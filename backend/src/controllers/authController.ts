@@ -12,7 +12,7 @@ import { AuthRequest } from '../types';
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'strict') as 'none' | 'strict',
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
@@ -329,9 +329,12 @@ export const googleCallback = async (req: AuthRequest, res: Response): Promise<v
       await dbUser.save();
     }
 
-    res.cookie('accessToken', accessToken, { ...COOKIE_OPTIONS, maxAge: 15 * 60 * 1000 });
     res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
-    res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+
+    // Pass the access token via URL so the frontend can store it in localStorage.
+    // This is necessary because cookies set on the API domain (Render) are not
+    // accessible to the frontend domain (Vercel) after an OAuth redirect.
+    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${accessToken}`);
   } catch {
     res.redirect(`${process.env.CLIENT_URL}/auth/login?error=oauth_failed`);
   }
