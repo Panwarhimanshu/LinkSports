@@ -84,12 +84,17 @@ app.use(helmet({
   contentSecurityPolicy: false, // Configured at the CDN/reverse-proxy level
 }));
 
+const allowedOrigins = [
+  process.env.CLIENT_URL || 'http://localhost:3000',
+  'https://www.linksports.in',
+  'https://linksports.in',
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    const webApp = process.env.CLIENT_URL || 'http://localhost:3000';
     // Native mobile apps send no Origin header — always allow
     if (!origin) return callback(null, true);
-    if (origin === webApp) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
     // Allow any localhost/192.168.x.x origin in development
     if (process.env.NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin)) {
       return callback(null, true);
@@ -126,7 +131,7 @@ const globalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 20 : 100,
+  max: process.env.NODE_ENV === 'production' ? 50 : 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many authentication attempts.' } },
@@ -141,6 +146,8 @@ const searchLimiter = rateLimit({
 app.use(globalLimiter);
 
 // ── Routes ────────────────────────────────────────────────────────────────────
+// OAuth redirect routes are excluded from the auth rate limiter (not brute-force targets)
+app.use('/api/v1/auth/oauth', authRoutes);
 app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/profiles', profileRoutes);
 app.use('/api/v1/connections', connectionRoutes);
