@@ -26,6 +26,12 @@ export interface AuthRequest extends Request {
   user?: IUser;
 }
 
+declare global {
+  namespace Express {
+    interface User extends IUser {}
+  }
+}
+
 export interface JwtPayload {
   id: string;
   role: string;

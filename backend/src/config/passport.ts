@@ -51,7 +51,7 @@ export const configurePassport = () => {
     console.log('[Passport] Google OAuth not configured - skipping strategy registration');
   }
 
-  passport.serializeUser((user: Express.User, done) => done(null, (user as { _id: string })._id));
+  passport.serializeUser((user: Express.User, done) => done(null, user._id.toString()));
   passport.deserializeUser(async (id: string, done) => {
     try {
       const user = await User.findById(id);

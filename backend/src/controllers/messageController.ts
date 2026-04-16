@@ -31,7 +31,7 @@ export const getConversations = async (req: AuthRequest, res: Response): Promise
 
     const enriched = await Promise.all(
       conversations.map(async (conv) => {
-        const obj = conv.toObject() as Record<string, unknown>;
+        const obj = conv.toObject() as unknown as Record<string, unknown>;
         const other = (conv.participants as any[]).find(
           (p) => p._id.toString() !== currentUserId
         );
@@ -77,7 +77,7 @@ export const getOrCreateConversation = async (req: AuthRequest, res: Response): 
       await conversation.populate('participants', 'email role');
     }
 
-    const obj = conversation.toObject() as Record<string, unknown>;
+    const obj = conversation.toObject() as unknown as Record<string, unknown>;
     const other = (conversation.participants as any[]).find(
       (p) => p._id.toString() !== currentUserId
     );

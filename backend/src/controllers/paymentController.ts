@@ -8,7 +8,7 @@ import { sendSuccess, sendError } from '../utils/response';
 
 const LISTING_FEE = 50;
 
-let razorpay: { orders: { create: (opts: Record<string, unknown>) => Promise<{ id: string }> } } | null = null;
+let razorpay: any = null;
 
 const getRazorpay = async () => {
   if (razorpay) return razorpay;
