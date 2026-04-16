@@ -19,11 +19,11 @@ function CallbackHandler() {
       return;
     }
 
-    // Store token then fetch the user profile
     setAccessToken(token);
     fetchMe()
       .then(() => router.replace('/dashboard'))
       .catch(() => router.replace('/auth/login?error=oauth_failed'));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
