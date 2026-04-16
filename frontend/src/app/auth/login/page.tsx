@@ -21,9 +21,18 @@ type LoginForm = z.infer<typeof loginSchema>;
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuthStore();
+  const { login, setAccessToken, fetchMe } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Handle Google OAuth redirect — token arrives as ?token=xxx
+  useEffect(() => {
+    const token = searchParams.get('token');
+    if (token) {
+      setAccessToken(token);
+      fetchMe().then(() => router.replace('/dashboard'));
+    }
+  }, []);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),

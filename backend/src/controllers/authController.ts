@@ -331,10 +331,10 @@ export const googleCallback = async (req: AuthRequest, res: Response): Promise<v
 
     res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
 
-    // Pass the access token via URL so the frontend can store it in localStorage.
-    // This is necessary because cookies set on the API domain (Render) are not
-    // accessible to the frontend domain (Vercel) after an OAuth redirect.
-    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${accessToken}`);
+    // Pass token via the login page (known-working route) so it can be stored
+    // in localStorage. A dedicated /auth/callback page is unreliable on Vercel
+    // when added after initial deploy.
+    res.redirect(`${process.env.CLIENT_URL}/auth/login?token=${accessToken}`);
   } catch {
     res.redirect(`${process.env.CLIENT_URL}/auth/login?error=oauth_failed`);
   }
