@@ -57,6 +57,7 @@ export default function HomePage() {
       {/* Stats */}
       <section className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <p className="text-center text-xs text-gray-400 mb-6">India's estimated sports ecosystem</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
               { value: '1M+', label: 'Athletes Across India' },
@@ -87,16 +88,27 @@ export default function HomePage() {
               { icon: Briefcase, title: 'Sports Job Board', desc: 'Find coaching positions, PE teacher jobs, and sports professional roles with one-click apply.', color: 'bg-purple-50 text-purple-600' },
               { icon: Shield, title: 'Verified Organizations', desc: 'All academies and clubs are document-verified. Trust who you connect with.', color: 'bg-orange-50 text-orange-600' },
               { icon: Trophy, title: 'Professional Networking', desc: 'Connect with coaches, athletes, and organizations. Build meaningful sports relationships.', color: 'bg-red-50 text-red-600' },
-              { icon: Star, title: 'CWG 2030 Ready', desc: 'Building digital scouting infrastructure for India\'s Commonwealth Games 2030 in Ahmedabad.', color: 'bg-yellow-50 text-yellow-600' },
-            ].map(({ icon: Icon, title, desc, color }) => (
-              <div key={title} className="card p-6">
-                <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center mb-4`}>
-                  <Icon className="w-6 h-6" />
+              { icon: Star, title: 'CWG 2030 Ready', desc: 'Building digital scouting infrastructure for India\'s Commonwealth Games 2030 in Ahmedabad.', color: 'bg-yellow-50 text-yellow-600', href: '/listings' },
+            ].map(({ icon: Icon, title, desc, color, href }) => {
+              const content = (
+                <>
+                  <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center mb-4`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+                </>
+              );
+              return href ? (
+                <Link key={title} href={href} className="card p-6 hover:shadow-md transition-shadow block">
+                  {content}
+                </Link>
+              ) : (
+                <div key={title} className="card p-6">
+                  {content}
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -178,15 +190,42 @@ export default function HomePage() {
               <p className="text-xs leading-relaxed">India's Sports Networking Platform. Linking Athletes to Opportunities.</p>
             </div>
             {[
-              { title: 'Platform', links: ['Find Trials', 'Job Board', 'Search Athletes', 'Organizations'] },
-              { title: 'Company', links: ['About Us', 'Privacy Policy', 'Terms of Service', 'Contact'] },
-              { title: 'Sports', links: ['Cricket', 'Football', 'Kabaddi', 'Athletics', 'All Sports'] },
+              {
+                title: 'Platform',
+                links: [
+                  { label: 'Find Trials', href: '/listings' },
+                  { label: 'Job Board', href: '/listings?tab=jobs' },
+                  { label: 'Search Athletes', href: '/search' },
+                  { label: 'Organizations', href: '/auth/register?role=organization' },
+                ],
+              },
+              {
+                title: 'Company',
+                links: [
+                  { label: 'About Us', href: '/listings' },
+                  { label: 'Privacy Policy', href: '/privacy' },
+                  { label: 'Terms of Service', href: '/terms' },
+                  { label: 'Contact', href: 'mailto:support@linksports.in' },
+                ],
+              },
+              {
+                title: 'Sports',
+                links: [
+                  { label: 'Cricket', href: '/listings?sport=Cricket' },
+                  { label: 'Football', href: '/listings?sport=Football' },
+                  { label: 'Kabaddi', href: '/listings?sport=Kabaddi' },
+                  { label: 'Athletics', href: '/listings?sport=Athletics' },
+                  { label: 'All Sports', href: '/listings' },
+                ],
+              },
             ].map(({ title, links }) => (
               <div key={title}>
                 <h4 className="text-white font-medium mb-3 text-sm">{title}</h4>
                 <ul className="space-y-2">
-                  {links.map((link) => (
-                    <li key={link}><a href="#" className="text-xs hover:text-white transition-colors">{link}</a></li>
+                  {links.map(({ label, href }) => (
+                    <li key={label}>
+                      <Link href={href} className="text-xs hover:text-white transition-colors">{label}</Link>
+                    </li>
                   ))}
                 </ul>
               </div>

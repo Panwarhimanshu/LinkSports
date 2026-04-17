@@ -87,8 +87,21 @@ export const getAthleteProfile = async (req: AuthRequest, res: Response): Promis
   }
 };
 
+const isPhoneOrEmail = (value: string): boolean => {
+  if (!value) return false;
+  const stripped = value.replace(/[\s\-().+]/g, '');
+  if (/^\d{7,}$/.test(stripped)) return true;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return true;
+  return false;
+};
+
 export const updateAthleteProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    if (req.body.fullName && isPhoneOrEmail(req.body.fullName)) {
+      sendError(res, 'Display name cannot be a phone number or email address', 400);
+      return;
+    }
+
     let profile = await AthleteProfile.findOne({ userId: req.user!._id });
     if (!profile) {
       profile = await AthleteProfile.create({

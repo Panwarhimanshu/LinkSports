@@ -52,7 +52,14 @@ export const getListings = async (req: AuthRequest, res: Response): Promise<void
     if (state) query['location.state'] = state;
     if (city) query['location.city'] = city;
     if (free === 'true') query.participantFee = 0;
-    if (q) query.$text = { $search: q as string };
+    if (q) {
+      const regex = new RegExp(q as string, 'i');
+      query.$or = [
+        { title: regex },
+        { description: regex },
+        { sports: regex },
+      ];
+    }
     if (dateFrom || dateTo) {
       query.startDate = {};
       if (dateFrom) (query.startDate as Record<string, Date>).$gte = new Date(dateFrom as string);

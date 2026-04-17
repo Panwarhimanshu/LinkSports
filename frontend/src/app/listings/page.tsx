@@ -268,7 +268,12 @@ function OpportunitiesContent() {
                     <Link key={listing._id as string} href={`/listings/${listing._id}`} className="card hover:shadow-md transition-all group">
                       {!!(listing.banner) && (
                         <div className="h-36 bg-gray-200 overflow-hidden">
-                          <img src={listing.banner as string} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img
+                            src={listing.banner as string}
+                            alt=""
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                          />
                         </div>
                       )}
                       <div className="p-5">

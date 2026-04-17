@@ -106,7 +106,15 @@ export default function AthleteProfilePage() {
             <div className="card p-6 text-center">
               <div className="w-24 h-24 rounded-full bg-brand text-white flex items-center justify-center text-3xl font-bold mx-auto mb-4 overflow-hidden">
                 {getPhotoUrl(profile.photo as string) ? (
-                  <img src={getPhotoUrl(profile.photo as string)!} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={getPhotoUrl(profile.photo as string)!}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.textContent = getInitials(profile.fullName as string || 'A');
+                    }}
+                  />
                 ) : (
                   getInitials(profile.fullName as string || 'A')
                 )}
@@ -317,7 +325,7 @@ export default function AthleteProfilePage() {
               <div className="card p-6">
                 <h2 className="font-semibold text-gray-900 mb-2">About</h2>
                 {profile.tagline && <p className="text-brand font-medium mb-2">{profile.tagline as string}</p>}
-                {profile.aboutBio && <p className="text-sm text-gray-600 whitespace-pre-wrap">{profile.aboutBio as string}</p>}
+                {profile.aboutBio && <p className="text-sm text-gray-600 whitespace-pre-wrap">{(profile.aboutBio as string).replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n')}</p>}
               </div>
             )}
 

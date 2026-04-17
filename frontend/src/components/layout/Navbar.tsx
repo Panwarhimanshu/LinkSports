@@ -259,6 +259,12 @@ export default function Navbar() {
                 <Link href="/listings" className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">
                   Opportunities
                 </Link>
+                <Link href="/listings?tab=jobs" className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">
+                  Jobs
+                </Link>
+                <Link href="/search" className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">
+                  Network
+                </Link>
                 <Link href="/auth/login" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">
                   Login
                 </Link>
@@ -312,6 +318,9 @@ export default function Navbar() {
               </>
             ) : (
               <>
+                <Link href="/listings" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Opportunities</Link>
+                <Link href="/listings?tab=jobs" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Jobs</Link>
+                <Link href="/search" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Network</Link>
                 <Link href="/auth/login" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Login</Link>
                 <Link href="/auth/register" className="block px-3 py-2 rounded-lg text-sm font-medium text-white bg-brand hover:bg-brand-dark" onClick={() => setIsMenuOpen(false)}>Join Free</Link>
               </>

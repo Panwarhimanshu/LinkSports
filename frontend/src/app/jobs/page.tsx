@@ -116,8 +116,19 @@ export default function JobsPage() {
         ) : jobs.length === 0 ? (
           <div className="text-center py-16">
             <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No jobs found</h3>
-            <p className="text-gray-500">Try different search terms or filters.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
+              {hasFilters ? 'No jobs found' : 'No jobs posted yet'}
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {hasFilters
+                ? 'Try different search terms or filters.'
+                : 'Be the first to post a sports job and find the right talent.'}
+            </p>
+            {!hasFilters && (
+              <Link href="/auth/register?role=organization" className="btn-primary inline-flex items-center gap-2 px-6 py-2.5">
+                <Building2 className="w-4 h-4" /> Post a Job as an Organization
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
