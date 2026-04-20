@@ -22,13 +22,7 @@ npm run dev
 
 ## Migrate Existing Data from MySQL
 
-1. Add MySQL credentials to `backend/.env`:
-   ```
-   MYSQL_HOST=your-hosting-ip-or-localhost
-   MYSQL_PORT=3306
-   MYSQL_USER=u993820046_linksports
-   MYSQL_PASS=your_mysql_password
-   MYSQL_DB=u993820046_connect_sport
+
    ```
 
 2. Run migration:
