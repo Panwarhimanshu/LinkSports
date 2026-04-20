@@ -314,6 +314,9 @@ export default function Navbar() {
                 <Link href="/search" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Network</Link>
                 <Link href="/messages" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Messages</Link>
                 <Link href="/notifications" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Notifications</Link>
+                {user?.role === 'admin' && (
+                  <Link href="/admin" className="block px-3 py-2 rounded-lg text-sm font-bold text-brand bg-blue-50 hover:bg-blue-100" onClick={() => setIsMenuOpen(false)}>⚙️ Admin Panel</Link>
+                )}
                 <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">Logout</button>
               </>
             ) : (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import Navbar from '@/components/layout/Navbar';
 import AuthGuard from '@/components/shared/AuthGuard';
@@ -146,6 +147,13 @@ function CardSkeleton() {
 // ── Main Page ──────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user, profile } = useAuthStore();
+  const router = useRouter();
+
+  // Redirect admin users straight to the admin panel
+  useEffect(() => {
+    if (user?.role === 'admin') router.replace('/admin');
+  }, [user?.role]);
+  if (user?.role === 'admin') return null;
 
   const [topAthletes, setTopAthletes] = useState<Record<string, unknown>[]>([]);
   const [topCoaches, setTopCoaches] = useState<Record<string, unknown>[]>([]);
