@@ -11,14 +11,14 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.hostinger.com',
     port,
-    secure: port === 465, // true for 465 (SSL), false for 587 (STARTTLS)
+    secure: port === 465,
     requireTLS: port === 587,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
     tls: {
-      rejectUnauthorized: false, // required for some Hostinger configs
+      rejectUnauthorized: false,
     },
   });
 };
@@ -30,7 +30,6 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
 
   if (unconfigured) {
     console.log(`[Email - NOT SENT] To: ${options.to} | Subject: ${options.subject}`);
-    console.log('[Email] Set EMAIL_USER and EMAIL_PASS in .env to enable sending');
     return;
   }
 

@@ -63,6 +63,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     await sendEmail({ to: email, ...emailTemplates.verifyEmail(otp, fullName || 'User') });
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`\n🔑 [DEV OTP] ${email} → ${otp}\n`);
+    }
+
     sendSuccess(res, { userId: user._id, email: user.email, role: user.role }, 'Registration successful. Please verify your email.', 201);
   } catch (error) {
     console.error('Register error:', error);
@@ -105,6 +109,11 @@ export const resendOtp = async (req: Request, res: Response): Promise<void> => {
     await user.save();
 
     await sendEmail({ to: normalizedEmail, ...emailTemplates.verifyEmail(otp, normalizedEmail.split('@')[0]) });
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`\n🔑 [DEV OTP] ${normalizedEmail} → ${otp}\n`);
+    }
+
     sendSuccess(res, null, 'OTP resent successfully');
   } catch (err) {
     console.error('resendOtp error:', err);
