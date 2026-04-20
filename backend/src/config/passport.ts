@@ -23,15 +23,15 @@ export const configurePassport = () => {
           let user = await User.findOne({ email });
 
           if (!user) {
+            const name = profile.displayName || email.split('@')[0];
             user = await User.create({
               email,
               authProvider: 'google',
               role: 'athlete',
               isVerified: true,
               isApproved: true,
+              needsRoleSelection: true,
             });
-
-            const name = profile.displayName || email.split('@')[0];
             await AthleteProfile.create({
               userId: user._id,
               fullName: name,

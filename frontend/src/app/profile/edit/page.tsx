@@ -117,7 +117,9 @@ export default function ProfileEditPage() {
   // Organization fields
   const [orgForm, setOrgForm] = useState({
     name: '', description: '', logo: '', website: '', phone: '', email: '',
-    type: '', yearEstablished: '', address: { city: '', state: '', country: 'India' },
+    alternatePhone: '', showPhone: true, showAddress: false,
+    type: '', yearEstablished: '',
+    city: '', state: '', pincode: '', address: '',
     sportsOffered: [] as string[],
   });
 
@@ -186,9 +188,13 @@ export default function ProfileEditPage() {
         const p = res.data.data?.profile || res.data.data || {};
         setOrgForm({
           name: p.name || '', description: p.description || '', logo: p.logo || '',
-          website: p.website || '', phone: p.phone || '', email: p.email || '',
+          website: p.website || '', phone: p.contact?.phone || p.phone || '',
+          email: p.contact?.email || p.email || '',
+          alternatePhone: p.alternatePhone || '', showPhone: p.showPhone !== false,
+          showAddress: p.showAddress === true,
           type: p.type || '', yearEstablished: p.yearEstablished || '',
-          address: p.address || { city: '', state: '', country: 'India' },
+          city: p.city || '', state: p.state || '', pincode: p.pincode || '',
+          address: typeof p.address === 'string' ? p.address : '',
           sportsOffered: p.sportsOffered || [],
         });
       }
@@ -240,7 +246,10 @@ export default function ProfileEditPage() {
       } else if (user?.role === 'coach') {
         await profileAPI.updateCoachProfile(coachForm);
       } else if (user?.role === 'organization') {
-        await profileAPI.updateOrganizationProfile(orgForm);
+        await profileAPI.updateOrganizationProfile({
+          ...orgForm,
+          contact: { phone: orgForm.phone, email: orgForm.email, website: orgForm.website },
+        });
       }
       await fetchMe();
       toast.success('Profile saved!');
@@ -826,15 +835,18 @@ export default function ProfileEditPage() {
                     <input className="input-field" value={orgForm.name} onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })} placeholder="Sports Academy Name" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type / Category</label>
                     <select className="input-field" value={orgForm.type} onChange={(e) => setOrgForm({ ...orgForm, type: e.target.value })}>
                       <option value="">Select type</option>
                       <option value="academy">Sports Academy</option>
                       <option value="school">School</option>
                       <option value="university">University/College</option>
                       <option value="club">Sports Club</option>
-                      <option value="federation">Federation</option>
+                      <option value="federation">Federation / Association</option>
                       <option value="organizer">Event Organizer</option>
+                      <option value="corporate">Corporate</option>
+                      <option value="agency">Sports Agency</option>
+                      <option value="brand">Brand / Sponsor</option>
                     </select>
                   </div>
                   <div>
@@ -842,25 +854,70 @@ export default function ProfileEditPage() {
                     <input type="number" className="input-field" value={orgForm.yearEstablished} onChange={(e) => setOrgForm({ ...orgForm, yearEstablished: e.target.value })} placeholder="2010" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input className="input-field" value={orgForm.phone} onChange={(e) => setOrgForm({ ...orgForm, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input type="email" className="input-field" value={orgForm.email} onChange={(e) => setOrgForm({ ...orgForm, email: e.target.value })} placeholder="contact@academy.com" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Primary Phone</label>
+                    <input type="tel" className="input-field" value={orgForm.phone} onChange={(e) => setOrgForm({ ...orgForm, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Alternate / Display Number</label>
+                    <input type="tel" className="input-field" value={orgForm.alternatePhone} onChange={(e) => setOrgForm({ ...orgForm, alternatePhone: e.target.value })} placeholder="Different number for public display" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                     <input className="input-field" value={orgForm.website} onChange={(e) => setOrgForm({ ...orgForm, website: e.target.value })} placeholder="https://youracademy.com" />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+                    <input className="input-field" maxLength={6} value={orgForm.pincode} onChange={(e) => {
+                      const val = e.target.value;
+                      setOrgForm({ ...orgForm, pincode: val });
+                      if (val.length === 6) {
+                        fetch(`https://api.postalpincode.in/pincode/${val}`)
+                          .then((r) => r.json())
+                          .then((data) => {
+                            if (data[0].Status === 'Success') {
+                              const { District, State } = data[0].PostOffice[0];
+                              setOrgForm((prev) => ({ ...prev, city: District, state: State }));
+                            }
+                          }).catch(() => {});
+                      }
+                    }} placeholder="400001" />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input className="input-field" value={orgForm.address.city} onChange={(e) => setOrgForm({ ...orgForm, address: { ...orgForm.address, city: e.target.value } })} placeholder="Ahmedabad" />
+                    <input className="input-field" value={orgForm.city} onChange={(e) => setOrgForm({ ...orgForm, city: e.target.value })} placeholder="Auto-filled from pincode" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                    <input className="input-field" value={orgForm.address.state} onChange={(e) => setOrgForm({ ...orgForm, address: { ...orgForm.address, state: e.target.value } })} placeholder="Gujarat" />
+                    <select className="input-field" value={orgForm.state} onChange={(e) => setOrgForm({ ...orgForm, state: e.target.value })}>
+                      <option value="">Select State</option>
+                      {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
+                  <textarea rows={2} className="input-field" value={orgForm.address} onChange={(e) => setOrgForm({ ...orgForm, address: e.target.value })} placeholder="Building, Street, Area..." />
+                </div>
+                <div className="space-y-3 pt-2 border-t">
+                  <p className="text-sm font-medium text-gray-700">Privacy Settings</p>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={orgForm.showPhone} onChange={(e) => setOrgForm({ ...orgForm, showPhone: e.target.checked })} className="rounded text-brand w-4 h-4" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">Show contact number on public profile</p>
+                      <p className="text-xs text-gray-500">Athletes and coaches will see your phone/alternate number</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={orgForm.showAddress} onChange={(e) => setOrgForm({ ...orgForm, showAddress: e.target.checked })} className="rounded text-brand w-4 h-4" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">Show address on public profile</p>
+                      <p className="text-xs text-gray-500">Full address will be visible to visitors on your page</p>
+                    </div>
+                  </label>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>

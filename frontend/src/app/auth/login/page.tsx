@@ -28,9 +28,14 @@ function LoginContent() {
   // Handle Google OAuth redirect — token arrives as ?token=xxx
   useEffect(() => {
     const token = searchParams.get('token');
+    const newUser = searchParams.get('newUser');
     if (token) {
       setAccessToken(token);
-      fetchMe().then(() => router.replace('/dashboard'));
+      if (newUser === 'true') {
+        router.replace('/auth/google-select-role');
+      } else {
+        fetchMe().then(() => router.replace('/dashboard'));
+      }
     }
   }, []);
 

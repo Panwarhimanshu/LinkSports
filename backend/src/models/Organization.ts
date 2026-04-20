@@ -5,12 +5,17 @@ export interface IOrganization extends Document {
   name: string;
   contactPerson?: string;
   city?: string;
+  state?: string;
+  pincode?: string;
   type: string;
   logo?: string;
   banner?: string;
   description?: string;
   address?: string;
+  showAddress?: boolean;
   contact: { phone?: string; email?: string; website?: string };
+  alternatePhone?: string;
+  showPhone?: boolean;
   sports: string[];
   facilities?: string;
   coachingStaff: Types.ObjectId[];
@@ -33,6 +38,8 @@ const OrganizationSchema = new Schema<IOrganization>(
     name: { type: String, required: true, trim: true },
     contactPerson: { type: String, trim: true },
     city: { type: String, trim: true },
+    state: { type: String, trim: true },
+    pincode: { type: String, trim: true },
     type: {
       type: String,
       enum: ['academy', 'school', 'university', 'club', 'federation', 'organizer', 'corporate', 'agency', 'brand'],
@@ -42,7 +49,10 @@ const OrganizationSchema = new Schema<IOrganization>(
     banner: String,
     description: String,
     address: String,
+    showAddress: { type: Boolean, default: false },
     contact: { phone: String, email: String, website: String },
+    alternatePhone: String,
+    showPhone: { type: Boolean, default: true },
     sports: [String],
     facilities: String,
     coachingStaff: [{ type: Schema.Types.ObjectId, ref: 'CoachProfile' }],

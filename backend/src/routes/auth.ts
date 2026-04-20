@@ -2,7 +2,7 @@ import { Router } from 'express';
 import passport from 'passport';
 import {
   register, login, verifyEmail, resendOtp, refreshToken, logout,
-  forgotPassword, resetPassword, getMe, googleCallback,
+  forgotPassword, resetPassword, getMe, googleCallback, updateRole,
 } from '../controllers/authController';
 import { protect } from '../middleware/auth';
 
@@ -17,6 +17,7 @@ router.post('/logout', protect, logout);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.get('/me', protect, getMe);
+router.patch('/update-role', protect, updateRole);
 
 router.get('/oauth/google', (req, res, next) => {
   if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID === 'your_google_client_id') {

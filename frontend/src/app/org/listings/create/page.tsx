@@ -9,7 +9,25 @@ import { listingAPI } from '@/lib/api';
 import { ChevronLeft, Plus, Trash2, Loader2, Trophy } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const SPORTS = ['Cricket', 'Football', 'Basketball', 'Kabaddi', 'Athletics', 'Tennis', 'Badminton', 'Hockey', 'Wrestling', 'Boxing', 'Volleyball', 'Swimming', 'Cycling', 'Archery', 'Shooting', 'Other'];
+const SPORTS = [
+  'Cricket', 'Football', 'Basketball', 'Kabaddi', 'Athletics', 'Tennis', 'Badminton',
+  'Hockey', 'Wrestling', 'Boxing', 'Volleyball', 'Swimming', 'Cycling', 'Archery',
+  'Shooting', 'Weightlifting', 'Gymnastics', 'Judo', 'Table Tennis', 'Kho Kho',
+  'Squash', 'Golf', 'Rugby', 'Taekwondo', 'Karate', 'MMA', 'Futsal',
+  'Beach Volleyball', 'Marathon', 'CrossFit', 'Powerlifting', 'Other',
+];
+
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
+  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
+  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana',
+  'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Andaman and Nicobar Islands', 'Chandigarh', 'Delhi', 'Jammu and Kashmir',
+  'Ladakh', 'Lakshadweep', 'Puducherry',
+];
+
+const TODAY = new Date().toISOString().split('T')[0];
 
 const LISTING_TYPES = [
   { value: 'trial', label: 'Trial', desc: 'Conduct trials to select players' },
@@ -32,7 +50,7 @@ export default function CreateListingPage() {
     location: { city: '', state: '', country: 'India', isOnline: false },
     participantLimit: '', participantFee: '0',
     eligibility: { ageMin: '', ageMax: '', gender: '', experienceLevel: '', states: [] as string[] },
-    contactInfo: '', banner: '',
+    contactInfo: '', contactPhone: '', banner: '',
   });
   const [questions, setQuestions] = useState<CustomQuestion[]>([]);
 
@@ -134,15 +152,15 @@ export default function CreateListingPage() {
                 <div className="grid sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-                    <input type="date" className="input-field" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+                    <input type="date" min={TODAY} className="input-field" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                    <input type="date" className="input-field" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
+                    <input type="date" min={form.startDate || TODAY} className="input-field" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Registration Deadline</label>
-                    <input type="date" className="input-field" value={form.registrationDeadline} onChange={(e) => setForm({ ...form, registrationDeadline: e.target.value })} />
+                    <input type="date" min={TODAY} max={form.startDate || undefined} className="input-field" value={form.registrationDeadline} onChange={(e) => setForm({ ...form, registrationDeadline: e.target.value })} />
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -152,7 +170,10 @@ export default function CreateListingPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                    <input className="input-field" value={form.location.state} onChange={(e) => setForm({ ...form, location: { ...form.location, state: e.target.value } })} placeholder="Maharashtra" />
+                    <select className="input-field" value={form.location.state} onChange={(e) => setForm({ ...form, location: { ...form.location, state: e.target.value } })}>
+                      <option value="">Select State</option>
+                      {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Participant Limit</label>
@@ -163,9 +184,15 @@ export default function CreateListingPage() {
                     <input type="number" className="input-field" value={form.participantFee} onChange={(e) => setForm({ ...form, participantFee: e.target.value })} placeholder="0 for free" />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Info</label>
-                  <input className="input-field" value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} placeholder="Phone, email, or WhatsApp number" />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Info / Email</label>
+                    <input className="input-field" value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} placeholder="Email or other contact info" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone (for this event)</label>
+                    <input type="tel" className="input-field" value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} placeholder="+91 XXXXX XXXXX (can differ from org number)" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Sports</label>

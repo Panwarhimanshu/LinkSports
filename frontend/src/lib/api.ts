@@ -55,6 +55,7 @@ export const authAPI = {
   resetPassword: (data: Record<string, string>) => api.post('/auth/reset-password', data),
   getMe: () => api.get('/auth/me'),
   refresh: () => api.post('/auth/refresh'),
+  updateRole: (role: string) => api.patch('/auth/update-role', { role }),
 };
 
 // ── Profiles ──────────────────────────────────────────────────────────────────

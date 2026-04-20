@@ -327,6 +327,7 @@ export const googleCallback = async (req: AuthRequest, res: Response): Promise<v
     if (!req.user) { res.redirect(`${process.env.CLIENT_URL}/auth/login?error=oauth_failed`); return; }
 
     const user = req.user;
+    const needsRole = (user as any).needsRoleSelection === true;
     const payload = { id: user._id.toString(), role: user.role, email: user.email };
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
@@ -340,11 +341,48 @@ export const googleCallback = async (req: AuthRequest, res: Response): Promise<v
 
     res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
 
-    // Pass token via the login page (known-working route) so it can be stored
-    // in localStorage. A dedicated /auth/callback page is unreliable on Vercel
-    // when added after initial deploy.
-    res.redirect(`${process.env.CLIENT_URL}/auth/login?token=${accessToken}`);
+    const newUserParam = needsRole ? '&newUser=true' : '';
+    res.redirect(`${process.env.CLIENT_URL}/auth/login?token=${accessToken}${newUserParam}`);
   } catch {
     res.redirect(`${process.env.CLIENT_URL}/auth/login?error=oauth_failed`);
+  }
+};
+
+export const updateRole = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { role } = req.body;
+    const validRoles = ['athlete', 'coach', 'professional', 'organization'];
+    if (!validRoles.includes(role)) { sendError(res, 'Invalid role', 400, 'INVALID_ROLE'); return; }
+
+    const user = await User.findById(req.user!._id);
+    if (!user) { sendError(res, 'User not found', 404); return; }
+
+    const oldRole = user.role;
+    user.role = role;
+    (user as any).needsRoleSelection = false;
+    await user.save();
+
+    const slug = generateSlug(user.email.split('@')[0]);
+
+    if (role === 'coach' && oldRole !== 'coach') {
+      await CoachProfile.findOneAndUpdate(
+        { userId: user._id },
+        { $setOnInsert: { userId: user._id, fullName: user.email.split('@')[0], profileUrl: slug } },
+        { upsert: true, new: true }
+      );
+    } else if (role === 'organization' && oldRole !== 'organization') {
+      await Organization.findOneAndUpdate(
+        { userId: user._id },
+        { $setOnInsert: { userId: user._id, name: user.email.split('@')[0], type: 'academy', contact: { email: user.email }, profileUrl: slug, verificationStatus: 'pending', isVerified: false } },
+        { upsert: true, new: true }
+      );
+    }
+
+    const payload = { id: user._id.toString(), role: user.role, email: user.email };
+    const newAccessToken = generateAccessToken(payload);
+    sendSuccess(res, { accessToken: newAccessToken, role: user.role }, 'Role updated');
+  } catch (error) {
+    console.error('updateRole error:', error);
+    sendError(res, 'Failed to update role', 500);
   }
 };

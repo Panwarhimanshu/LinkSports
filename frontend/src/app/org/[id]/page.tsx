@@ -10,7 +10,7 @@ import { getInitials, formatDate, getListingTypeBadge, getPhotoUrl, formatCurren
 import {
   MapPin, CheckCircle, Globe, ChevronLeft, Loader2, Building2, Edit,
   Briefcase, Calendar, UserPlus, MessageCircle, Trophy, Users, Phone,
-  Mail, Share2, Star, Dumbbell, GraduationCap, MapPinned,
+  Mail, Share2, Dumbbell, GraduationCap, MapPinned, AlertCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -75,6 +75,9 @@ export default function OrgProfilePage() {
       || user?.id === orgUserId
     ));
   const contact = (org.contact as Record<string, string>) || {};
+  const showPhone = org.showPhone !== false;
+  const showAddress = org.showAddress === true;
+  const displayPhone = (org.alternatePhone as string) || contact.phone;
   const achievements = (org.achievements as { title: string; year?: number; description?: string }[]) || [];
   const coachingStaff = (org.coachingStaff as Record<string, unknown>[]) || [];
   const sports = (org.sports as string[]) || [];
@@ -96,6 +99,20 @@ export default function OrgProfilePage() {
         <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mt-4 mb-0">
           <ChevronLeft className="w-4 h-4" /> Back
         </button>
+
+        {/* Verification pending banner for org owner */}
+        {isOwnProfile && !org.isVerified && (
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-800 text-sm">Verification Pending</p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Your organization profile is under admin review. It will be visible publicly only after verification.
+                This usually takes 1-2 business days.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Profile header card — overlaps banner */}
         <div className="card p-6 -mt-16 relative z-10 mb-6">
@@ -135,9 +152,9 @@ export default function OrgProfilePage() {
                     <Mail className="w-4 h-4 text-brand" /> {contact.email}
                   </a>
                 )}
-                {contact.phone && (
+                {showPhone && displayPhone && (
                   <span className="flex items-center gap-1">
-                    <Phone className="w-4 h-4 text-brand" /> {contact.phone}
+                    <Phone className="w-4 h-4 text-brand" /> {displayPhone}
                   </span>
                 )}
               </div>
@@ -285,7 +302,7 @@ export default function OrgProfilePage() {
             )}
 
             {/* Contact */}
-            {(contact.email || contact.phone || org.address || org.contactPerson) && (
+            {(contact.email || (showPhone && displayPhone) || (showAddress && org.address) || org.contactPerson) && (
               <div className="card p-5">
                 <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <Phone className="w-4 h-4 text-brand" /> Contact
@@ -302,15 +319,21 @@ export default function OrgProfilePage() {
                       <Mail className="w-4 h-4 flex-shrink-0" /> {contact.email}
                     </a>
                   )}
-                  {contact.phone && (
+                  {showPhone && displayPhone && (
                     <div className="flex items-center gap-2 text-gray-600">
-                      <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.phone}
+                      <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" /> {displayPhone}
                     </div>
                   )}
-                  {org.address && (
+                  {showAddress && org.address && (
                     <div className="flex items-start gap-2 text-gray-600">
                       <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                      <span>{org.address as string}</span>
+                      <span>{org.address as string}{org.city ? `, ${org.city as string}` : ''}{org.state ? `, ${org.state as string}` : ''}{org.pincode ? ` - ${org.pincode as string}` : ''}</span>
+                    </div>
+                  )}
+                  {!showAddress && (org.city || org.state) && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span>{[org.city, org.state].filter(Boolean).join(', ') as string}</span>
                     </div>
                   )}
                 </div>
