@@ -327,7 +327,7 @@ export const googleCallback = async (req: AuthRequest, res: Response): Promise<v
     if (!req.user) { res.redirect(`${process.env.CLIENT_URL}/auth/login?error=oauth_failed`); return; }
 
     const user = req.user;
-    const needsRole = (user as any).needsRoleSelection === true;
+    const needsRole = user.needsRoleSelection === true;
     const payload = { id: user._id.toString(), role: user.role, email: user.email };
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
@@ -359,7 +359,7 @@ export const updateRole = async (req: AuthRequest, res: Response): Promise<void>
 
     const oldRole = user.role;
     user.role = role;
-    (user as any).needsRoleSelection = false;
+    user.needsRoleSelection = false;
     await user.save();
 
     const slug = generateSlug(user.email.split('@')[0]);
