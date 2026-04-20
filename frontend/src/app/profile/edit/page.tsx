@@ -10,7 +10,39 @@ import { useAuthStore } from '@/store/authStore';
 import { getInitials, getPhotoUrl } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-const SPORTS = ['Cricket', 'Football', 'Basketball', 'Kabaddi', 'Athletics', 'Tennis', 'Badminton', 'Hockey', 'Wrestling', 'Boxing', 'Volleyball', 'Swimming', 'Cycling', 'Archery', 'Shooting', 'Weightlifting', 'Gymnastics', 'Judo', 'Table Tennis', 'Other'];
+const SPORTS = [
+  'Cricket', 'Football', 'Basketball', 'Kabaddi', 'Athletics', 'Tennis', 'Badminton',
+  'Hockey', 'Wrestling', 'Boxing', 'Volleyball', 'Swimming', 'Cycling', 'Archery',
+  'Shooting', 'Weightlifting', 'Gymnastics', 'Judo', 'Table Tennis', 'Kho Kho',
+  'Carrom', 'Chess', 'Squash', 'Golf', 'Rugby', 'Baseball', 'Softball', 'Handball',
+  'Water Polo', 'Diving', 'Rowing', 'Kayaking', 'Canoeing', 'Sailing', 'Surfing',
+  'Skiing', 'Snowboarding', 'Ice Hockey', 'Figure Skating', 'Speed Skating',
+  'Equestrian', 'Fencing', 'Taekwondo', 'Karate', 'Muay Thai', 'MMA', 'Kickboxing',
+  'Futsal', 'Beach Volleyball', 'Beach Football', 'Sepak Takraw', 'Polo',
+  'Billiards', 'Snooker', 'Darts', 'Esports', 'Triathlon', 'Pentathlon',
+  'Marathon', 'CrossFit', 'Powerlifting', 'Bodybuilding', 'Other',
+];
+
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
+  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
+  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana',
+  'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry',
+];
+
+const COUNTRY_CODES = [
+  { code: '+91', label: '🇮🇳 +91' }, { code: '+1', label: '🇺🇸 +1' },
+  { code: '+44', label: '🇬🇧 +44' }, { code: '+61', label: '🇦🇺 +61' },
+  { code: '+971', label: '🇦🇪 +971' }, { code: '+65', label: '🇸🇬 +65' },
+  { code: '+60', label: '🇲🇾 +60' }, { code: '+49', label: '🇩🇪 +49' },
+  { code: '+33', label: '🇫🇷 +33' }, { code: '+81', label: '🇯🇵 +81' },
+  { code: '+86', label: '🇨🇳 +86' }, { code: '+92', label: '🇵🇰 +92' },
+  { code: '+880', label: '🇧🇩 +880' }, { code: '+94', label: '🇱🇰 +94' },
+  { code: '+977', label: '🇳🇵 +977' }, { code: '+27', label: '🇿🇦 +27' },
+];
 
 export default function ProfileEditPage() {
   const { user, fetchMe } = useAuthStore();
@@ -24,6 +56,7 @@ export default function ProfileEditPage() {
     fullName: '',
     username: '',
     email: '',
+    countryCode: '+91',
     phone: '',
     dateOfBirth: '',
     gender: '',
@@ -65,14 +98,14 @@ export default function ProfileEditPage() {
 
   const [achievements, setAchievements] = useState<{ title: string; year: string; category: string; description: string }[]>([]);
   const [tournaments, setTournaments] = useState<{ name: string; startDate: string; endDate: string; location: string; description: string }[]>([]);
-  const [education, setEducation] = useState<{ institution: string; degree: string; fieldOfStudy: string; startYear: string; endYear: string; description: string }[]>([]);
+  const [education, setEducation] = useState<{ institution: string; degree: string; fieldOfStudy: string; startYear: string; endYear: string; description: string; isCurrent?: boolean }[]>([]);
   const [playingHistory, setPlayingHistory] = useState<{ organization: string; role: string; startDate: string; endDate: string; isCurrent: boolean; description: string }[]>([]);
   const [highlights, setHighlights] = useState<{ title: string; url: string; platform: string }[]>([]);
 
   // Coach fields
   const [coachForm, setCoachForm] = useState({
-    fullName: '', bio: '', photo: '', gender: '', 
-    email: '', phone: '',
+    fullName: '', bio: '', photo: '', gender: '',
+    email: '', countryCode: '+91', phone: '',
     experienceYears: 0,
     sportsCoached: [] as string[], certifications: [] as string[],
     location: { city: '', state: '', country: 'India' },
@@ -101,6 +134,7 @@ export default function ProfileEditPage() {
           fullName: p.fullName || '',
           username: p.username || '',
           email: p.email || '',
+          countryCode: p.countryCode || '+91',
           phone: p.phone || '',
           dateOfBirth: p.dob ? p.dob.split('T')[0] : '',
           gender: p.gender || '',
@@ -138,7 +172,7 @@ export default function ProfileEditPage() {
         setCoachForm({
           fullName: p.fullName || '', bio: p.bio || '', photo: p.photo || '',
           gender: p.gender || '', 
-          email: p.email || '', phone: p.phone || '',
+          email: p.email || '', countryCode: p.countryCode || '+91', phone: p.phone || '',
           experienceYears: p.experienceYears || 0,
           sportsCoached: p.sportsCoached || [], certifications: p.certifications || [],
           location: p.location || { city: '', state: '', country: 'India' },
@@ -344,7 +378,12 @@ export default function ProfileEditPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Mobile No</label>
-                      <input className="input-field" value={athleteForm.phone} onChange={(e) => setAthleteForm({ ...athleteForm, phone: e.target.value })} placeholder="+91..." />
+                      <div className="flex gap-2">
+                        <select className="input-field w-32" value={athleteForm.countryCode} onChange={(e) => setAthleteForm({ ...athleteForm, countryCode: e.target.value })}>
+                          {COUNTRY_CODES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+                        </select>
+                        <input type="tel" className="input-field flex-1" value={athleteForm.phone} onChange={(e) => setAthleteForm({ ...athleteForm, phone: e.target.value })} placeholder="98765 43210" />
+                      </div>
                     </div>
                   </div>
 
@@ -369,7 +408,10 @@ export default function ProfileEditPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                      <input className="input-field" value={athleteForm.location.state} onChange={(e) => setAthleteForm({ ...athleteForm, location: { ...athleteForm.location, state: e.target.value } })} placeholder="Auto-filled" />
+                      <select className="input-field" value={athleteForm.location.state} onChange={(e) => setAthleteForm({ ...athleteForm, location: { ...athleteForm.location, state: e.target.value } })}>
+                        <option value="">Select State</option>
+                        {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -513,11 +555,15 @@ export default function ProfileEditPage() {
                       <input className="input-field" placeholder="School / University" value={e.institution} onChange={(ev) => { const c = [...education]; c[i].institution = ev.target.value; setEducation(c); }} />
                       <input className="input-field" placeholder="Degree" value={e.degree} onChange={(ev) => { const c = [...education]; c[i].degree = ev.target.value; setEducation(c); }} />
                       <input className="input-field" placeholder="Field of Study" value={e.fieldOfStudy} onChange={(ev) => { const c = [...education]; c[i].fieldOfStudy = ev.target.value; setEducation(c); }} />
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         <input className="input-field" placeholder="Start Year" value={e.startYear} onChange={(ev) => { const c = [...education]; c[i].startYear = ev.target.value; setEducation(c); }} />
-                        <input className="input-field" placeholder="End Year" value={e.endYear} onChange={(ev) => { const c = [...education]; c[i].endYear = ev.target.value; setEducation(c); }} />
+                        {!e.isCurrent && <input className="input-field" placeholder="End Year" value={e.endYear} onChange={(ev) => { const c = [...education]; c[i].endYear = ev.target.value; setEducation(c); }} />}
                       </div>
                     </div>
+                    <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                      <input type="checkbox" checked={!!e.isCurrent} onChange={(ev) => { const c = [...education]; c[i].isCurrent = ev.target.checked; if (ev.target.checked) c[i].endYear = ''; setEducation(c); }} className="rounded text-brand" />
+                      Currently Studying
+                    </label>
                     <textarea rows={2} className="input-field" placeholder="Description / Academic achievements" value={e.description} onChange={(ev) => { const c = [...education]; c[i].description = ev.target.value; setEducation(c); }} />
                   </div>
                 ))}
@@ -653,19 +699,6 @@ export default function ProfileEditPage() {
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t">
-                  <div className="col-span-2">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Current Education / Employment</h3>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Institution Name</label>
-                    <input className="input-field" value={athleteForm.institutionName} onChange={(e) => setAthleteForm({ ...athleteForm, institutionName: e.target.value })} placeholder="St. Xavier's, etc." />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Grade / Year</label>
-                    <input className="input-field" value={athleteForm.currentEducation} onChange={(e) => setAthleteForm({ ...athleteForm, currentEducation: e.target.value })} placeholder="12th Grade, Final Year" />
-                  </div>
-                </div>
               </div>
             )}
 
@@ -684,7 +717,12 @@ export default function ProfileEditPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Mobile No</label>
-                    <input className="input-field" value={coachForm.phone} onChange={(e) => setCoachForm({ ...coachForm, phone: e.target.value })} placeholder="+91..." />
+                    <div className="flex gap-2">
+                      <select className="input-field w-32" value={coachForm.countryCode} onChange={(e) => setCoachForm({ ...coachForm, countryCode: e.target.value })}>
+                        {COUNTRY_CODES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+                      </select>
+                      <input type="tel" className="input-field flex-1" value={coachForm.phone} onChange={(e) => setCoachForm({ ...coachForm, phone: e.target.value })} placeholder="98765 43210" />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
@@ -709,7 +747,10 @@ export default function ProfileEditPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                    <input className="input-field" value={coachForm.location.state} onChange={(e) => setCoachForm({ ...coachForm, location: { ...coachForm.location, state: e.target.value } })} placeholder="Delhi" />
+                    <select className="input-field" value={coachForm.location.state} onChange={(e) => setCoachForm({ ...coachForm, location: { ...coachForm.location, state: e.target.value } })}>
+                      <option value="">Select State</option>
+                      {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Availability</label>

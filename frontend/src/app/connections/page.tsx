@@ -12,7 +12,8 @@ import toast from 'react-hot-toast';
 
 const TABS = [
   { id: 'connections', label: 'Connections', icon: Users },
-  { id: 'pending', label: 'Pending Requests', icon: Clock },
+  { id: 'pending', label: 'Incoming', icon: Clock },
+  { id: 'sent', label: 'Sent', icon: UserCheck },
 ];
 
 export default function ConnectionsPage() {
@@ -20,6 +21,7 @@ export default function ConnectionsPage() {
   const [activeTab, setActiveTab] = useState('connections');
   const [connections, setConnections] = useState<Record<string, unknown>[]>([]);
   const [pendingRequests, setPendingRequests] = useState<Record<string, unknown>[]>([]);
+  const [sentRequests, setSentRequests] = useState<Record<string, unknown>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
@@ -27,12 +29,14 @@ export default function ConnectionsPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [connRes, pendRes] = await Promise.all([
+      const [connRes, pendRes, sentRes] = await Promise.all([
         connectionAPI.getConnections(),
         connectionAPI.getPendingRequests(),
+        connectionAPI.getSentRequests().catch(() => ({ data: { data: [] } })),
       ]);
       setConnections(connRes.data.data || []);
       setPendingRequests(pendRes.data.data || []);
+      setSentRequests(sentRes.data.data || []);
     } catch {}
     setIsLoading(false);
   };
@@ -56,6 +60,14 @@ export default function ConnectionsPage() {
       setConnections((prev) => prev.filter((c) => c._id !== connectionId));
       toast.success('Connection removed');
     } catch { toast.error('Failed to remove connection'); }
+  };
+
+  const handleWithdrawSent = async (requestId: string) => {
+    try {
+      await connectionAPI.withdrawSentRequest(requestId);
+      setSentRequests((prev) => prev.filter((r) => r._id !== requestId));
+      toast.success('Request withdrawn');
+    } catch { toast.error('Failed to withdraw request'); }
   };
 
   const getProfile = (conn: Record<string, unknown>, field: string) => {
@@ -95,7 +107,7 @@ export default function ConnectionsPage() {
           {/* Tabs */}
           <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">
             {TABS.map((tab) => {
-              const count = tab.id === 'connections' ? connections.length : pendingRequests.length;
+              const count = tab.id === 'connections' ? connections.length : tab.id === 'pending' ? pendingRequests.length : sentRequests.length;
               return (
                 <button
                   key={tab.id}
@@ -220,6 +232,50 @@ export default function ConnectionsPage() {
                             <UserX className="w-4 h-4" /> Decline
                           </button>
                         </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'sent' && (
+            <>
+              {sentRequests.length === 0 ? (
+                <div className="text-center py-16">
+                  <UserCheck className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900">No sent requests</h3>
+                  <p className="text-gray-500">Connect with athletes, coaches and organizations</p>
+                  <Link href="/search" className="btn-primary px-6 py-2 mt-4 inline-block">Find People</Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {sentRequests.map((req) => {
+                    const profile = (req.recipientProfile || {}) as Record<string, unknown>;
+                    const userInfo = (req.recipientId || {}) as Record<string, unknown>;
+                    const email = userInfo.email as string || '';
+                    const name = (profile.fullName || profile.name || userInfo.name || (email ? email.split('@')[0] : 'Unknown')) as string;
+                    const sport = (profile.primarySport || '') as string;
+                    const photo = (profile.photo || '') as string;
+                    const role = (userInfo.role || '') as string;
+
+                    return (
+                      <div key={req._id as string} className="card p-4 flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold flex-shrink-0 overflow-hidden">
+                          {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : getInitials(name)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900">{name}</h3>
+                          <p className="text-sm text-gray-500 capitalize">{role}{sport ? ` · ${sport}` : ''}</p>
+                          <p className="text-xs text-amber-600 mt-0.5">Request pending</p>
+                        </div>
+                        <button
+                          onClick={() => handleWithdrawSent(req._id as string)}
+                          className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors"
+                        >
+                          <UserX className="w-4 h-4" /> Withdraw
+                        </button>
                       </div>
                     );
                   })}
