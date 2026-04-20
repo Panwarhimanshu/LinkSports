@@ -34,13 +34,18 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
   }
 
   const transporter = createTransporter();
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM || 'LinkSports <noreply@linksports.in>',
-    to: options.to,
-    subject: options.subject,
-    html: options.html,
-  });
-  console.log(`[Email] Sent to ${options.to}`);
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || 'LinkSports <noreply@linksports.in>',
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    });
+    console.log(`[Email] Sent to ${options.to}`);
+  } catch (err) {
+    console.error(`[Email] FAILED to send to ${options.to}:`, err);
+    // Don't rethrow — caller continues even if email fails
+  }
 };
 
 export const emailTemplates = {
