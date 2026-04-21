@@ -73,9 +73,13 @@ export const useAuthStore = create<AuthState>()(
           const { user, profile } = response.data.data;
           const u = { ...user, id: user.id || user._id };
           set({ user: u, profile, isAuthenticated: true });
-        } catch {
-          set({ user: null, profile: null, accessToken: null, isAuthenticated: false });
-          localStorage.removeItem('accessToken');
+        } catch (error: unknown) {
+          // Only clear auth on explicit 401 — network errors / 5xx should not log the user out
+          const status = (error as { response?: { status?: number } })?.response?.status;
+          if (status === 401) {
+            set({ user: null, profile: null, accessToken: null, isAuthenticated: false });
+            localStorage.removeItem('accessToken');
+          }
         }
       },
 

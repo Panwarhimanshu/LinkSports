@@ -38,6 +38,18 @@ export const configurePassport = () => {
               photo: profile.photos?.[0]?.value,
               profileUrl: generateSlug(name),
             });
+          } else {
+            // Existing user logging in via Google: mark email as verified (Google verified it)
+            // and flag for role selection if they never completed it.
+            let changed = false;
+            if (!user.isVerified) {
+              user.isVerified = true;
+              changed = true;
+            }
+            if (user.needsRoleSelection) {
+              // already flagged — no change needed
+            }
+            if (changed) await user.save();
           }
 
           return done(null, user);

@@ -1,27 +1,16 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-// Explicitly parse CLOUDINARY_URL if present, otherwise fall back to individual vars
-const cloudinaryUrl = process.env.CLOUDINARY_URL;
-if (cloudinaryUrl) {
-  try {
-    // Format: cloudinary://api_key:api_secret@cloud_name
-    const url = new URL(cloudinaryUrl);
-    cloudinary.config({
-      cloud_name: url.hostname,
-      api_key: url.username,
-      api_secret: url.password,
-    });
-    console.log('[Cloudinary] Configured from CLOUDINARY_URL, cloud:', url.hostname);
-  } catch (e) {
-    console.error('[Cloudinary] Failed to parse CLOUDINARY_URL:', e);
-  }
-} else {
+// The Cloudinary SDK v2 auto-reads CLOUDINARY_URL from the environment — no manual parsing needed.
+// Only configure manually when individual vars are used instead of CLOUDINARY_URL.
+if (!process.env.CLOUDINARY_URL) {
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
-  console.log('[Cloudinary] Configured from individual env vars');
+  console.log('[Cloudinary] Configured from individual env vars, cloud:', process.env.CLOUDINARY_CLOUD_NAME);
+} else {
+  console.log('[Cloudinary] CLOUDINARY_URL detected — SDK auto-config active');
 }
 
 export const uploadToCloudinary = (

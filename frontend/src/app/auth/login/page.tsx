@@ -32,7 +32,8 @@ function LoginContent() {
     if (token) {
       setAccessToken(token);
       if (newUser === 'true') {
-        router.replace('/auth/google-select-role');
+        // Fetch user so isAuthenticated is set before role selection page loads
+        fetchMe().finally(() => router.replace('/auth/google-select-role'));
       } else {
         fetchMe().then(() => router.replace('/dashboard'));
       }

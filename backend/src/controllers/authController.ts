@@ -12,7 +12,8 @@ import { AuthRequest } from '../types';
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'strict') as 'none' | 'strict',
+  // 'none' for cross-origin production; 'lax' for dev (strict blocks cross-port cookies)
+  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
@@ -61,10 +62,16 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       });
     }
 
-    await sendEmail({ to: email, ...emailTemplates.verifyEmail(otp, fullName || 'User') });
-
-    // Always log OTP so it's visible in Render logs if email delivery fails
+    // Always log OTP to server logs as a fallback if email delivery fails
     console.log(`\n🔑 [OTP] ${email} → ${otp}\n`);
+
+    // Email send failure must NOT fail registration — user's account is already created.
+    // They can request a resend via /auth/resend-otp.
+    try {
+      await sendEmail({ to: email, ...emailTemplates.verifyEmail(otp, fullName || 'User') });
+    } catch (emailError) {
+      console.error('[Register] Failed to send verification email:', emailError);
+    }
 
     sendSuccess(res, { userId: user._id, email: user.email, role: user.role }, 'Registration successful. Please verify your email.', 201);
   } catch (error) {

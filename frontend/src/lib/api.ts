@@ -17,25 +17,53 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor — handle token refresh
+// Response interceptor — handle token refresh with mutex to prevent race conditions
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else prom.resolve(token!);
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as (typeof error.config & { _retry?: boolean });
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Queue this request until the ongoing refresh completes
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (originalRequest.headers) originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
+
       try {
         const response = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
         const { accessToken } = response.data.data;
         localStorage.setItem('accessToken', accessToken);
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        }
+        if (originalRequest.headers) originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        processQueue(null, accessToken);
         return api(originalRequest);
-      } catch {
+      } catch (refreshError) {
+        processQueue(refreshError, null);
         localStorage.removeItem('accessToken');
         if (typeof window !== 'undefined') window.location.href = '/auth/login';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
     return Promise.reject(error);
