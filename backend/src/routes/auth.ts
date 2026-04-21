@@ -3,6 +3,7 @@ import passport from 'passport';
 import {
   register, login, verifyEmail, resendOtp, refreshToken, logout,
   forgotPassword, resetPassword, getMe, googleCallback, updateRole,
+  changePassword, deleteAccount,
 } from '../controllers/authController';
 import { protect } from '../middleware/auth';
 
@@ -18,6 +19,8 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.get('/me', protect, getMe);
 router.patch('/update-role', protect, updateRole);
+router.post('/change-password', protect, changePassword);
+router.delete('/account', protect, deleteAccount);
 
 router.get('/oauth/google', (req, res, next) => {
   if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID === 'your_google_client_id') {

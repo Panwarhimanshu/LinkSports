@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { Bell, MessageSquare, Search, Menu, X, User, LogOut, Settings, Trophy, Briefcase, Building2 } from 'lucide-react';
+import { Bell, MessageSquare, Search, Menu, X, User, LogOut, Settings, Trophy, Briefcase, Building2, Home, UserCircle } from 'lucide-react';
 import { notificationAPI, messageAPI, connectionAPI } from '@/lib/api';
 import { cn, getInitials, getPhotoUrl } from '@/lib/utils';
 import Logo from '@/components/shared/Logo';
@@ -208,7 +208,7 @@ export default function Navbar() {
                             <Building2 className="w-4 h-4 text-brand" /> My Page
                           </Link>
                           <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                            <User className="w-4 h-4" /> Dashboard
+                            <Home className="w-4 h-4" /> Home
                           </Link>
                           <Link href="/notifications" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
                             <Bell className="w-4 h-4" /> Notifications
@@ -222,11 +222,17 @@ export default function Navbar() {
                           <Link href="/org/jobs" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
                             <Briefcase className="w-4 h-4 text-purple-500" /> My Jobs
                           </Link>
+                          <Link href="/settings" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
+                            <Settings className="w-4 h-4" /> Settings
+                          </Link>
                         </>
                       ) : (
                         <>
                           <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                            <User className="w-4 h-4" /> Dashboard
+                            <Home className="w-4 h-4" /> Home
+                          </Link>
+                          <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
+                            <UserCircle className="w-4 h-4 text-brand" /> View Profile
                           </Link>
                           <Link href="/profile/edit" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
                             <Settings className="w-4 h-4" /> Edit Profile
@@ -244,6 +250,9 @@ export default function Navbar() {
                               <Settings className="w-4 h-4" /> Admin Panel
                             </Link>
                           )}
+                          <Link href="/settings" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
+                            <Settings className="w-4 h-4" /> Settings
+                          </Link>
                         </>
                       )}
                       <hr className="my-1 border-gray-100" />
@@ -300,7 +309,10 @@ export default function Navbar() {
             </form>
             {isAuthenticated ? (
               <>
-                <Link href="/dashboard" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                <Link href="/dashboard" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Home</Link>
+                {user?.role !== 'organization' && (
+                  <Link href="/profile" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>View Profile</Link>
+                )}
                 <Link href="/listings" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Opportunities</Link>
                 <Link href="/listings?tab=jobs" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Jobs</Link>
                 {user?.role === 'organization' ? (
@@ -314,6 +326,7 @@ export default function Navbar() {
                 <Link href="/search" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Network</Link>
                 <Link href="/messages" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Messages</Link>
                 <Link href="/notifications" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Notifications</Link>
+                <Link href="/settings" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Settings</Link>
                 {user?.role === 'admin' && (
                   <Link href="/admin" className="block px-3 py-2 rounded-lg text-sm font-bold text-brand bg-blue-50 hover:bg-blue-100" onClick={() => setIsMenuOpen(false)}>⚙️ Admin Panel</Link>
                 )}

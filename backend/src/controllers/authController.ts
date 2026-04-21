@@ -352,6 +352,58 @@ export const googleCallback = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
+export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      sendError(res, 'Current and new password are required', 400); return;
+    }
+    if (newPassword.length < 8) { sendError(res, 'Password must be at least 8 characters', 400); return; }
+    if (!/(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])/.test(newPassword)) {
+      sendError(res, 'Password needs uppercase, number, and special character', 400); return;
+    }
+
+    const user = await User.findById(req.user!._id).select('+passwordHash');
+    if (!user) { sendError(res, 'User not found', 404); return; }
+
+    if (!user.passwordHash) {
+      sendError(res, 'Cannot change password for social login accounts', 400, 'SOCIAL_ACCOUNT'); return;
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) { sendError(res, 'Current password is incorrect', 401, 'INVALID_PASSWORD'); return; }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    await user.save();
+    sendSuccess(res, null, 'Password changed successfully');
+  } catch (error) {
+    console.error('changePassword error:', error);
+    sendError(res, 'Failed to change password', 500);
+  }
+};
+
+export const deleteAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!._id;
+
+    // Remove all associated data
+    await Promise.allSettled([
+      AthleteProfile.deleteOne({ userId }),
+      CoachProfile.deleteOne({ userId }),
+      Organization.deleteOne({ userId }),
+    ]);
+
+    await User.findByIdAndDelete(userId);
+
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    sendSuccess(res, null, 'Account deleted successfully');
+  } catch (error) {
+    console.error('deleteAccount error:', error);
+    sendError(res, 'Failed to delete account', 500);
+  }
+};
+
 export const updateRole = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { role } = req.body;

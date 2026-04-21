@@ -84,6 +84,8 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   refresh: () => api.post('/auth/refresh'),
   updateRole: (role: string) => api.patch('/auth/update-role', { role }),
+  changePassword: (data: { currentPassword: string; newPassword: string }) => api.post('/auth/change-password', data),
+  deleteAccount: () => api.delete('/auth/account'),
 };
 
 // ── Profiles ──────────────────────────────────────────────────────────────────
