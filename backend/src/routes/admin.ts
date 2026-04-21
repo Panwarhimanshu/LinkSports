@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-  getDashboard, getUsers, suspendUser,
+  getDashboard, getUsers, suspendUser, createUser, updateUser, deleteUser,
   getPendingListings, reviewListing,
   getPendingJobs, reviewJob,
   getPendingOrganizations, verifyOrganization,
@@ -15,7 +15,10 @@ router.use(protect, authorize('admin'));
 
 router.get('/dashboard', getDashboard);
 router.get('/users', getUsers);
+router.post('/users', createUser);
+router.patch('/users/:id', updateUser);
 router.patch('/users/:id/suspend', suspendUser);
+router.delete('/users/:id', deleteUser);
 
 router.get('/listings/pending', getPendingListings);
 router.patch('/listings/:id/review', reviewListing);

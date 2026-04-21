@@ -68,6 +68,47 @@ export const suspendUser = async (req: AuthRequest, res: Response): Promise<void
   } catch { sendError(res, 'Failed to update user', 500); }
 };
 
+export const createUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { email, password, role, phone } = req.body;
+    if (!email || !password || !role) { sendError(res, 'email, password and role are required', 400); return; }
+    const exists = await User.findOne({ email: email.toLowerCase() });
+    if (exists) { sendError(res, 'Email already in use', 409); return; }
+    const user = await User.create({ email: email.toLowerCase(), passwordHash: password, role, phone, isVerified: true, authProvider: 'email' });
+    sendSuccess(res, user, 'User created', 201);
+  } catch { sendError(res, 'Failed to create user', 500); }
+};
+
+export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { role, phone, isVerified, isSuspended, password } = req.body;
+    const user = await User.findById(req.params.id).select('+passwordHash');
+    if (!user) { sendError(res, 'User not found', 404); return; }
+    if (role) user.role = role;
+    if (phone !== undefined) user.phone = phone;
+    if (isVerified !== undefined) user.isVerified = isVerified;
+    if (isSuspended !== undefined) user.isSuspended = isSuspended;
+    if (password) user.passwordHash = password;
+    await user.save();
+    sendSuccess(res, user, 'User updated');
+  } catch { sendError(res, 'Failed to update user', 500); }
+};
+
+export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) { sendError(res, 'User not found', 404); return; }
+    if (String(user._id) === String(req.user!._id)) { sendError(res, 'Cannot delete your own account', 400); return; }
+    await Promise.all([
+      AthleteProfile.deleteOne({ userId: user._id }),
+      CoachProfile.deleteOne({ userId: user._id }),
+      Organization.deleteOne({ userId: user._id }),
+      User.deleteOne({ _id: user._id }),
+    ]);
+    sendSuccess(res, null, 'User deleted');
+  } catch { sendError(res, 'Failed to delete user', 500); }
+};
+
 export const getPendingListings = async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
     const listings = await Listing.find({ status: 'pending' })
