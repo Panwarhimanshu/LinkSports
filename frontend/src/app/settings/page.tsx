@@ -24,20 +24,29 @@ const tabs: { id: Tab; label: string; icon: React.ElementType; desc: string }[] 
 // ── Account Tab ───────────────────────────────────────────────────────────────
 function AccountTab() {
   const { user, profile, fetchMe } = useAuthStore();
-  const [phone, setPhone] = useState((profile as any)?.phone || user?.email || '');
+  const [phone, setPhone] = useState((profile as any)?.phone || '');
+  const [username, setUsername] = useState((profile as any)?.username || '');
   const [saving, setSaving] = useState(false);
 
-  const handleSavePhone = async () => {
+  const isAthlete = user?.role === 'athlete';
+
+  const handleSave = async () => {
+    if (isAthlete && username && !/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+      toast.error('Username: 3–30 chars, letters/numbers/underscores only');
+      return;
+    }
     setSaving(true);
     try {
       const role = user?.role;
-      if (role === 'athlete') await profileAPI.updateAthleteProfile({ phone });
+      const payload: Record<string, string> = { phone };
+      if (isAthlete) payload.username = username;
+      if (role === 'athlete') await profileAPI.updateAthleteProfile(payload);
       else if (role === 'coach') await profileAPI.updateCoachProfile({ phone });
       else if (role === 'organization') await profileAPI.updateOrganizationProfile({ phone });
       await fetchMe();
-      toast.success('Phone number updated');
+      toast.success('Account information updated');
     } catch {
-      toast.error('Failed to update phone number');
+      toast.error('Failed to update account information');
     } finally {
       setSaving(false);
     }
@@ -73,28 +82,47 @@ function AccountTab() {
           </span>
         </div>
 
+        {/* Username — athletes only */}
+        {isAthlete && (
+          <div className="px-5 py-4">
+            <p className="text-sm font-medium text-gray-700 mb-1">Username</p>
+            <p className="text-xs text-gray-400 mb-2">Shown in the navbar and on your public profile as @username</p>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">@</span>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                placeholder="your_username"
+                maxLength={30}
+                className="w-full pl-7 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">3–30 characters · letters, numbers, underscores</p>
+          </div>
+        )}
+
         {/* Phone */}
         <div className="px-5 py-4">
           <p className="text-sm font-medium text-gray-700 mb-2">Phone Number</p>
-          <div className="flex gap-2">
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 XXXXX XXXXX"
-              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
-            />
-            <button
-              onClick={handleSavePhone}
-              disabled={saving}
-              className="px-4 py-2 text-sm font-medium bg-brand text-white rounded-lg hover:bg-brand-dark disabled:opacity-50 flex items-center gap-1.5"
-            >
-              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              Save
-            </button>
-          </div>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+91 XXXXX XXXXX"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
+          />
         </div>
       </div>
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-dark disabled:opacity-50"
+      >
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+        Save Changes
+      </button>
 
       {/* Auth provider */}
       <div>
