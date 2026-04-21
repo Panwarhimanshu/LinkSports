@@ -69,11 +69,11 @@ export default function AdminPage() {
     setProcessingId(null);
   };
 
-  const verifyOrg = async (id: string, action: 'verify' | 'reject', reason?: string) => {
+  const verifyOrg = async (id: string, action: 'approve' | 'reject', reason?: string) => {
     setProcessingId(id);
     try {
       await adminAPI.verifyOrganization(id, action, reason);
-      toast.success(`Organization ${action === 'verify' ? 'verified' : 'rejected'}`);
+      toast.success(`Organization ${action === 'approve' ? 'verified' : 'rejected'}`);
       setPendingOrgs((prev) => prev.filter((o) => (o._id as string) !== id));
     } catch { toast.error('Failed'); }
     setProcessingId(null);
@@ -100,7 +100,7 @@ export default function AdminPage() {
     } catch { toast.error('Failed'); }
   };
 
-  const stats = dashboard as Record<string, unknown> | null;
+  const stats = dashboard as { users?: { total?: number }; listings?: { active?: number }; jobs?: { active?: number }; revenue?: { total?: number } } | null;
 
   const navTabs: { id: Tab; label: string; icon: React.ElementType; badge?: number }[] = [
     { id: 'overview', label: 'Overview', icon: BarChart2 },
@@ -148,10 +148,10 @@ export default function AdminPage() {
                     <div className="space-y-6">
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         {[
-                          { icon: Users, label: 'Total Users', value: (stats?.totalUsers as number) || 0, color: 'bg-blue-50 text-blue-600' },
-                          { icon: Trophy, label: 'Active Listings', value: (stats?.activeListings as number) || 0, color: 'bg-green-50 text-green-600' },
-                          { icon: Briefcase, label: 'Active Jobs', value: (stats?.activeJobs as number) || 0, color: 'bg-purple-50 text-purple-600' },
-                          { icon: IndianRupee, label: 'Revenue', value: formatCurrency((stats?.totalRevenue as number) || 0), color: 'bg-orange-50 text-orange-600', isString: true },
+                          { icon: Users, label: 'Total Users', value: stats?.users?.total || 0, color: 'bg-blue-50 text-blue-600' },
+                          { icon: Trophy, label: 'Active Listings', value: stats?.listings?.active || 0, color: 'bg-green-50 text-green-600' },
+                          { icon: Briefcase, label: 'Active Jobs', value: stats?.jobs?.active || 0, color: 'bg-purple-50 text-purple-600' },
+                          { icon: IndianRupee, label: 'Revenue', value: formatCurrency(stats?.revenue?.total || 0), color: 'bg-orange-50 text-orange-600' },
                         ].map(({ icon: Icon, label, value, color }) => (
                           <div key={label} className="card p-5">
                             <div className={`w-10 h-10 ${color} rounded-lg flex items-center justify-center mb-3`}>
@@ -337,7 +337,7 @@ export default function AdminPage() {
                                 )}
                               </div>
                               <div className="flex flex-col gap-2">
-                                <button onClick={() => verifyOrg(org._id as string, 'verify')} disabled={processingId === org._id as string}
+                                <button onClick={() => verifyOrg(org._id as string, 'approve')} disabled={processingId === org._id as string}
                                   className="flex items-center gap-1 bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50">
                                   {processingId === org._id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Verify
                                 </button>
