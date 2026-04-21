@@ -10,7 +10,7 @@ import { getProfileName } from '../utils/profile';
 export const createJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const org = await Organization.findOne({ userId: req.user!._id });
-    if (!org || !org.isVerified) { sendError(res, 'Verified organization required', 403); return; }
+    if (!org || (!org.isVerified && org.verificationStatus !== 'verified')) { sendError(res, 'Verified organization required', 403); return; }
 
     const job = await Job.create({
       ...req.body,

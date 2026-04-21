@@ -11,7 +11,7 @@ export const createListing = async (req: AuthRequest, res: Response): Promise<vo
   try {
     const org = await Organization.findOne({ userId: req.user!._id });
     if (!org) { sendError(res, 'Organization profile required', 403); return; }
-    if (!org.isVerified) { sendError(res, 'Organization must be verified to post listings', 403); return; }
+    if (!org.isVerified && org.verificationStatus !== 'verified') { sendError(res, 'Organization must be verified to post listings', 403); return; }
 
     const listing = await Listing.create({
       ...req.body,
