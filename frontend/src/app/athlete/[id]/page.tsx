@@ -120,6 +120,9 @@ export default function AthleteProfilePage() {
                 )}
               </div>
               <h1 className="text-xl font-bold text-gray-900">{profile.fullName as string}</h1>
+              {profile.username && (
+                <p className="text-sm text-gray-400 mt-0.5">@{profile.username as string}</p>
+              )}
               {profile.primarySport && <p className="text-brand font-medium mt-1">{profile.primarySport as string}</p>}
               {loc?.city && (
                 <p className="flex items-center justify-center gap-1 text-sm text-gray-500 mt-2">
@@ -144,6 +147,20 @@ export default function AthleteProfilePage() {
                   >
                     {isDownloadingCV ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     Download My CV
+                  </button>
+                  <button
+                    onClick={() => {
+                      const url = window.location.href;
+                      if (navigator.share) {
+                        navigator.share({ title: profile.fullName as string, url });
+                      } else {
+                        navigator.clipboard.writeText(url);
+                        toast.success('Profile link copied!');
+                      }
+                    }}
+                    className="btn-secondary w-full flex items-center justify-center gap-2 py-2"
+                  >
+                    <Share2 className="w-4 h-4" /> Share Profile
                   </button>
                 </div>
               ) : (
@@ -213,39 +230,36 @@ export default function AthleteProfilePage() {
                 </div>
               )}
 
-              {/* CV / Share button for non-own profiles */}
-              {!isOwnProfile && (() => {
-                const viewerRole = user?.role;
-                const canDownload =
-                  viewerRole === 'organization' ||
-                  (viewerRole === 'coach' && connectionStatus === 'accepted') ||
-                  (viewerRole === 'professional' && connectionStatus === 'accepted');
-                const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
-
-                if (canDownload) {
-                  return (
+              {/* CV download + Share for non-own profiles */}
+              {!isOwnProfile && (
+                <div className="flex flex-col gap-2 mt-3">
+                  {(user?.role === 'organization' ||
+                    ((user?.role === 'coach' || user?.role === 'professional') && connectionStatus === 'accepted')) && (
                     <button
                       onClick={handleDownloadCV}
                       disabled={isDownloadingCV}
-                      className="btn-secondary w-full mt-3 flex items-center justify-center gap-2 py-2 text-sm"
+                      className="btn-secondary w-full flex items-center justify-center gap-2 py-2 text-sm"
                     >
                       {isDownloadingCV ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                       Download Sports CV
                     </button>
-                  );
-                }
-                return (
+                  )}
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(shareUrl);
-                      toast.success('Profile link copied!');
+                      const url = window.location.href;
+                      if (navigator.share) {
+                        navigator.share({ title: profile.fullName as string, url });
+                      } else {
+                        navigator.clipboard.writeText(url);
+                        toast.success('Profile link copied!');
+                      }
                     }}
-                    className="btn-secondary w-full mt-3 flex items-center justify-center gap-2 py-2 text-sm"
+                    className="btn-secondary w-full flex items-center justify-center gap-2 py-2 text-sm"
                   >
                     <Share2 className="w-4 h-4" /> Share Profile
                   </button>
-                );
-              })()}
+                </div>
+              )}
             </div>
 
             {/* Quick stats */}
