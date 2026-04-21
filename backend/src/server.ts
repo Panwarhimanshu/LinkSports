@@ -166,35 +166,63 @@ app.get('/api/v1/search', searchLimiter, async (req, res) => {
   try {
     const { q, page = 1, limit = 20 } = req.query;
 
-    // Cap page and limit to prevent abuse
     const safePage = Math.max(1, Math.min(100, parseInt(page as string) || 1));
     const safeLimit = Math.max(1, Math.min(20, parseInt(limit as string) || 20));
+    const skip = (safePage - 1) * safeLimit;
 
     const { AthleteProfile } = await import('./models/AthleteProfile');
-    const { Listing } = await import('./models/Listing');
-    const { Job } = await import('./models/Job');
+    const { CoachProfile }   = await import('./models/CoachProfile');
+    const { Organization }   = await import('./models/Organization');
+    const { User }           = await import('./models/User');
+    const { Listing }        = await import('./models/Listing');
+    const { Job }            = await import('./models/Job');
 
-    // Use regex-safe text search; if no query, skip $text filter
-    const textFilter = q && typeof q === 'string' && q.trim().length > 0
-      ? { $text: { $search: q.trim().slice(0, 200) } } // cap query length
-      : {};
+    let profileFilter: Record<string, unknown> = {};
 
-    const [athletes, listings, jobs] = await Promise.all([
-      AthleteProfile.find({ ...textFilter, visibility: 'public' })
-        .limit(safeLimit)
-        .skip((safePage - 1) * safeLimit)
-        .select('fullName photo primarySport location profileUrl'),
-      Listing.find({ ...textFilter, status: 'published' })
-        .limit(safeLimit)
-        .skip((safePage - 1) * safeLimit)
-        .select('title type sports startDate location')
+    if (q && typeof q === 'string' && q.trim()) {
+      const raw = q.trim().slice(0, 200);
+      const safe = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(safe, 'i');
+
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw);
+      const isPhone = /^\+?[\d\s\-().]{7,}$/.test(raw) && /\d{6,}/.test(raw.replace(/\D/g, ''));
+
+      if (isEmail) {
+        const users = await User.find({ email: re }).select('_id').lean();
+        const ids = users.map((u: any) => u._id);
+        profileFilter.$or = [{ email: re }, ...(ids.length ? [{ userId: { $in: ids } }] : [])];
+      } else if (isPhone) {
+        const digits = raw.replace(/\D/g, '');
+        const phoneRe = new RegExp(digits, 'i');
+        const users = await User.find({ phone: phoneRe }).select('_id').lean();
+        const ids = users.map((u: any) => u._id);
+        profileFilter.$or = [{ phone: phoneRe }, ...(ids.length ? [{ userId: { $in: ids } }] : [])];
+      } else {
+        const nameStr = raw.startsWith('@') ? raw.slice(1) : raw;
+        const nameSafe = nameStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const nameRe = new RegExp(nameSafe, 'i');
+        profileFilter.$or = [{ fullName: nameRe }, { username: nameRe }, { name: nameRe }, { tagline: nameRe }];
+      }
+    }
+
+    const [athletes, coaches, organizations, listings, jobs] = await Promise.all([
+      AthleteProfile.find({ ...profileFilter, visibility: 'public' })
+        .limit(safeLimit).skip(skip)
+        .select('fullName photo primarySport location profileUrl username'),
+      CoachProfile.find({ ...profileFilter, visibility: 'public' })
+        .limit(safeLimit).skip(skip)
+        .select('fullName photo sportsSpecialization location profileUrl'),
+      Organization.find({ ...profileFilter, verificationStatus: 'verified' })
+        .limit(safeLimit).skip(skip)
+        .select('name logo sports contact profileUrl'),
+      Listing.find({ status: 'published' })
+        .limit(5).select('title type sports startDate location')
         .populate('organizationId', 'name logo'),
       Job.find({ status: 'published' })
-        .limit(5)
-        .select('title category location jobType'),
+        .limit(5).select('title category location jobType'),
     ]);
 
-    res.json({ success: true, data: { athletes, listings, jobs } });
+    res.json({ success: true, data: { athletes, coaches, organizations, listings, jobs } });
   } catch {
     res.status(500).json({ success: false, error: { message: 'Search failed' } });
   }

@@ -1012,6 +1012,56 @@ export const downloadCoachCV = async (req: AuthRequest, res: Response): Promise<
 
 // ── SEARCH PROFILES ───────────────────────────────────────────────────────────
 
+// Detect query type and return a MongoDB $or condition for profile collections.
+// Also returns matching userIds found via the User collection for email/phone.
+const buildSearchOr = async (
+  rawQ: string,
+  profileEmailField: string,
+  profilePhoneField: string,
+  profileNameField: string,
+  extraNameFields: string[] = [],
+): Promise<Record<string, unknown>[] | null> => {
+  const q = rawQ.trim();
+  if (!q) return null;
+
+  const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(safe, 'i');
+
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q);
+  const isPhone = /^\+?[\d\s\-().]{7,}$/.test(q) && /\d{6,}/.test(q.replace(/\D/g, ''));
+
+  if (isEmail) {
+    const users = await User.find({ email: re }).select('_id').lean();
+    const ids = users.map((u: any) => u._id);
+    return [
+      { [profileEmailField]: re },
+      ...(ids.length ? [{ userId: { $in: ids } }] : []),
+    ];
+  }
+
+  if (isPhone) {
+    const digits = q.replace(/\D/g, '');
+    const phoneRe = new RegExp(digits, 'i');
+    const users = await User.find({ phone: phoneRe }).select('_id').lean();
+    const ids = users.map((u: any) => u._id);
+    return [
+      { [profilePhoneField]: phoneRe },
+      ...(ids.length ? [{ userId: { $in: ids } }] : []),
+    ];
+  }
+
+  // @username or general name search
+  const nameStr = q.startsWith('@') ? q.slice(1) : q;
+  const nameSafe = nameStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const nameRe = new RegExp(nameSafe, 'i');
+
+  return [
+    { [profileNameField]: nameRe },
+    { username: nameRe },
+    ...extraNameFields.map((f) => ({ [f]: nameRe })),
+  ];
+};
+
 export const searchProfiles = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const {
@@ -1020,17 +1070,19 @@ export const searchProfiles = async (req: AuthRequest, res: Response): Promise<v
       sort, page = 1, limit = 20,
     } = req.query;
 
-    // sort=popular → order by connectionCount desc then followerCount desc
     const sortQuery: Record<string, 1 | -1> = sort === 'popular'
       ? { connectionCount: -1, followerCount: -1 }
-      : sort === 'recent'
-        ? { createdAt: -1 }
-        : {};
+      : sort === 'recent' ? { createdAt: -1 } : {};
 
     const skip = (Number(page) - 1) * Number(limit);
     const query: Record<string, unknown> = {};
 
-    if (q) query.$text = { $search: q as string };
+    // Build search condition using regex (works without text indexes)
+    if (q && typeof q === 'string' && q.trim()) {
+      const orClauses = await buildSearchOr(q as string, 'email', 'phone', 'fullName', ['tagline']);
+      if (orClauses?.length) query.$or = orClauses;
+    }
+
     if (sport) query.primarySport = sport;
     if (state) query['location.state'] = state;
     if (city) query['location.city'] = city;
@@ -1070,10 +1122,14 @@ export const searchProfiles = async (req: AuthRequest, res: Response): Promise<v
         CoachProfile.countDocuments(query),
       ]);
     } else {
+      // Organization search
       const orgQuery: Record<string, unknown> = {};
-      if (q) orgQuery.$text = { $search: q as string };
+      if (q && typeof q === 'string' && q.trim()) {
+        const orClauses = await buildSearchOr(q as string, 'contact.email', 'contact.phone', 'name', ['description']);
+        if (orClauses?.length) orgQuery.$or = orClauses;
+      }
       if (sport) orgQuery.sports = sport;
-      if (state) orgQuery['contact.address'] = new RegExp(state as string, 'i');
+      if (state) orgQuery['contact.address'] = new RegExp((state as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       const orgSort: Record<string, 1 | -1> = sort === 'popular' ? { connectionCount: -1, followerCount: -1 } : sort === 'recent' ? { createdAt: -1 } : {};
       [profiles, total] = await Promise.all([
         Organization.find({ ...orgQuery, verificationStatus: 'verified' }).sort(orgSort).skip(skip).limit(Number(limit)),
@@ -1087,5 +1143,8 @@ export const searchProfiles = async (req: AuthRequest, res: Response): Promise<v
       pages: Math.ceil(total / Number(limit)),
       limit: Number(limit),
     });
-  } catch { sendError(res, 'Search failed', 500); }
+  } catch (err) {
+    console.error('searchProfiles error:', err);
+    sendError(res, 'Search failed', 500);
+  }
 };
