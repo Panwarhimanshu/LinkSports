@@ -262,6 +262,24 @@ export default function AthleteProfilePage() {
               )}
             </div>
 
+            {/* Connection stats */}
+            <div className="card p-4">
+              <div className="grid grid-cols-3 divide-x divide-gray-100 text-center">
+                <div className="px-2">
+                  <p className="font-bold text-gray-900 text-lg">{(profile.connectionCount as number) || 0}</p>
+                  <p className="text-gray-500 text-xs">Connections</p>
+                </div>
+                <div className="px-2">
+                  <p className="font-bold text-gray-900 text-lg">{(profile.followerCount as number) || 0}</p>
+                  <p className="text-gray-500 text-xs">Followers</p>
+                </div>
+                <div className="px-2">
+                  <p className="font-bold text-gray-900 text-lg">{achievements.length}</p>
+                  <p className="text-gray-500 text-xs">Achievements</p>
+                </div>
+              </div>
+            </div>
+
             {/* Quick stats */}
             <div className="card p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Details</h3>

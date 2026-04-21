@@ -1132,8 +1132,8 @@ export const searchProfiles = async (req: AuthRequest, res: Response): Promise<v
       if (state) orgQuery['contact.address'] = new RegExp((state as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       const orgSort: Record<string, 1 | -1> = sort === 'popular' ? { connectionCount: -1, followerCount: -1 } : sort === 'recent' ? { createdAt: -1 } : {};
       [profiles, total] = await Promise.all([
-        Organization.find({ ...orgQuery, verificationStatus: 'verified' }).sort(orgSort).skip(skip).limit(Number(limit)),
-        Organization.countDocuments({ ...orgQuery, verificationStatus: 'verified' }),
+        Organization.find(orgQuery).sort(orgSort).skip(skip).limit(Number(limit)),
+        Organization.countDocuments(orgQuery),
       ]);
     }
 

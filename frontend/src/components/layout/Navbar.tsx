@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { Bell, MessageSquare, Search, Menu, X, LogOut, Settings, Trophy, Briefcase, Building2, Home, UserCircle } from 'lucide-react';
+import { Bell, MessageSquare, Search, Menu, X, LogOut, Settings, Trophy, Briefcase, Building2, Home, UserCircle, Users } from 'lucide-react';
 import { notificationAPI, messageAPI, connectionAPI } from '@/lib/api';
 import { cn, getInitials, getPhotoUrl } from '@/lib/utils';
 import Logo from '@/components/shared/Logo';
@@ -209,8 +209,8 @@ export default function Navbar() {
                           <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
                             <Home className="w-4 h-4" /> Home
                           </Link>
-                          <Link href="/notifications" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                            <Bell className="w-4 h-4" /> Notifications
+                          <Link href="/my-connections" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
+                            <Users className="w-4 h-4" /> My Connections
                           </Link>
                           <Link href="/profile/applications" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
                             <Trophy className="w-4 h-4 text-orange-500" /> My Applications
@@ -236,8 +236,8 @@ export default function Navbar() {
                           <Link href="/profile/edit" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
                             <Settings className="w-4 h-4" /> Edit Profile
                           </Link>
-                          <Link href="/notifications" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                            <Bell className="w-4 h-4" /> Notifications
+                          <Link href="/my-connections" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
+                            <Users className="w-4 h-4" /> My Connections
                           </Link>
                           <Link href="/profile/applications" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
                             <Trophy className="w-4 h-4 text-orange-500" /> My Applications
@@ -318,7 +318,7 @@ export default function Navbar() {
                   )}
                   <Link href="/search" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Network</Link>
                   <Link href="/messages" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Messages</Link>
-                  <Link href="/notifications" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Notifications</Link>
+                  <Link href="/my-connections" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>My Connections</Link>
                   <Link href="/settings" className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>Settings</Link>
                   <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">Logout</button>
                 </>
