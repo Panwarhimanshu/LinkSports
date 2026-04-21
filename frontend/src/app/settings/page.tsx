@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI, profileAPI } from '@/lib/api';
 import AuthGuard from '@/components/shared/AuthGuard';
+import Navbar from '@/components/layout/Navbar';
 import {
   User, Lock, Bell, Shield, Trash2, Eye, EyeOff,
   ChevronRight, CheckCircle, AlertTriangle, Loader2, LogOut,
@@ -519,6 +520,7 @@ export default function SettingsPage() {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-50">
+        <Navbar />
         <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
