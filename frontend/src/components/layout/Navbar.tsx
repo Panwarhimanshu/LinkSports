@@ -193,10 +193,9 @@ export default function Navbar() {
                     <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
                       <div className="px-4 py-2 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          {(profile as any)?.fullName || (profile as any)?.name || user?.email?.split('@')[0]}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {(profile as any)?.username ? `@${(profile as any).username}` : user?.email}
+                          {(profile as any)?.username
+                            ? `@${(profile as any).username}`
+                            : (profile as any)?.name || user?.email?.split('@')[0]}
                         </p>
                         <p className="text-[10px] font-bold text-brand uppercase mt-1 px-1.5 py-0.5 bg-blue-50 rounded w-fit">
                           {user?.role}
