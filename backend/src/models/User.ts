@@ -34,6 +34,8 @@ const UserSchema = new Schema<IUser>(
     refreshTokens: [{ type: String, select: false }],
     lastLoginAt: { type: Date },
     needsRoleSelection: { type: Boolean, default: false },
+    failedLoginAttempts: { type: Number, default: 0, select: false },
+    lockUntil: { type: Date, select: false },
   },
   { timestamps: true }
 );

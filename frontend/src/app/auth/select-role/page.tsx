@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authAPI } from '@/lib/api';
+import { pendingPassword, clearPendingPassword } from '@/app/auth/register/page';
 import { Dumbbell, User, Stethoscope, Building2, Loader2, ArrowLeft } from 'lucide-react';
 import Logo from '@/components/shared/Logo';
 import toast from 'react-hot-toast';
@@ -89,12 +90,19 @@ export default function SelectRolePage() {
       return;
     }
 
-    const { fullName, email, phone, password } = JSON.parse(raw) as {
+    const { fullName, email, phone } = JSON.parse(raw) as {
       fullName: string;
       email: string;
       phone: string;
-      password: string;
     };
+    const password = pendingPassword;
+    if (!password) {
+      // Password lost on page refresh — restart registration
+      toast.error('Session expired. Please fill in your details again.');
+      sessionStorage.removeItem('ls_reg');
+      router.replace('/auth/register');
+      return;
+    }
 
     setSelected(role);
     setLoadingRole(role);
@@ -115,6 +123,7 @@ export default function SelectRolePage() {
       });
 
       sessionStorage.removeItem('ls_reg');
+      clearPendingPassword();
       toast.success('Account created! Please verify your email.');
       router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
     } catch (error: unknown) {

@@ -30,6 +30,10 @@ export default function ForgotPasswordPage() {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newPassword.length < 8) { toast.error('Password must be at least 8 characters'); return; }
+    if (!/[A-Z]/.test(newPassword)) { toast.error('Password must contain at least one uppercase letter'); return; }
+    if (!/[0-9]/.test(newPassword)) { toast.error('Password must contain at least one number'); return; }
+    if (!/[^a-zA-Z0-9]/.test(newPassword)) { toast.error('Password must contain at least one special character'); return; }
     setIsLoading(true);
     try {
       await authAPI.resetPassword({ email, otp, newPassword });
@@ -77,7 +81,7 @@ export default function ForgotPasswordPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
                 <div className="relative">
-                  <input type={showPassword ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="input-field pr-10" />
+                  <input type={showPassword ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special" className="input-field pr-10" required minLength={8} />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

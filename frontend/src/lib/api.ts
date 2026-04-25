@@ -6,6 +6,7 @@ const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 30000,
 });
 
 // Request interceptor — attach access token
@@ -60,7 +61,9 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         localStorage.removeItem('accessToken');
-        if (typeof window !== 'undefined') window.location.href = '/auth/login';
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:session-expired'));
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

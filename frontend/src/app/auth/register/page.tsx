@@ -1,5 +1,11 @@
 'use client';
 
+// Module-level variable holds the pending password between the register and select-role steps.
+// It is never written to storage — it lives only in this JS module's memory for the current tab session.
+// It is cleared immediately after the API call in select-role/page.tsx.
+export let pendingPassword = '';
+export function clearPendingPassword() { pendingPassword = ''; }
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -28,26 +34,46 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
+function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^a-zA-Z0-9]/.test(pw)) score++;
+  if (pw.length >= 12) score++;
+  if (score <= 1) return { score, label: 'Weak', color: 'bg-red-500' };
+  if (score <= 2) return { score, label: 'Fair', color: 'bg-yellow-500' };
+  if (score <= 3) return { score, label: 'Good', color: 'bg-blue-500' };
+  return { score, label: 'Strong', color: 'bg-green-500' };
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [passwordValue, setPasswordValue] = useState('');
 
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
 
   const onSubmit = async (data: RegisterForm) => {
+    if (!termsAccepted) {
+      toast.error('Please accept the Terms and Privacy Policy to continue.');
+      return;
+    }
     setIsLoading(true);
     try {
-      // Store registration data temporarily; role selection is the next step
+      // Store non-sensitive fields in sessionStorage; keep password in memory only
       sessionStorage.setItem('ls_reg', JSON.stringify({
         fullName: data.fullName.trim(),
         email: data.email.trim().toLowerCase(),
         phone: data.phone?.trim() || '',
-        password: data.password,
       }));
+      // Password is held in module memory — cleared after registration or on refresh
+      pendingPassword = data.password;
       router.push('/auth/select-role');
     } catch {
       toast.error('Something went wrong. Please try again.');
@@ -122,6 +148,8 @@ export default function RegisterPage() {
                   placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special"
                   className="input-field pr-10"
                   autoComplete="new-password"
+                  onChange={(e) => { setPasswordValue(e.target.value); }}
+                  onBlur={(e) => { setPasswordValue(e.target.value); register('password').onBlur(e); }}
                 />
                 <button
                   type="button"
@@ -131,6 +159,19 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {passwordValue.length > 0 && (() => {
+                const { score, label, color } = getPasswordStrength(passwordValue);
+                return (
+                  <div className="mt-1.5">
+                    <div className="flex gap-1 mb-0.5">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className={`h-1 flex-1 rounded-full ${score >= i ? color : 'bg-gray-200'}`} />
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-gray-500">Strength: <span className="font-medium">{label}</span></p>
+                  </div>
+                );
+              })()}
               {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
             </div>
 
@@ -156,11 +197,20 @@ export default function RegisterPage() {
               {errors.confirmPassword && <p className="mt-1 text-xs text-red-600">{errors.confirmPassword.message}</p>}
             </div>
 
-            <p className="text-xs text-gray-400">
-              By creating an account you agree to our{' '}
-              <a href="/terms" className="text-brand hover:underline">Terms</a> and{' '}
-              <a href="/privacy" className="text-brand hover:underline">Privacy Policy</a>.
-            </p>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-0.5 accent-brand"
+              />
+              <span className="text-xs text-gray-500">
+                I agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Terms of Service</a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Privacy Policy</a>
+              </span>
+            </label>
 
             <button
               type="submit"

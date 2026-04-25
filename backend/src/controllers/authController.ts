@@ -62,9 +62,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       });
     }
 
-    // Always log OTP to server logs as a fallback if email delivery fails
-    console.log(`\n🔑 [OTP] ${email} → ${otp}\n`);
-
     // Email send failure must NOT fail registration — user's account is already created.
     // They can request a resend via /auth/resend-otp.
     try {
@@ -116,8 +113,6 @@ export const resendOtp = async (req: Request, res: Response): Promise<void> => {
 
     await sendEmail({ to: normalizedEmail, ...emailTemplates.verifyEmail(otp, normalizedEmail.split('@')[0]) });
 
-    console.log(`\n🔑 [OTP] ${normalizedEmail} → ${otp}\n`);
-
     sendSuccess(res, null, 'OTP resent successfully');
   } catch (err) {
     console.error('resendOtp error:', err);
@@ -125,10 +120,13 @@ export const resendOtp = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+const MAX_FAILED_ATTEMPTS = 10;
+const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body; // 'email' acts as identifier (email, username, or slug)
-    let user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash +refreshTokens') as any;
+    let user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash +refreshTokens +failedLoginAttempts +lockUntil') as any;
 
     if (!user) {
       const identifier = email.toLowerCase().trim();
@@ -141,14 +139,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       }).select('userId');
 
       if (athlete) {
-        user = await User.findById(athlete.userId).select('+passwordHash +refreshTokens');
+        user = await User.findById(athlete.userId).select('+passwordHash +refreshTokens +failedLoginAttempts +lockUntil');
       } else {
         const coach = await CoachProfile.findOne({ profileUrl: { $eq: identifier } }).select('userId');
         if (coach) {
-          user = await User.findById(coach.userId).select('+passwordHash +refreshTokens');
+          user = await User.findById(coach.userId).select('+passwordHash +refreshTokens +failedLoginAttempts +lockUntil');
         } else {
           const org = await Organization.findOne({ profileUrl: { $eq: identifier } }).select('userId');
-          if (org) user = await User.findById(org.userId).select('+passwordHash +refreshTokens');
+          if (org) user = await User.findById(org.userId).select('+passwordHash +refreshTokens +failedLoginAttempts +lockUntil');
         }
       }
     }
@@ -158,13 +156,36 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      sendError(res, 'Invalid credentials', 401, 'INVALID_CREDENTIALS');
+    // Check account lockout
+    if (user.lockUntil && user.lockUntil > new Date()) {
+      const minutesLeft = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60000);
+      sendError(res, `Account temporarily locked. Try again in ${minutesLeft} minute(s).`, 429, 'ACCOUNT_LOCKED');
       return;
     }
 
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+      if (user.failedLoginAttempts >= MAX_FAILED_ATTEMPTS) {
+        user.lockUntil = new Date(Date.now() + LOCK_DURATION_MS);
+        user.failedLoginAttempts = 0;
+        await user.save();
+        sendError(res, 'Too many failed attempts. Account locked for 15 minutes.', 429, 'ACCOUNT_LOCKED');
+      } else {
+        await user.save();
+        sendError(res, 'Invalid credentials', 401, 'INVALID_CREDENTIALS');
+      }
+      return;
+    }
+
+    // Reset failed attempts on successful password match
+    if (user.failedLoginAttempts > 0 || user.lockUntil) {
+      user.failedLoginAttempts = 0;
+      user.lockUntil = undefined;
+    }
+
     if (!user.isVerified) {
+      await user.save();
       sendError(res, 'Please verify your email first', 401, 'EMAIL_NOT_VERIFIED');
       return;
     }

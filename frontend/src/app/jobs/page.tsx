@@ -18,6 +18,7 @@ export default function JobsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ q: '', category: '', jobType: '', location: '' });
   const [myApplications, setMyApplications] = useState<string[]>([]);
@@ -29,13 +30,17 @@ export default function JobsPage() {
 
   const fetchJobs = async () => {
     setIsLoading(true);
+    setFetchError(false);
     try {
       const params = { ...filters, page, limit: 12 };
       Object.keys(params).forEach((k) => { if (!(params as Record<string, unknown>)[k]) delete (params as Record<string, unknown>)[k]; });
       const res = await jobAPI.getJobs(params);
       setJobs(res.data.data || []);
       setTotal(res.data.pagination?.total || 0);
-    } catch {}
+    } catch {
+      setFetchError(true);
+      toast.error('Failed to load jobs. Please try again.');
+    }
     setIsLoading(false);
   };
 
@@ -112,6 +117,13 @@ export default function JobsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : fetchError ? (
+          <div className="text-center py-16">
+            <Briefcase className="w-12 h-12 text-red-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">Could not load jobs</h3>
+            <p className="text-gray-500 mb-6">There was a problem connecting to the server.</p>
+            <button onClick={fetchJobs} className="btn-primary px-6 py-2.5">Retry</button>
           </div>
         ) : jobs.length === 0 ? (
           <div className="text-center py-16">

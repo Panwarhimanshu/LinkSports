@@ -32,6 +32,7 @@ function OpportunitiesContent() {
   const [listingsTotal, setListingsTotal] = useState(0);
   const [listingsPage, setListingsPage] = useState(1);
   const [listingsLoading, setListingsLoading] = useState(true);
+  const [listingsFetchError, setListingsFetchError] = useState(false);
   const [showListingFilters, setShowListingFilters] = useState(false);
   const [listingFilters, setListingFilters] = useState({
     q: searchParams.get('q') || '',
@@ -46,6 +47,7 @@ function OpportunitiesContent() {
   const [jobsTotal, setJobsTotal] = useState(0);
   const [jobsPage, setJobsPage] = useState(1);
   const [jobsLoading, setJobsLoading] = useState(true);
+  const [jobsFetchError, setJobsFetchError] = useState(false);
   const [showJobFilters, setShowJobFilters] = useState(false);
   const [jobFilters, setJobFilters] = useState({ q: '', category: '', jobType: '', location: '' });
   const [myJobApplications, setMyJobApplications] = useState<string[]>([]);
@@ -55,13 +57,17 @@ function OpportunitiesContent() {
 
   const fetchListings = async () => {
     setListingsLoading(true);
+    setListingsFetchError(false);
     try {
       const params = { ...listingFilters, page: listingsPage, limit: 12, status: 'published' };
       Object.keys(params).forEach((k) => { if (!(params as Record<string, unknown>)[k]) delete (params as Record<string, unknown>)[k]; });
       const res = await listingAPI.getListings(params);
       setListings(res.data.data || []);
       setListingsTotal(res.data.pagination?.total || 0);
-    } catch {}
+    } catch {
+      setListingsFetchError(true);
+      toast.error('Failed to load listings. Please try again.');
+    }
     setListingsLoading(false);
   };
 
@@ -71,13 +77,17 @@ function OpportunitiesContent() {
 
   const fetchJobs = async () => {
     setJobsLoading(true);
+    setJobsFetchError(false);
     try {
       const params = { ...jobFilters, page: jobsPage, limit: 12 };
       Object.keys(params).forEach((k) => { if (!(params as Record<string, unknown>)[k]) delete (params as Record<string, unknown>)[k]; });
       const res = await jobAPI.getJobs(params);
       setJobs(res.data.data || []);
       setJobsTotal(res.data.pagination?.total || 0);
-    } catch {}
+    } catch {
+      setJobsFetchError(true);
+      toast.error('Failed to load jobs. Please try again.');
+    }
     setJobsLoading(false);
   };
 
@@ -252,6 +262,13 @@ function OpportunitiesContent() {
                   </div>
                 ))}
               </div>
+            ) : listingsFetchError ? (
+              <div className="text-center py-16">
+                <Trophy className="w-12 h-12 text-red-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-1">Could not load listings</h3>
+                <p className="text-gray-500 mb-6">There was a problem connecting to the server.</p>
+                <button onClick={fetchListings} className="btn-primary px-6 py-2.5">Retry</button>
+              </div>
             ) : listings.length === 0 ? (
               <div className="text-center py-16">
                 <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-4" />
@@ -384,6 +401,13 @@ function OpportunitiesContent() {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : jobsFetchError ? (
+              <div className="text-center py-16">
+                <Briefcase className="w-12 h-12 text-red-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-1">Could not load jobs</h3>
+                <p className="text-gray-500 mb-6">There was a problem connecting to the server.</p>
+                <button onClick={fetchJobs} className="btn-primary px-6 py-2.5">Retry</button>
               </div>
             ) : jobs.length === 0 ? (
               <div className="text-center py-16">

@@ -20,6 +20,8 @@ export interface IUser extends Document {
   updatedAt: Date;
   lastLoginAt?: Date;
   needsRoleSelection?: boolean;
+  failedLoginAttempts?: number;
+  lockUntil?: Date;
   comparePassword(password: string): Promise<boolean>;
 }
 
