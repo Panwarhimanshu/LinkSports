@@ -316,7 +316,7 @@ function NotificationsTab() {
 
       <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
         {items.map(({ key, label, desc }) => (
-          <div key={key} className="px-5 py-4 flex items-center justify-between">
+          <div key={key as string} className="px-5 py-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-800">{label}</p>
               <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
