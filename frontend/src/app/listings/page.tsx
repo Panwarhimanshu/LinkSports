@@ -285,12 +285,17 @@ function OpportunitiesContent() {
                   return (
                     <Link key={listing._id as string} href={`/listings/${listing._id}`} className="card hover:shadow-md transition-all group flex flex-col">
                       {!!(listing.banner) && (
-                        <div className="h-36 bg-gray-100 overflow-hidden flex-shrink-0">
+                        <div className="h-36 bg-gray-100 overflow-hidden flex-shrink-0"
+                          ref={(el) => { if (el) el.dataset.hasImg = 'true'; }}
+                        >
                           <img
                             src={listing.banner as string}
                             alt={listing.title as string}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                            onError={(e) => {
+                              const parent = (e.currentTarget as HTMLImageElement).parentElement;
+                              if (parent) parent.style.display = 'none';
+                            }}
                           />
                         </div>
                       )}

@@ -86,7 +86,7 @@ export default function HomePage() {
               <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden max-w-sm mx-auto">
                 <div className="bg-brand px-6 py-3 flex items-center justify-between">
                   <span className="text-white text-xs font-semibold tracking-wide">SPORTS CV</span>
-                  <span className="text-blue-200 text-xs">linksports.in/arjun-sharma</span>
+                  <span className="text-blue-200 text-xs">@arjun-sharma</span>
                 </div>
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-4">
@@ -121,7 +121,7 @@ export default function HomePage() {
                   </ul>
                   <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                     <Link2 className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                    <span className="text-xs text-brand truncate">linksports.in/arjun-sharma</span>
+                    <span className="text-xs text-brand truncate">@arjun-sharma</span>
                     <span className="ml-auto text-xs text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded">Copy</span>
                   </div>
                 </div>
@@ -216,7 +216,7 @@ export default function HomePage() {
               {/* Card header */}
               <div className="bg-brand px-6 py-4 flex items-center justify-between">
                 <span className="text-white text-xs font-semibold tracking-wide">SPORTS CV</span>
-                <span className="text-blue-200 text-xs">linksports.in/arjun-sharma</span>
+                <span className="text-blue-200 text-xs">@arjun-sharma</span>
               </div>
               {/* Profile */}
               <div className="p-6">
@@ -255,7 +255,7 @@ export default function HomePage() {
                 {/* Shareable link */}
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                   <Link2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-brand truncate">linksports.in/arjun-sharma</span>
+                  <span className="text-xs text-brand truncate">@arjun-sharma</span>
                   <span className="ml-auto text-xs text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-100">Copy</span>
                 </div>
               </div>
@@ -272,7 +272,7 @@ export default function HomePage() {
             <div className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden order-2 md:order-1">
               <div className="bg-purple-600 px-6 py-4 flex items-center justify-between">
                 <span className="text-white text-xs font-semibold tracking-wide">COACHING PROFILE</span>
-                <span className="text-purple-200 text-xs">linksports.in/coach-ravi</span>
+                <span className="text-purple-200 text-xs">@coach-ravi</span>
               </div>
               <div className="p-6">
                 <div className="flex items-center gap-4 mb-5">
@@ -313,7 +313,7 @@ export default function HomePage() {
                 </ul>
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                   <Link2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-purple-600 truncate">linksports.in/coach-ravi</span>
+                  <span className="text-xs text-purple-600 truncate">@coach-ravi</span>
                   <span className="ml-auto text-xs text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-100">Copy</span>
                 </div>
               </div>

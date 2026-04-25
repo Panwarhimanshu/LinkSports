@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Logo from '@/components/shared/Logo';
 import Footer from '@/components/shared/Footer';
+import PublicHeader from '@/components/shared/PublicHeader';
 import { Mail, MessageSquare, Clock, ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -12,18 +12,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link href="/" className="hover:opacity-90 transition-opacity">
-            <Logo />
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/auth/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2">Login</Link>
-            <Link href="/auth/register" className="btn-primary text-sm">Join Free</Link>
-          </div>
-        </div>
-      </header>
+      <PublicHeader />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Hero */}

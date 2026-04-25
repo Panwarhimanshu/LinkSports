@@ -24,6 +24,7 @@ function LoginContent() {
   const { login, setAccessToken, fetchMe } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   // Handle Google OAuth redirect — token arrives as ?token=xxx
   useEffect(() => {
@@ -46,6 +47,7 @@ function LoginContent() {
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
+    setApiError('');
     try {
       await login(data.identifier, data.password);
       toast.success('Welcome back!');
@@ -56,6 +58,7 @@ function LoginContent() {
       if (msg.includes('verify')) {
         router.push(`/auth/verify-email?email=${encodeURIComponent(data.identifier)}`);
       }
+      setApiError(msg);
       toast.error(msg);
     } finally {
       setIsLoading(false);
@@ -115,6 +118,13 @@ function LoginContent() {
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
+
+            {apiError && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                <span className="mt-0.5 flex-shrink-0">⚠</span>
+                <span>{apiError}</span>
+              </div>
+            )}
           </form>
 
           <div className="relative my-6">

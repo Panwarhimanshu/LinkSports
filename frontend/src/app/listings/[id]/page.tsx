@@ -136,7 +136,11 @@ export default function ListingDetailPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`badge ${type.color}`}>{type.label}</span>
-                    <span className={`badge ${status.color}`}>{status.label}</span>
+                    {isDeadlinePassed ? (
+                      <span className="badge bg-gray-100 text-gray-500">Closed</span>
+                    ) : (
+                      <span className={`badge ${status.color}`}>{status.label}</span>
+                    )}
                   </div>
                   <h1 className="text-2xl font-bold text-gray-900">{listing.title as string}</h1>
                 </div>
@@ -188,7 +192,13 @@ export default function ListingDetailPage() {
               {listing.contactInfo && (
                 <div className="pt-4 border-t border-gray-100">
                   <h3 className="font-semibold text-gray-900 mb-1">Contact</h3>
-                  <p className="text-sm text-gray-600">{listing.contactInfo as string}</p>
+                  {isAuthenticated ? (
+                    <p className="text-sm text-gray-600">{listing.contactInfo as string}</p>
+                  ) : (
+                    <p className="text-sm text-gray-400 italic">
+                      <Link href={`/auth/login?redirect=/listings/${id}`} className="text-brand hover:underline font-medium">Sign in</Link> to view contact details
+                    </p>
+                  )}
                 </div>
               )}
             </div>
