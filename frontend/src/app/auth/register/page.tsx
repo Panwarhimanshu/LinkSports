@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { pendingReg } from '@/lib/pendingRegistration';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,8 +42,34 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
   return { score, label: 'Strong', color: 'bg-green-500' };
 }
 
-export default function RegisterPage() {
+const ROLE_COPY: Record<string, { heading: string; sub: string; accent: string }> = {
+  athlete: {
+    heading: 'Create your Athlete profile',
+    sub: 'Build your free Sports CV and get discovered by academies, scouts, and clubs.',
+    accent: 'text-brand',
+  },
+  coach: {
+    heading: 'Create your Coaching profile',
+    sub: 'Build your professional coaching profile and find jobs at schools, academies, and clubs.',
+    accent: 'text-purple-600',
+  },
+  organization: {
+    heading: 'Register your Organisation',
+    sub: 'Post trials, search athletes, and hire coaches — from one verified dashboard.',
+    accent: 'text-orange-600',
+  },
+  professional: {
+    heading: 'Create your Professional profile',
+    sub: 'Connect with the sports ecosystem as a physio, nutritionist, or sports professional.',
+    accent: 'text-teal-600',
+  },
+};
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get('role') || '';
+  const roleCopy = ROLE_COPY[roleParam] || null;
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,8 +115,12 @@ export default function RegisterPage() {
         </div>
 
         <div className="card p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Create your account</h1>
-          <p className="text-gray-500 text-sm mb-6">Join thousands of athletes, coaches and organisations</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">
+            {roleCopy ? roleCopy.heading : 'Create your account'}
+          </h1>
+          <p className="text-gray-500 text-sm mb-6">
+            {roleCopy ? roleCopy.sub : 'Join thousands of athletes, coaches and organisations'}
+          </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Full Name */}
@@ -224,5 +254,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center"><div className="w-8 h-8 animate-spin rounded-full border-4 border-brand border-t-transparent" /></div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

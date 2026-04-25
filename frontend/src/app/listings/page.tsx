@@ -281,30 +281,33 @@ function OpportunitiesContent() {
                   const type = getListingTypeBadge(listing.type as string);
                   const org = listing.organizationId as Record<string, unknown>;
                   const loc = listing.location as Record<string, string>;
+                  const deadlinePassed = listing.registrationDeadline && new Date(listing.registrationDeadline as string) < new Date();
                   return (
-                    <Link key={listing._id as string} href={`/listings/${listing._id}`} className="card hover:shadow-md transition-all group">
+                    <Link key={listing._id as string} href={`/listings/${listing._id}`} className="card hover:shadow-md transition-all group flex flex-col">
                       {!!(listing.banner) && (
-                        <div className="h-36 bg-gray-200 overflow-hidden">
+                        <div className="h-36 bg-gray-100 overflow-hidden flex-shrink-0">
                           <img
                             src={listing.banner as string}
-                            alt=""
+                            alt={listing.title as string}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                           />
                         </div>
                       )}
-                      <div className="p-5">
-                        <div className="flex items-center gap-2 mb-2">
+                      <div className="p-5 flex flex-col flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <span className={`badge ${type.color}`}>{type.label}</span>
-                          {listing.participantFee ? (
+                          {deadlinePassed ? (
+                            <span className="badge bg-gray-100 text-gray-500">Closed</span>
+                          ) : listing.participantFee ? (
                             <span className="badge bg-gray-100 text-gray-600">{formatCurrency(listing.participantFee as number)}</span>
                           ) : (
                             <span className="badge bg-green-100 text-green-700">Free</span>
                           )}
                         </div>
-                        <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-brand transition-colors line-clamp-2">{listing.title as string}</h3>
-                        <p className="text-sm text-gray-500 mb-3 line-clamp-1">{org?.name as string}</p>
-                        <div className="space-y-1.5">
+                        <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-brand transition-colors line-clamp-2 min-h-[2.5rem]">{listing.title as string}</h3>
+                        <p className="text-sm text-gray-500 mb-3 line-clamp-1">{(org?.name as string) || 'Unknown Organisation'}</p>
+                        <div className="space-y-1.5 flex-1">
                           {loc?.city && (
                             <div className="flex items-center gap-1.5 text-xs text-gray-500">
                               <MapPin className="w-3.5 h-3.5 flex-shrink-0" />

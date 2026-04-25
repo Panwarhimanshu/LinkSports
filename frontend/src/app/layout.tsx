@@ -9,13 +9,31 @@ export const metadata: Metadata = {
   title: { default: 'LinkSports - India\'s Sports Networking Platform', template: '%s | LinkSports' },
   description: 'India\'s first professional sports networking platform. Connecting athletes, coaches, academies, and sports professionals.',
   keywords: ['sports networking', 'athlete profile', 'sports jobs', 'cricket trials', 'football trials', 'sports academy India'],
+  metadataBase: new URL('https://www.linksports.in'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
-    title: 'LinkSports.in',
-    description: 'India\'s Sports Networking Platform - Linking Athletes to Opportunities',
-    url: 'https://linksports.in',
+    title: 'LinkSports.in — India\'s Sports Professional Network',
+    description: 'Build your free Sports CV. Get discovered by academies, scouts, and clubs across India.',
+    url: 'https://www.linksports.in',
     siteName: 'LinkSports',
     locale: 'en_IN',
     type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'LinkSports.in — India\'s Sports Professional Network',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'LinkSports.in — India\'s Sports Professional Network',
+    description: 'Build your free Sports CV. Get discovered by academies, scouts, and clubs across India.',
+    images: ['/og-image.png'],
   },
 };
 

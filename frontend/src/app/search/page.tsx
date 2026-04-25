@@ -16,6 +16,12 @@ const TABS = [
   { id: 'organization', label: 'Organizations' },
 ];
 
+const PLURAL: Record<string, string> = {
+  athlete: 'athletes',
+  coach: 'coaches',
+  organization: 'organizations',
+};
+
 function SearchContent() {
   const searchParams = useSearchParams();
   const { isAuthenticated, user } = useAuthStore();
@@ -95,7 +101,7 @@ function SearchContent() {
           <div className="flex gap-3 flex-wrap">
             <div className="relative flex-1 min-w-48">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="text" placeholder={`Search ${activeTab}s...`} value={filters.q} onChange={(e) => updateFilter('q', e.target.value)} className="input-field pl-9" />
+              <input type="text" placeholder={`Search ${PLURAL[activeTab] ?? `${activeTab}s`}...`} value={filters.q} onChange={(e) => updateFilter('q', e.target.value)} className="input-field pl-9" />
             </div>
             <select value={filters.sport} onChange={(e) => updateFilter('sport', e.target.value)} className="input-field w-auto min-w-36">
               <option value="">All Sports</option>
@@ -116,8 +122,8 @@ function SearchContent() {
           </div>
         </div>
 
-        {/* Results count */}
-        <p className="text-sm text-gray-500 mb-4">{total} {activeTab}s found</p>
+        {/* Results count — hidden while loading to avoid "0 found" flash */}
+        {!isLoading && <p className="text-sm text-gray-500 mb-4">{total} {PLURAL[activeTab] ?? `${activeTab}s`} found</p>}
 
         {/* Results grid */}
         {isLoading ? (
@@ -133,7 +139,7 @@ function SearchContent() {
         ) : profiles.length === 0 ? (
           <div className="text-center py-16">
             <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">No {activeTab}s found</h3>
+            <h3 className="text-lg font-medium text-gray-900">No {PLURAL[activeTab] ?? `${activeTab}s`} found</h3>
             <p className="text-gray-500">Try different filters</p>
           </div>
         ) : (

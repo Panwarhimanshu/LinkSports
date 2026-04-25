@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "LinkSports.in — Build Your Free Sports CV | India's Sports Network",
   description:
     "Create your free Sports CV, find trials & tournaments, and get discovered by academies and clubs. India's first professional network for athletes, coaches & sports organizations.",
+  alternates: { canonical: 'https://www.linksports.in/' },
   openGraph: {
     title: "LinkSports.in — India's Sports Professional Network",
     description: 'Build your free Sports CV. Get discovered by academies, scouts, and clubs across India.',
@@ -28,9 +29,9 @@ export default function HomePage() {
             <Logo />
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/auth/register?role=athlete" className="text-sm font-medium text-gray-600 hover:text-gray-900">For Athletes</Link>
-            <Link href="/auth/register?role=coach" className="text-sm font-medium text-gray-600 hover:text-gray-900">For Coaches</Link>
-            <Link href="/auth/register?role=organization" className="text-sm font-medium text-gray-600 hover:text-gray-900">For Organizations</Link>
+            <Link href="#for-athletes" className="text-sm font-medium text-gray-600 hover:text-gray-900">For Athletes</Link>
+            <Link href="#for-coaches" className="text-sm font-medium text-gray-600 hover:text-gray-900">For Coaches</Link>
+            <Link href="#for-organizations" className="text-sm font-medium text-gray-600 hover:text-gray-900">For Organizations</Link>
             <Link href="/listings" className="text-sm font-medium text-gray-600 hover:text-gray-900">Opportunities</Link>
             <Link href="/jobs" className="text-sm font-medium text-gray-600 hover:text-gray-900">Jobs</Link>
           </nav>
@@ -43,38 +44,98 @@ export default function HomePage() {
 
       {/* Hero */}
       <section className="relative bg-white overflow-hidden border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 text-sm font-medium text-blue-700 mb-6">
-              <Star className="w-4 h-4" />
-              India's First Sports Professional Network
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left — copy */}
+            <div>
+              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 text-sm font-medium text-blue-700 mb-6">
+                <Star className="w-4 h-4" />
+                India's First Sports Professional Network
+              </div>
+              <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-6 text-gray-900">
+                Where Sports Talent Meets{' '}
+                <span className="text-brand">Real Opportunity</span>
+              </h1>
+              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                Build your free Sports CV. Get discovered by academies, scouts, and clubs.
+                Find trials, tournaments, and coaching jobs — all in one platform.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <Link
+                  href="/auth/register?role=athlete"
+                  className="flex items-center justify-center gap-2 bg-brand text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
+                >
+                  I'm an Athlete / Coach → Join Free
+                </Link>
+                <Link
+                  href="/auth/register?role=organization"
+                  className="flex items-center justify-center gap-2 bg-white border-2 border-brand text-brand font-semibold px-6 py-3 rounded-xl hover:bg-blue-50 transition-colors"
+                >
+                  I'm an Organization → Register
+                </Link>
+              </div>
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500">
+                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Free forever for athletes &amp; coaches</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Takes under 5 minutes</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> 50+ sports supported</span>
+              </div>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-gray-900">
-              Where Sports Talent Meets{' '}
-              <span className="text-brand">Real Opportunity</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Build your free Sports CV. Get discovered by academies, scouts, and clubs.
-              Find trials, tournaments, and coaching jobs — all in one platform.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <Link
-                href="/auth/register?role=athlete"
-                className="flex items-center justify-center gap-2 bg-brand text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
-              >
-                I'm an Athlete / Coach → Join Free
-              </Link>
-              <Link
-                href="/auth/register?role=organization"
-                className="flex items-center justify-center gap-2 bg-white border-2 border-brand text-brand font-semibold px-6 py-3 rounded-xl hover:bg-blue-50 transition-colors"
-              >
-                I'm an Organization → Register
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500">
-              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Free forever for athletes & coaches</span>
-              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Takes under 5 minutes</span>
-              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> 50+ sports supported</span>
+            {/* Right — mock Sports CV preview */}
+            <div className="hidden lg:block">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden max-w-sm mx-auto">
+                <div className="bg-brand px-6 py-3 flex items-center justify-between">
+                  <span className="text-white text-xs font-semibold tracking-wide">SPORTS CV</span>
+                  <span className="text-blue-200 text-xs">linksports.in/arjun-sharma</span>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-brand font-bold text-base flex-shrink-0">AS</div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">Arjun Sharma</h3>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="bg-blue-50 text-brand text-xs font-medium px-2 py-0.5 rounded-full">Football · Midfielder</span>
+                        <span className="text-gray-400 text-xs">Vadodara, Gujarat</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {[{ v: '47', l: 'Matches' }, { v: '12', l: 'Goals' }, { v: '3', l: 'Medals' }].map(({ v, l }) => (
+                      <div key={l} className="bg-gray-50 rounded-xl p-2.5 text-center">
+                        <p className="text-lg font-bold text-gray-900">{v}</p>
+                        <p className="text-xs text-gray-400">{l}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recent Achievements</p>
+                  <ul className="space-y-1.5 mb-4">
+                    {[
+                      { icon: '🥇', text: 'Gujarat State U-19 Championship 2024 — Winner' },
+                      { icon: '🏆', text: 'District Level Best Player Award 2023' },
+                      { icon: '⚽', text: 'Reliance Foundation League — Top Scorer' },
+                    ].map(({ icon, text }) => (
+                      <li key={text} className="flex items-start gap-2 text-xs text-gray-700">
+                        <span>{icon}</span><span>{text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                    <Link2 className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                    <span className="text-xs text-brand truncate">linksports.in/arjun-sharma</span>
+                    <span className="ml-auto text-xs text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded">Copy</span>
+                  </div>
+                </div>
+              </div>
+              {/* Floating badge */}
+              <div className="flex justify-center mt-4 gap-3">
+                <div className="bg-green-50 border border-green-200 rounded-full px-4 py-1.5 flex items-center gap-2">
+                  <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                  <span className="text-xs font-medium text-green-700">Discovered by 3 academies</span>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 flex items-center gap-2">
+                  <Trophy className="w-3.5 h-3.5 text-brand" />
+                  <span className="text-xs font-medium text-brand">2 trial invites</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -333,11 +394,44 @@ export default function HomePage() {
               </Link>
               <p className="text-xs text-gray-400 mt-3">Event and trial listings start at just ₹50. Organization registration is free.</p>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 flex items-center justify-center min-h-96">
-              <div className="text-center text-gray-400">
-                <BarChart2 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-sm font-medium">Organization Dashboard Preview</p>
-                <p className="text-xs mt-1">Applicant management dashboard coming soon</p>
+            {/* Mock applicant management card */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
+              <div className="bg-orange-600 px-6 py-3 flex items-center justify-between">
+                <span className="text-white text-xs font-semibold tracking-wide">APPLICANT DASHBOARD</span>
+                <span className="text-orange-200 text-xs">Hindustan United FC</span>
+              </div>
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-900">U-29 Trial — Applicants</p>
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">24 applied</span>
+                </div>
+                <div className="space-y-2.5 mb-4">
+                  {[
+                    { name: 'Arjun Sharma', sport: 'Football · Midfielder', status: 'Shortlisted', color: 'bg-green-100 text-green-700' },
+                    { name: 'Rohit Patel', sport: 'Football · Striker', status: 'Under Review', color: 'bg-yellow-100 text-yellow-700' },
+                    { name: 'Priya Nair', sport: 'Football · Defender', status: 'Shortlisted', color: 'bg-green-100 text-green-700' },
+                    { name: 'Suresh Yadav', sport: 'Football · Goalkeeper', status: 'Rejected', color: 'bg-red-100 text-red-600' },
+                  ].map(({ name, sport, status, color }) => (
+                    <div key={name} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                      <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 text-xs font-bold flex-shrink-0">
+                        {name.split(' ').map((n) => n[0]).join('')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-900">{name}</p>
+                        <p className="text-xs text-gray-400">{sport}</p>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${color}`}>{status}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100">
+                  {[{ v: '8', l: 'Shortlisted' }, { v: '12', l: 'Reviewing' }, { v: '4', l: 'Rejected' }].map(({ v, l }) => (
+                    <div key={l} className="text-center">
+                      <p className="text-base font-bold text-gray-900">{v}</p>
+                      <p className="text-xs text-gray-400">{l}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -610,7 +704,7 @@ export default function HomePage() {
                 title: 'Company',
                 links: [
                   { label: 'About Us', href: '/about' },
-                  { label: 'Contact', href: 'mailto:support@linksports.in' },
+                  { label: 'Contact', href: '/contact' },
                   { label: 'Privacy Policy', href: '/privacy' },
                   { label: 'Terms of Service', href: '/terms' },
                   { label: 'support@linksports.in', href: 'mailto:support@linksports.in' },

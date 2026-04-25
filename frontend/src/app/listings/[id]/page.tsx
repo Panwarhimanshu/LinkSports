@@ -122,7 +122,14 @@ export default function ListingDetailPage() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-4">
-            {listing.banner && <img src={listing.banner as string} alt="" className="w-full h-48 object-cover rounded-xl" />}
+            {listing.banner && (
+              <img
+                src={listing.banner as string}
+                alt={listing.title as string}
+                className="w-full h-48 object-cover rounded-xl"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+            )}
 
             <div className="card p-6">
               <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
@@ -233,18 +240,26 @@ export default function ListingDetailPage() {
             {/* Organization card */}
             <div className="card p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Organized by</h3>
-              <Link href={`/org/${org?._id}`} className="flex items-center gap-3 hover:opacity-80">
-                <div className="w-10 h-10 rounded-lg bg-brand flex items-center justify-center text-white font-bold text-sm">
-                  {(org?.name as string)?.[0]?.toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-medium text-sm text-gray-900">{org?.name as string}</p>
-                  <div className="flex items-center gap-1">
-                    {org?.isVerified && <CheckCircle className="w-3 h-3 text-green-500" />}
-                    <span className="text-xs text-gray-500 capitalize">{org?.type as string}</span>
+              {org?._id ? (
+                <Link href={`/org/${(org.profileUrl as string) || (org._id as string)}`} className="flex items-center gap-3 hover:opacity-80">
+                  <div className="w-10 h-10 rounded-lg bg-brand flex items-center justify-center text-white font-bold text-sm overflow-hidden flex-shrink-0">
+                    {(org.logo as string) ? (
+                      <img src={org.logo as string} alt={org.name as string} className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                    ) : (
+                      (org?.name as string)?.[0]?.toUpperCase() || '?'
+                    )}
                   </div>
-                </div>
-              </Link>
+                  <div>
+                    <p className="font-medium text-sm text-gray-900">{(org?.name as string) || 'Unknown Organisation'}</p>
+                    <div className="flex items-center gap-1">
+                      {org?.isVerified && <CheckCircle className="w-3 h-3 text-green-500" />}
+                      <span className="text-xs text-gray-500 capitalize">{(org?.type as string) || 'Organisation'}</span>
+                    </div>
+                  </div>
+                </Link>
+              ) : (
+                <p className="text-sm text-gray-400 italic">Organisation info unavailable</p>
+              )}
             </div>
 
             {/* Apply action */}
