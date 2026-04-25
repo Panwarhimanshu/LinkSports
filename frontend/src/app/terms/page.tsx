@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import Logo from '@/components/shared/Logo';
+import Footer from '@/components/shared/Footer';
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
@@ -323,17 +324,7 @@ export default function TermsPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white mt-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-          <span>© {new Date().getFullYear()} LinkSports Technologies Pvt. Ltd. All rights reserved.</span>
-          <div className="flex items-center gap-5">
-            <Link href="/terms" className="text-brand font-medium">Terms</Link>
-            <Link href="/privacy" className="hover:text-brand transition-colors">Privacy</Link>
-            <Link href="/auth/login" className="hover:text-brand transition-colors">Sign In</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

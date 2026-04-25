@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Logo from '@/components/shared/Logo';
+import Footer from '@/components/shared/Footer';
 import { Trophy, Users, Briefcase, Target, Heart } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -121,17 +122,7 @@ export default function AboutPage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs">© 2026 LinkSports.in. All rights reserved.</p>
-          <div className="flex gap-6 text-xs">
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-            <Link href="/listings" className="hover:text-white transition-colors">Opportunities</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

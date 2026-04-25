@@ -36,6 +36,13 @@ api.interceptors.response.use(
     const originalRequest = error.config as (typeof error.config & { _retry?: boolean });
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Only attempt refresh if the user was previously authenticated.
+      // Unauthenticated visitors browsing public pages should not trigger session-expired.
+      const hadToken = typeof window !== 'undefined' && !!localStorage.getItem('accessToken');
+      if (!hadToken) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // Queue this request until the ongoing refresh completes
         return new Promise<string>((resolve, reject) => {
@@ -206,7 +213,9 @@ export const uploadAPI = {
   uploadImage: (file: File) => {
     const formData = new FormData();
     formData.append('image', file);
-    // Do NOT set Content-Type manually — Axios auto-sets multipart/form-data with boundary
-    return api.post('/upload/image', formData);
+    // Axios 1.x auto-appends the multipart boundary when Content-Type is set this way
+    return api.post('/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 };

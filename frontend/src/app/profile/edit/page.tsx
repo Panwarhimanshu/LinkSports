@@ -164,9 +164,22 @@ export default function ProfileEditPage() {
           profileUrl: p.profileUrl || '',
         });
         setAchievements(p.achievements || []);
-        setTournaments(p.tournaments || []);
+        setTournaments(
+          (p.tournaments || []).map((t: any) => ({
+            ...t,
+            startDate: t.startDate ? String(t.startDate).split('T')[0] : '',
+            endDate: t.endDate ? String(t.endDate).split('T')[0] : '',
+          }))
+        );
         setEducation(p.education || []);
-        setPlayingHistory(p.playingHistory?.map((h: any) => ({ ...h, isCurrent: h.current })) || []);
+        setPlayingHistory(
+          (p.playingHistory || []).map((h: any) => ({
+            ...h,
+            isCurrent: h.current,
+            startDate: h.startDate ? String(h.startDate).split('T')[0] : '',
+            endDate: h.endDate ? String(h.endDate).split('T')[0] : '',
+          }))
+        );
         setHighlights(p.media?.filter((m: any) => m.type === 'video').map((m: any) => ({ title: m.title, url: m.url, platform: m.platform })) || []);
       } else if (user.role === 'coach') {
         const res = await profileAPI.getMyCoachProfile();
@@ -565,8 +578,8 @@ export default function ProfileEditPage() {
                       <input className="input-field" placeholder="Degree" value={e.degree} onChange={(ev) => { const c = [...education]; c[i].degree = ev.target.value; setEducation(c); }} />
                       <input className="input-field" placeholder="Field of Study" value={e.fieldOfStudy} onChange={(ev) => { const c = [...education]; c[i].fieldOfStudy = ev.target.value; setEducation(c); }} />
                       <div className="flex gap-2 items-center">
-                        <input className="input-field" placeholder="Start Year" value={e.startYear} onChange={(ev) => { const c = [...education]; c[i].startYear = ev.target.value; setEducation(c); }} />
-                        {!e.isCurrent && <input className="input-field" placeholder="End Year" value={e.endYear} onChange={(ev) => { const c = [...education]; c[i].endYear = ev.target.value; setEducation(c); }} />}
+                        <input type="number" min="1950" max={new Date().getFullYear()} className="input-field" placeholder="Start Year" value={e.startYear} onChange={(ev) => { const c = [...education]; c[i].startYear = ev.target.value; setEducation(c); }} />
+                        {!e.isCurrent && <input type="number" min="1950" max={new Date().getFullYear() + 6} className="input-field" placeholder="End Year" value={e.endYear} onChange={(ev) => { const c = [...education]; c[i].endYear = ev.target.value; setEducation(c); }} />}
                       </div>
                     </div>
                     <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
