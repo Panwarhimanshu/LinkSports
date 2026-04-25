@@ -1,12 +1,7 @@
 'use client';
 
-// Module-level variable holds the pending password between the register and select-role steps.
-// It is never written to storage — it lives only in this JS module's memory for the current tab session.
-// It is cleared immediately after the API call in select-role/page.tsx.
-export let pendingPassword = '';
-export function clearPendingPassword() { pendingPassword = ''; }
-
 import { useState } from 'react';
+import { pendingReg } from '@/lib/pendingRegistration';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -73,7 +68,7 @@ export default function RegisterPage() {
         phone: data.phone?.trim() || '',
       }));
       // Password is held in module memory — cleared after registration or on refresh
-      pendingPassword = data.password;
+      pendingReg.setPassword(data.password);
       router.push('/auth/select-role');
     } catch {
       toast.error('Something went wrong. Please try again.');
