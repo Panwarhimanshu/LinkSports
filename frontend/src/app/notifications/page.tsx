@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import AuthGuard from '@/components/shared/AuthGuard';
 import { notificationAPI, connectionAPI } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/utils';
-import { Bell, Check, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const NOTIFICATION_ICONS: Record<string, string> = {
@@ -44,6 +45,7 @@ const NOTIFICATION_ICONS: Record<string, string> = {
 };
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Record<string, unknown>[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,11 +123,9 @@ export default function NotificationsPage() {
                 <div
                   key={notif._id as string}
                   className={`card p-4 flex gap-3 cursor-pointer transition-colors ${!notif.isRead ? 'border-l-4 border-l-brand bg-blue-50/30' : 'hover:bg-gray-50'}`}
-                  onClick={() => { 
+                  onClick={() => {
                     if (!notif.isRead) markAsRead(notif._id as string);
-                    if (notif.link) {
-                      window.location.href = notif.link as string;
-                    }
+                    if (notif.link) router.push(notif.link as string);
                   }}
                 >
                   <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-xl flex-shrink-0">

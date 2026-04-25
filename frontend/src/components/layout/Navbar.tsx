@@ -113,6 +113,7 @@ export default function Navbar() {
                 <div className="relative ml-1">
                   <button
                     onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
+                    aria-label="Notifications"
                     className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <Bell className="w-5 h-5 text-gray-600" />
@@ -158,7 +159,7 @@ export default function Navbar() {
                   )}
                 </div>
 
-                <Link href="/messages" className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <Link href="/messages" aria-label="Messages" className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
                   <MessageSquare className="w-5 h-5 text-gray-600" />
                   {unreadMessages > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-brand text-white text-xs rounded-full flex items-center justify-center">
@@ -171,10 +172,11 @@ export default function Navbar() {
                 <div className="relative ml-1">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    aria-label="Open profile menu"
                     className="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center text-sm font-semibold hover:bg-brand-dark transition-colors overflow-hidden"
                   >
                     {getPhotoUrl((profile as any)?.photo) ? (
-                      <img src={getPhotoUrl((profile as any).photo)!} alt="" className="w-full h-full object-cover" />
+                      <img src={getPhotoUrl((profile as any).photo)!} alt={(profile as any)?.fullName || (profile as any)?.name || 'Profile'} className="w-full h-full object-cover" />
                     ) : (
                       getInitials((profile as any)?.fullName || (profile as any)?.name || user?.email?.split('@')[0] || 'U')
                     )}
@@ -268,7 +270,11 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <button className="md:hidden p-2 rounded-lg hover:bg-gray-100" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <button
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
             {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>

@@ -157,7 +157,7 @@ export default function ConnectionsPage() {
                       <div key={conn._id as string} className="card p-4 flex items-start gap-3">
                         <Link href={profileUrl} className="flex-shrink-0">
                           <div className="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold overflow-hidden">
-                            {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : getInitials(name)}
+                            {photo ? <img src={photo} alt={name} loading="lazy" className="w-full h-full object-cover" /> : getInitials(name)}
                           </div>
                         </Link>
                         <div className="flex-1 min-w-0">
@@ -212,7 +212,7 @@ export default function ConnectionsPage() {
                     return (
                       <div key={req._id as string} className="card p-4 flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold flex-shrink-0 overflow-hidden">
-                          {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : getInitials(name)}
+                          {photo ? <img src={photo} alt={name} loading="lazy" className="w-full h-full object-cover" /> : getInitials(name)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900">{name}</h3>
@@ -263,7 +263,7 @@ export default function ConnectionsPage() {
                     return (
                       <div key={req._id as string} className="card p-4 flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center font-bold flex-shrink-0 overflow-hidden">
-                          {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : getInitials(name)}
+                          {photo ? <img src={photo} alt={name} loading="lazy" className="w-full h-full object-cover" /> : getInitials(name)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900">{name}</h3>

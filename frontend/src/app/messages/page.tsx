@@ -239,12 +239,12 @@ function MessagesContent() {
                             {profileLink ? (
                               <Link href={profileLink} onClick={(e) => e.stopPropagation()}>
                                 {other?.photo ? (
-                                  <img src={other.photo as string} alt="" className="w-full h-full object-cover" />
+                                  <img src={other.photo as string} alt={name} loading="lazy" className="w-full h-full object-cover" />
                                 ) : getInitials(name)}
                               </Link>
                             ) : (
                               other?.photo ? (
-                                <img src={other.photo as string} alt="" className="w-full h-full object-cover" />
+                                <img src={other.photo as string} alt={name} loading="lazy" className="w-full h-full object-cover" />
                               ) : getInitials(name)
                             )}
                           </div>
@@ -289,6 +289,7 @@ function MessagesContent() {
                 <div className="flex items-center gap-3 p-4 border-b border-gray-100">
                   <button
                     onClick={() => setActiveConvId(null)}
+                    aria-label="Back to conversations"
                     className="sm:hidden p-1 -ml-1 text-gray-500 hover:text-gray-700"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,7 +302,7 @@ function MessagesContent() {
                     const avatar = (
                       <div className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0">
                         {activeOther?.photo ? (
-                          <img src={activeOther.photo as string} alt="" className="w-full h-full object-cover" />
+                          <img src={activeOther.photo as string} alt={displayName} loading="lazy" className="w-full h-full object-cover" />
                         ) : getInitials(displayName)}
                       </div>
                     );

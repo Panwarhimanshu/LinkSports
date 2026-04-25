@@ -86,31 +86,35 @@ function AccountTab() {
         {/* Username — athletes only */}
         {isAthlete && (
           <div className="px-5 py-4">
-            <p className="text-sm font-medium text-gray-700 mb-1">Username</p>
-            <p className="text-xs text-gray-400 mb-2">Shown in the navbar and on your public profile as @username</p>
+            <label htmlFor="settings-username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <p className="text-xs text-gray-500 mb-2">Shown in the navbar and on your public profile as @username</p>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">@</span>
               <input
+                id="settings-username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
                 placeholder="your_username"
                 maxLength={30}
+                autoComplete="username"
                 className="w-full pl-7 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
-            <p className="text-[11px] text-gray-400 mt-1">3–30 characters · letters, numbers, underscores</p>
+            <p className="text-[11px] text-gray-500 mt-1">3–30 characters · letters, numbers, underscores</p>
           </div>
         )}
 
         {/* Phone */}
         <div className="px-5 py-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Phone Number</p>
+          <label htmlFor="settings-phone" className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
           <input
+            id="settings-phone"
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+91 XXXXX XXXXX"
+            autoComplete="tel"
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
@@ -253,26 +257,44 @@ function PrivacyTab() {
   );
 }
 
+const NOTIF_PREFS_KEY = 'ls_notif_prefs';
+const NOTIF_DEFAULTS = {
+  connectionRequests: true,
+  messages: true,
+  trialAlerts: true,
+  jobAlerts: true,
+  profileViews: false,
+  weeklyDigest: true,
+  announcements: true,
+};
+
 // ── Notifications Tab ─────────────────────────────────────────────────────────
 function NotificationsTab() {
-  const [prefs, setPrefs] = useState({
-    connectionRequests: true,
-    messages: true,
-    trialAlerts: true,
-    jobAlerts: true,
-    profileViews: false,
-    weeklyDigest: true,
-    announcements: true,
+  const [prefs, setPrefs] = useState(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(NOTIF_PREFS_KEY) : null;
+      return stored ? { ...NOTIF_DEFAULTS, ...JSON.parse(stored) } : NOTIF_DEFAULTS;
+    } catch {
+      return NOTIF_DEFAULTS;
+    }
   });
   const [saving, setSaving] = useState(false);
 
-  const toggle = (key: keyof typeof prefs) => setPrefs((p) => ({ ...p, [key]: !p[key] }));
+  const toggle = (key: keyof typeof prefs) => {
+    if (saving) return;
+    setPrefs((p) => ({ ...p, [key]: !p[key] }));
+  };
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 600));
-    setSaving(false);
-    toast.success('Notification preferences saved');
+    try {
+      localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(prefs));
+      toast.success('Notification preferences saved');
+    } catch {
+      toast.error('Failed to save preferences');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const items: { key: keyof typeof prefs; label: string; desc: string }[] = [
@@ -301,7 +323,10 @@ function NotificationsTab() {
             </div>
             <button
               onClick={() => toggle(key)}
-              className={`relative w-11 h-6 rounded-full transition-colors ${prefs[key] ? 'bg-brand' : 'bg-gray-200'}`}
+              disabled={saving}
+              aria-label={`${prefs[key] ? 'Disable' : 'Enable'} ${label}`}
+              aria-pressed={prefs[key]}
+              className={`relative w-11 h-6 rounded-full transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${prefs[key] ? 'bg-brand' : 'bg-gray-200'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${prefs[key] ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
@@ -385,14 +410,18 @@ function SecurityTab() {
             {(['currentPassword', 'newPassword', 'confirmPassword'] as const).map((field) => {
               const labels = { currentPassword: 'Current Password', newPassword: 'New Password', confirmPassword: 'Confirm New Password' };
               const showKey = field === 'currentPassword' ? 'current' : field === 'newPassword' ? 'new' : 'confirm';
+              const autoCompleteVal = field === 'currentPassword' ? 'current-password' : 'new-password';
+              const inputId = `security-${field}`;
               return (
                 <div key={field}>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{labels[field]}</label>
+                  <label htmlFor={inputId} className="block text-xs font-medium text-gray-600 mb-1">{labels[field]}</label>
                   <div className="relative">
                     <input
+                      id={inputId}
                       type={show[showKey as keyof typeof show] ? 'text' : 'password'}
                       value={form[field]}
                       onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
+                      autoComplete={autoCompleteVal}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg pr-10 focus:outline-none focus:ring-2 focus:ring-brand"
                       required
                     />
@@ -480,14 +509,16 @@ function DangerZoneTab() {
 
         <form onSubmit={handleDelete} className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label htmlFor="danger-confirm" className="block text-xs font-medium text-gray-600 mb-1">
               Type <span className="font-mono font-bold text-red-600">DELETE</span> to confirm
             </label>
             <input
+              id="danger-confirm"
               type="text"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder="DELETE"
+              autoComplete="off"
               className="w-full max-w-xs px-3 py-2 text-sm border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>

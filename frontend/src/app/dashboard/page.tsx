@@ -291,7 +291,7 @@ export default function DashboardPage() {
                         <div key={req._id as string} className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-3 py-2">
                           <div className="w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xs font-bold overflow-hidden flex-shrink-0">
                             {getPhotoUrl(rp?.photo) ? (
-                              <img src={getPhotoUrl(rp.photo)!} alt="" className="w-full h-full object-cover" />
+                              <img src={getPhotoUrl(rp.photo)!} alt={name} className="w-full h-full object-cover" />
                             ) : getInitials(name)}
                           </div>
                           <div className="min-w-0">
@@ -330,7 +330,13 @@ export default function DashboardPage() {
                   {sectionsLoading
                     ? Array(5).fill(0).map((_, i) => <CardSkeleton key={i} />)
                     : topAthletes.length === 0
-                      ? <p className="text-sm text-gray-400 py-4">No athletes found.</p>
+                      ? (
+                        <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                          <Dumbbell className="w-8 h-8 text-gray-300 mb-2" />
+                          <p className="text-sm text-gray-500 mb-3">No athletes found yet.</p>
+                          <Link href="/search?type=athlete" className="text-xs text-brand hover:underline font-medium">Browse Athletes →</Link>
+                        </div>
+                      )
                       : topAthletes.map((p) => {
                           const loc = p.location as Record<string, string>;
                           return (
@@ -358,7 +364,13 @@ export default function DashboardPage() {
                 {sectionsLoading
                   ? Array(5).fill(0).map((_, i) => <CardSkeleton key={i} />)
                   : topCoaches.length === 0
-                    ? <p className="text-sm text-gray-400 py-4">No coaches found.</p>
+                    ? (
+                      <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                        <Star className="w-8 h-8 text-gray-300 mb-2" />
+                        <p className="text-sm text-gray-500 mb-3">No coaches found yet.</p>
+                        <Link href="/search?type=coach" className="text-xs text-brand hover:underline font-medium">Browse Coaches →</Link>
+                      </div>
+                    )
                     : topCoaches.map((p) => {
                         const loc = p.location as Record<string, string>;
                         const specs = (p.sportsSpecialization as string[]) || [];
@@ -386,7 +398,13 @@ export default function DashboardPage() {
                 {sectionsLoading
                   ? Array(4).fill(0).map((_, i) => <CardSkeleton key={i} />)
                   : topOrgs.length === 0
-                    ? <p className="text-sm text-gray-400 py-4">No organisations found.</p>
+                    ? (
+                      <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                        <Building2 className="w-8 h-8 text-gray-300 mb-2" />
+                        <p className="text-sm text-gray-500 mb-3">No organisations found yet.</p>
+                        <Link href="/search?type=organization" className="text-xs text-brand hover:underline font-medium">Browse Organisations →</Link>
+                      </div>
+                    )
                     : topOrgs.map((org) => {
                         const photoUrl = getPhotoUrl((org.logo as string) || null);
                         const loc = (org.contact as Record<string, string>) || {};
