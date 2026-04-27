@@ -7,6 +7,19 @@ interface EmailOptions {
 }
 
 const createTransporter = () => {
+  // Prefer Resend SMTP in production (reliable from cloud IPs)
+  if (process.env.RESEND_API_KEY) {
+    return nodemailer.createTransport({
+      host: 'smtp.resend.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'resend',
+        pass: process.env.RESEND_API_KEY,
+      },
+    });
+  }
+
   const port = Number(process.env.EMAIL_PORT) || 587;
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.hostinger.com',
@@ -24,9 +37,10 @@ const createTransporter = () => {
 };
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
-  const unconfigured = !process.env.EMAIL_USER ||
+  const unconfigured = !process.env.RESEND_API_KEY &&
+    (!process.env.EMAIL_USER ||
     !process.env.EMAIL_PASS ||
-    process.env.EMAIL_PASS === 'your_email_password_here';
+    process.env.EMAIL_PASS === 'your_email_password_here');
 
   if (unconfigured) {
     console.log(`[Email - NOT SENT] To: ${options.to} | Subject: ${options.subject}`);
