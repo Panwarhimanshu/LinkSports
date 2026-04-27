@@ -68,15 +68,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       });
     }
 
-    // Email send failure must NOT fail registration — user's account is already created.
-    // They can request a resend via /auth/resend-otp.
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`\n[DEV] ── OTP for ${email}: ${otp} ──\n`);
-    }
+    // Always log OTP so it's visible in Render/server logs for debugging
+    console.log(`\n[OTP] ── ${email}: ${otp} ──\n`);
     try {
       await sendEmail({ to: email, ...emailTemplates.verifyEmail(otp, fullName || 'User') });
+      console.log(`[Email] OTP sent to ${email}`);
     } catch (emailError) {
-      console.error('[Register] Failed to send verification email:', emailError);
+      console.error('[Email] FAILED to send OTP:', emailError);
     }
 
     sendSuccess(res, { userId: user._id, email: user.email, role: user.role }, 'Registration successful. Please verify your email.', 201);
@@ -125,10 +123,13 @@ export const resendOtp = async (req: Request, res: Response): Promise<void> => {
     user.emailOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`\n[DEV] ── Resend OTP for ${normalizedEmail}: ${otp} ──\n`);
+    console.log(`\n[OTP] ── Resend ${normalizedEmail}: ${otp} ──\n`);
+    try {
+      await sendEmail({ to: normalizedEmail, ...emailTemplates.verifyEmail(otp, normalizedEmail.split('@')[0]) });
+      console.log(`[Email] Resend OTP sent to ${normalizedEmail}`);
+    } catch (emailError) {
+      console.error('[Email] FAILED to resend OTP:', emailError);
     }
-    await sendEmail({ to: normalizedEmail, ...emailTemplates.verifyEmail(otp, normalizedEmail.split('@')[0]) });
 
     sendSuccess(res, null, 'OTP resent successfully');
   } catch (err) {
