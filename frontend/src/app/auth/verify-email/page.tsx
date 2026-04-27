@@ -24,8 +24,13 @@ function VerifyEmailContent() {
       toast.success('Email verified! Please log in.');
       router.push('/auth/login');
     } catch (error: unknown) {
-      const msg = (error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Verification failed';
-      toast.error(msg);
+      const err = (error as { response?: { data?: { error?: { message?: string; code?: string } } } })?.response?.data?.error;
+      if (err?.code === 'ALREADY_VERIFIED') {
+        toast.success('Your email is already verified. Please log in.');
+        router.push('/auth/login');
+        return;
+      }
+      toast.error(err?.message || 'Verification failed');
     } finally {
       setIsLoading(false);
     }
@@ -36,8 +41,14 @@ function VerifyEmailContent() {
     try {
       await authAPI.resendOtp(email);
       toast.success('OTP resent to your email');
-    } catch {
-      toast.error('Failed to resend OTP');
+    } catch (error: unknown) {
+      const err = (error as { response?: { data?: { error?: { message?: string; code?: string } } } })?.response?.data?.error;
+      if (err?.code === 'ALREADY_VERIFIED') {
+        toast.success('Your email is already verified. Please log in.');
+        router.push('/auth/login');
+        return;
+      }
+      toast.error(err?.message || 'Failed to resend OTP');
     } finally {
       setIsResending(false);
     }
