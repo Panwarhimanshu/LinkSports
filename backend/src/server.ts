@@ -33,6 +33,9 @@ import userReviewRoutes, { reviewRouter } from './routes/reviews';
 const app = express();
 const server = http.createServer(app);
 
+// Trust Render/proxy X-Forwarded-For headers (required for express-rate-limit on Render)
+app.set('trust proxy', 1);
+
 // ── Socket.IO (authenticated) ─────────────────────────────────────────────────
 const io = new SocketIOServer(server, {
   cors: {
