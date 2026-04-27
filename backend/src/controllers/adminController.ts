@@ -137,9 +137,10 @@ export const reviewListing = async (req: AuthRequest, res: Response): Promise<vo
 
     await listing.save();
 
+    // Notify the org about the review outcome
     await Notification.create({
       recipientId: listing.createdBy,
-      type: action === 'approve' ? 'new_event_posted' : 'listing_rejected',
+      type: action === 'approve' ? 'listing_approved' : 'listing_rejected',
       title: `Listing ${action === 'approve' ? 'Approved' : 'Needs Changes'}`,
       message: action === 'approve'
         ? `Your listing "${listing.title}" has been approved and is now live!`
@@ -147,6 +148,28 @@ export const reviewListing = async (req: AuthRequest, res: Response): Promise<vo
       referenceId: listing._id,
       referenceType: 'Listing',
     });
+
+    // Notify all athletes when a listing goes live
+    if (action === 'approve') {
+      const org = await Organization.findById(listing.organizationId).select('name').lean();
+      const athletes = await User.find({ role: 'athlete' }, '_id').lean();
+      if (athletes.length > 0) {
+        const typeLabel = listing.type.replace(/_/g, ' ');
+        const athleteNotifs = athletes.map((a) => ({
+          recipientId: a._id,
+          type: 'new_event_posted',
+          title: `New ${typeLabel} posted`,
+          message: `${org?.name || 'An organisation'} just posted a new ${typeLabel}: "${listing.title}"`,
+          referenceId: listing._id,
+          referenceType: 'Listing',
+          link: `/listings/${listing._id}`,
+          isRead: false,
+        }));
+        Notification.insertMany(athleteNotifs, { ordered: false }).catch((e) =>
+          console.error('[Notify] Failed to notify athletes:', e)
+        );
+      }
+    }
 
     sendSuccess(res, listing, `Listing ${action}d`);
   } catch { sendError(res, 'Failed to review listing', 500); }
