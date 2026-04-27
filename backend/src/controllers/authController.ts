@@ -19,7 +19,13 @@ const COOKIE_OPTIONS = {
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, role, fullName, organizationName, organizationType, phone, contactPerson, city } = req.body;
+    const { password, role, fullName, organizationName, organizationType, phone, contactPerson, city } = req.body;
+    const email = req.body.email?.toLowerCase()?.trim();
+
+    if (!email) {
+      sendError(res, 'Email is required', 400, 'VALIDATION_ERROR');
+      return;
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -64,6 +70,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     // Email send failure must NOT fail registration — user's account is already created.
     // They can request a resend via /auth/resend-otp.
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`\n[DEV] ── OTP for ${email}: ${otp} ──\n`);
+    }
     try {
       await sendEmail({ to: email, ...emailTemplates.verifyEmail(otp, fullName || 'User') });
     } catch (emailError) {
@@ -71,8 +80,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 
     sendSuccess(res, { userId: user._id, email: user.email, role: user.role }, 'Registration successful. Please verify your email.', 201);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Register error:', error);
+    if ((error as { code?: number })?.code === 11000) {
+      sendError(res, 'Email already registered', 409, 'DUPLICATE_EMAIL');
+      return;
+    }
     sendError(res, 'Registration failed', 500, 'REGISTER_ERROR');
   }
 };
@@ -80,7 +93,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, otp } = req.body;
-    const user = await User.findOne({ email }).select('+emailOtp +emailOtpExpiry');
+    const normalizedEmail = email?.toLowerCase()?.trim();
+    const user = await User.findOne({ email: normalizedEmail }).select('+emailOtp +emailOtpExpiry');
 
     if (!user) { sendError(res, 'User not found', 404, 'NOT_FOUND'); return; }
     if (user.isVerified) { sendError(res, 'Email already verified', 400, 'ALREADY_VERIFIED'); return; }
@@ -111,6 +125,9 @@ export const resendOtp = async (req: Request, res: Response): Promise<void> => {
     user.emailOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`\n[DEV] ── Resend OTP for ${normalizedEmail}: ${otp} ──\n`);
+    }
     await sendEmail({ to: normalizedEmail, ...emailTemplates.verifyEmail(otp, normalizedEmail.split('@')[0]) });
 
     sendSuccess(res, null, 'OTP resent successfully');

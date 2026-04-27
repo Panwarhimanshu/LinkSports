@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-type Tab = 'overview' | 'users';
+type Tab = 'overview' | 'users' | 'listings' | 'organizations';
 
 const ROLES = ['athlete', 'coach', 'professional', 'organization', 'admin'] as const;
 type Role = typeof ROLES[number];
@@ -163,6 +163,19 @@ export default function AdminPage() {
   const [modalUser, setModalUser] = useState<UserRow | null | undefined>(undefined); // undefined = closed, null = create
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Listings tab state
+  const [pendingListings, setPendingListings] = useState<any[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
+
+  // Organizations tab state
+  const [pendingOrgs, setPendingOrgs] = useState<any[]>([]);
+  const [orgsLoading, setOrgsLoading] = useState(false);
+
+  // Shared review modal state
+  const [reviewModal, setReviewModal] = useState<{ id: string; type: 'listing' | 'org'; action: string } | null>(null);
+  const [reviewReason, setReviewReason] = useState('');
+  const [reviewing, setReviewing] = useState(false);
+
   useEffect(() => {
     adminAPI.getDashboard()
       .then((r) => setDashboard(r.data?.data))
@@ -172,7 +185,64 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (tab === 'users') loadUsers();
+    else if (tab === 'listings') loadPendingListings();
+    else if (tab === 'organizations') loadPendingOrgs();
   }, [tab]);
+
+  const loadPendingListings = async () => {
+    setListingsLoading(true);
+    try {
+      const res = await adminAPI.getPendingListings();
+      setPendingListings(res.data?.data || []);
+    } catch { toast.error('Failed to load pending listings'); }
+    setListingsLoading(false);
+  };
+
+  const loadPendingOrgs = async () => {
+    setOrgsLoading(true);
+    try {
+      const res = await adminAPI.getPendingOrganizations();
+      setPendingOrgs(res.data?.data || []);
+    } catch { toast.error('Failed to load pending organizations'); }
+    setOrgsLoading(false);
+  };
+
+  const handleReviewListing = async (id: string, action: string, reason?: string) => {
+    setReviewing(true);
+    try {
+      await adminAPI.reviewListing(id, action, reason);
+      toast.success(`Listing ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'returned for changes'}`);
+      setPendingListings((prev) => prev.filter((l) => l._id !== id));
+    } catch { toast.error('Failed to review listing'); }
+    setReviewing(false);
+    setReviewModal(null);
+    setReviewReason('');
+  };
+
+  const handleVerifyOrg = async (id: string, action: string, reason?: string) => {
+    setReviewing(true);
+    try {
+      await adminAPI.verifyOrganization(id, action, reason);
+      toast.success(`Organization ${action === 'approve' ? 'verified' : 'rejected'}`);
+      setPendingOrgs((prev) => prev.filter((o) => o._id !== id));
+    } catch { toast.error('Failed to verify organization'); }
+    setReviewing(false);
+    setReviewModal(null);
+    setReviewReason('');
+  };
+
+  const submitReview = () => {
+    if (!reviewModal) return;
+    if (reviewModal.action !== 'approve' && !reviewReason.trim()) {
+      toast.error('Please provide a reason');
+      return;
+    }
+    if (reviewModal.type === 'listing') {
+      handleReviewListing(reviewModal.id, reviewModal.action, reviewReason.trim() || undefined);
+    } else {
+      handleVerifyOrg(reviewModal.id, reviewModal.action, reviewReason.trim() || undefined);
+    }
+  };
 
   const loadUsers = async (q = search, role = roleFilter) => {
     setUsersLoading(true);
@@ -239,8 +309,13 @@ export default function AdminPage() {
           </div>
 
           {/* Tab bar */}
-          <div className="flex gap-1 mb-6 bg-white border border-gray-200 rounded-xl p-1 w-fit">
-            {([['overview', 'Overview'], ['users', 'User Management']] as [Tab, string][]).map(([id, label]) => (
+          <div className="flex flex-wrap gap-1 mb-6 bg-white border border-gray-200 rounded-xl p-1 w-fit">
+            {([
+              ['overview', 'Overview'],
+              ['users', 'User Management'],
+              ['listings', `Listings${dashboard?.pendingApprovals?.listings ? ` (${dashboard.pendingApprovals.listings})` : ''}`],
+              ['organizations', `Organizations${dashboard?.pendingApprovals?.organizations ? ` (${dashboard.pendingApprovals.organizations})` : ''}`],
+            ] as [Tab, string][]).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === id ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
                 {label}
@@ -406,6 +481,109 @@ export default function AdminPage() {
               <p className="text-xs text-gray-400">{users.length} user{users.length !== 1 ? 's' : ''} shown</p>
             </div>
           )}
+
+          {/* ── Listings Tab ── */}
+      {tab === 'listings' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Pending Listing Reviews</h2>
+            <button onClick={loadPendingListings} className="text-sm text-brand hover:underline">Refresh</button>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            {listingsLoading ? (
+              <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand" /></div>
+            ) : pendingListings.length === 0 ? (
+              <div className="py-16 text-center text-gray-400 text-sm">No pending listings</div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {pendingListings.map((listing) => (
+                  <div key={listing._id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{listing.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 capitalize">
+                          {listing.type?.replace(/_/g, ' ')} · {listing.organizationId?.name || '—'}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {listing.startDate ? new Date(listing.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleReviewListing(listing._id, 'approve')}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                        >
+                          <Check className="w-3.5 h-3.5" /> Approve
+                        </button>
+                        <button
+                          onClick={() => { setReviewModal({ id: listing._id, type: 'listing', action: 'request_changes' }); setReviewReason(''); }}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors"
+                        >
+                          Changes
+                        </button>
+                        <button
+                          onClick={() => { setReviewModal({ id: listing._id, type: 'listing', action: 'reject' }); setReviewReason(''); }}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" /> Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-gray-400">{pendingListings.length} listing{pendingListings.length !== 1 ? 's' : ''} pending</p>
+        </div>
+      )}
+
+      {/* ── Organizations Tab ── */}
+      {tab === 'organizations' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Pending Organization Verifications</h2>
+            <button onClick={loadPendingOrgs} className="text-sm text-brand hover:underline">Refresh</button>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            {orgsLoading ? (
+              <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand" /></div>
+            ) : pendingOrgs.length === 0 ? (
+              <div className="py-16 text-center text-gray-400 text-sm">No pending organization verifications</div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {pendingOrgs.map((org) => (
+                  <div key={org._id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{org.name}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 capitalize">{org.type?.replace(/_/g, ' ')} · {org.contactPerson || '—'}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{org.userId?.email || '—'} {org.userId?.phone ? `· ${org.userId.phone}` : ''}</p>
+                        {org.city && <p className="text-xs text-gray-400">{org.city}</p>}
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleVerifyOrg(org._id, 'approve')}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                        >
+                          <Check className="w-3.5 h-3.5" /> Verify
+                        </button>
+                        <button
+                          onClick={() => { setReviewModal({ id: org._id, type: 'org', action: 'reject' }); setReviewReason(''); }}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" /> Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-gray-400">{pendingOrgs.length} organization{pendingOrgs.length !== 1 ? 's' : ''} pending</p>
+        </div>
+      )}
         </div>
       </div>
 
@@ -416,6 +594,34 @@ export default function AdminPage() {
           onClose={() => setModalUser(undefined)}
           onSaved={() => loadUsers()}
         />
+      )}
+
+      {/* Review / Reject Reason Modal */}
+      {reviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">
+                {reviewModal.action === 'request_changes' ? 'Request Changes' : 'Reject — Provide Reason'}
+              </h2>
+              <button onClick={() => setReviewModal(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+            </div>
+            <textarea
+              rows={4}
+              value={reviewReason}
+              onChange={(e) => setReviewReason(e.target.value)}
+              placeholder="Describe what needs to be changed or why it's being rejected…"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand resize-none"
+            />
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setReviewModal(null)} className="flex-1 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={submitReview} disabled={reviewing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+                {reviewing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {reviewModal.action === 'request_changes' ? 'Send Feedback' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </AuthGuard>
   );

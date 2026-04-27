@@ -146,7 +146,7 @@ export default function CreateListingPage() {
                   <input className="input-field" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={`e.g. Under-17 Cricket Trials 2026`} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-red-500">*</span></label>
                   <textarea rows={5} className="input-field" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe the event, what participants should expect, schedule..." />
                 </div>
                 <div className="grid sm:grid-cols-3 gap-4">
@@ -212,7 +212,7 @@ export default function CreateListingPage() {
               </div>
               <div className="flex gap-3 justify-between">
                 <button onClick={() => setStep(1)} className="btn-secondary">← Back</button>
-                <button disabled={!form.title || !form.startDate} onClick={() => setStep(3)} className="btn-primary disabled:opacity-50">Next: Eligibility →</button>
+                <button disabled={!form.title || !form.description.trim() || !form.startDate} onClick={() => setStep(3)} className="btn-primary disabled:opacity-50">Next: Eligibility →</button>
               </div>
             </div>
           )}
