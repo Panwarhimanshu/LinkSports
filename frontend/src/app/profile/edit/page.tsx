@@ -104,15 +104,19 @@ export default function ProfileEditPage() {
 
   // Coach fields
   const [coachForm, setCoachForm] = useState({
-    fullName: '', bio: '', photo: '', gender: '',
+    fullName: '', bio: '', aboutBio: '', coachingPhilosophy: '', photo: '', gender: '',
     email: '', countryCode: '+91', phone: '',
     experienceYears: 0,
-    sportsCoached: [] as string[], certifications: [] as string[],
+    sportsCoached: [] as string[],
     location: { city: '', state: '', country: 'India' },
-    availabilityStatus: 'available', hourlyRate: '',
+    availabilityStatus: 'full_time', hourlyRate: '',
     socialLinks: { instagram: '', youtube: '', twitter: '', linkedin: '' },
     profileUrl: '',
   });
+  const [coachQualifications, setCoachQualifications] = useState<{ name: string; issuer: string; year: string }[]>([]);
+  const [coachExperience, setCoachExperience] = useState<{ organization: string; role: string; startDate: string; endDate: string; current: boolean }[]>([]);
+  const [coachTournaments, setCoachTournaments] = useState<{ tournament: string; team: string; result: string; year: string }[]>([]);
+  const [coachAgeGroups, setCoachAgeGroups] = useState<string[]>([]);
 
   // Organization fields
   const [orgForm, setOrgForm] = useState({
@@ -185,17 +189,22 @@ export default function ProfileEditPage() {
         const res = await profileAPI.getMyCoachProfile();
         const p = res.data.data?.profile || res.data.data || {};
         setCoachForm({
-          fullName: p.fullName || '', bio: p.bio || '', photo: p.photo || '',
-          gender: p.gender || '', 
+          fullName: p.fullName || '', bio: p.bio || '', aboutBio: p.aboutBio || '',
+          coachingPhilosophy: p.coachingPhilosophy || '',
+          photo: p.photo || '', gender: p.gender || '',
           email: p.email || '', countryCode: p.countryCode || '+91', phone: p.phone || '',
           experienceYears: p.experienceYears || 0,
-          sportsCoached: p.sportsCoached || [], certifications: p.certifications || [],
+          sportsCoached: p.sportsSpecialization || [],
           location: p.location || { city: '', state: '', country: 'India' },
-          availabilityStatus: p.availabilityStatus || 'available',
+          availabilityStatus: p.availability || 'full_time',
           hourlyRate: p.hourlyRate || '',
           socialLinks: p.socialLinks || { instagram: '', youtube: '', twitter: '', linkedin: '' },
           profileUrl: p.profileUrl || '',
         });
+        setCoachQualifications((p.qualifications || []).map((q: { name?: string; issuer?: string; year?: number }) => ({ name: q.name || '', issuer: q.issuer || '', year: q.year?.toString() || '' })));
+        setCoachExperience((p.experience || []).map((e: { organization?: string; role?: string; startDate?: string; endDate?: string; current?: boolean }) => ({ organization: e.organization || '', role: e.role || '', startDate: e.startDate ? String(e.startDate).split('T')[0] : '', endDate: e.endDate ? String(e.endDate).split('T')[0] : '', current: e.current || false })));
+        setCoachTournaments((p.tournamentResults || []).map((t: { tournament?: string; team?: string; result?: string; year?: number }) => ({ tournament: t.tournament || '', team: t.team || '', result: t.result || '', year: t.year?.toString() || '' })));
+        setCoachAgeGroups(p.ageGroupsCoached || []);
       } else if (user.role === 'organization') {
         const res = await profileAPI.getMyOrganizationProfile();
         const p = res.data.data?.profile || res.data.data || {};
@@ -257,7 +266,15 @@ export default function ProfileEditPage() {
           media
         });
       } else if (user?.role === 'coach') {
-        await profileAPI.updateCoachProfile(coachForm);
+        await profileAPI.updateCoachProfile({
+          ...coachForm,
+          sportsSpecialization: coachForm.sportsCoached,
+          availability: coachForm.availabilityStatus,
+          qualifications: coachQualifications.map((q) => ({ ...q, year: q.year ? parseInt(q.year) : undefined })),
+          experience: coachExperience,
+          tournamentResults: coachTournaments.map((t) => ({ ...t, year: t.year ? parseInt(t.year) : undefined })),
+          ageGroupsCoached: coachAgeGroups,
+        });
       } else if (user?.role === 'organization') {
         await profileAPI.updateOrganizationProfile({
           ...orgForm,
@@ -312,7 +329,14 @@ export default function ProfileEditPage() {
         { id: 'contact', label: 'Contact' }
       ]
     : user?.role === 'coach'
-    ? [{ id: 'basic', label: 'Basic Info' }, { id: 'sports', label: 'Sports & Coaching' }, { id: 'social', label: 'Social' }]
+    ? [
+        { id: 'basic', label: 'Basic Info' },
+        { id: 'certifications', label: 'Certifications' },
+        { id: 'experience', label: 'Experience' },
+        { id: 'sports', label: 'Sports & Skills' },
+        { id: 'tournaments', label: 'Tournament Results' },
+        { id: 'social', label: 'Social' },
+      ]
     : [{ id: 'basic', label: 'Organization Info' }, { id: 'sports', label: 'Sports Offered' }];
 
   return (
@@ -796,7 +820,7 @@ export default function ProfileEditPage() {
 
             {user?.role === 'coach' && activeTab === 'sports' && (
               <div className="card p-6 space-y-5">
-                <h2 className="font-semibold text-gray-900">Sports & Certifications</h2>
+                <h2 className="font-semibold text-gray-900">Sports & Skills</h2>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Sports You Coach</label>
                   <div className="flex flex-wrap gap-2">
@@ -809,20 +833,90 @@ export default function ProfileEditPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">Certifications</label>
-                    <button onClick={() => setCoachForm({ ...coachForm, certifications: [...coachForm.certifications, ''] })} className="text-sm text-brand hover:underline flex items-center gap-1">
-                      <Plus className="w-3 h-3" /> Add
-                    </button>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Age Groups Coached</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Under 10', 'Under 14', 'Under 16', 'Under 19', 'Seniors', 'Professionals'].map((ag) => (
+                      <button key={ag} type="button" onClick={() => toggleSport(ag, coachAgeGroups, setCoachAgeGroups)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${coachAgeGroups.includes(ag) ? 'bg-brand text-white border-brand' : 'bg-white text-gray-600 border-gray-300 hover:border-brand'}`}>
+                        {ag}
+                      </button>
+                    ))}
                   </div>
-                  {coachForm.certifications.map((cert, i) => (
-                    <div key={i} className="flex gap-2 mb-2">
-                      <input className="input-field" placeholder="e.g. SAI Level 1 Coaching Certificate" value={cert}
-                        onChange={(e) => { const c = [...coachForm.certifications]; c[i] = e.target.value; setCoachForm({ ...coachForm, certifications: c }); }} />
-                      <button onClick={() => setCoachForm({ ...coachForm, certifications: coachForm.certifications.filter((_, j) => j !== i) })} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  ))}
                 </div>
+              </div>
+            )}
+
+            {user?.role === 'coach' && activeTab === 'certifications' && (
+              <div className="card p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-gray-900">Coaching Certifications</h2>
+                  <button onClick={() => setCoachQualifications([...coachQualifications, { name: '', issuer: '', year: '' }])} className="flex items-center gap-1 text-sm text-brand hover:underline">
+                    <Plus className="w-4 h-4" /> Add
+                  </button>
+                </div>
+                {coachQualifications.map((q, i) => (
+                  <div key={i} className="mb-6 p-4 bg-gray-50 rounded-lg relative space-y-3">
+                    <button onClick={() => setCoachQualifications(coachQualifications.filter((_, j) => j !== i))} className="absolute top-2 right-2 text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <input className="input-field" placeholder="Certification Name (e.g. AFC B License)" value={q.name} onChange={(e) => { const c = [...coachQualifications]; c[i].name = e.target.value; setCoachQualifications(c); }} />
+                      <input className="input-field" placeholder="Issuing Organization" value={q.issuer} onChange={(e) => { const c = [...coachQualifications]; c[i].issuer = e.target.value; setCoachQualifications(c); }} />
+                      <input type="number" className="input-field sm:col-span-2" placeholder="Year" value={q.year} onChange={(e) => { const c = [...coachQualifications]; c[i].year = e.target.value; setCoachQualifications(c); }} />
+                    </div>
+                  </div>
+                ))}
+                {coachQualifications.length === 0 && <p className="text-center text-gray-500 py-4">No certifications added.</p>}
+              </div>
+            )}
+
+            {user?.role === 'coach' && activeTab === 'experience' && (
+              <div className="card p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-gray-900">Coaching Experience</h2>
+                  <button onClick={() => setCoachExperience([...coachExperience, { organization: '', role: '', startDate: '', endDate: '', current: false }])} className="flex items-center gap-1 text-sm text-brand hover:underline">
+                    <Plus className="w-4 h-4" /> Add
+                  </button>
+                </div>
+                {coachExperience.map((e, i) => (
+                  <div key={i} className="mb-6 p-4 bg-gray-50 rounded-lg relative space-y-3">
+                    <button onClick={() => setCoachExperience(coachExperience.filter((_, j) => j !== i))} className="absolute top-2 right-2 text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <input className="input-field" placeholder="Academy / Club Name" value={e.organization} onChange={(ev) => { const c = [...coachExperience]; c[i].organization = ev.target.value; setCoachExperience(c); }} />
+                      <input className="input-field" placeholder="Role (e.g. Head Coach)" value={e.role} onChange={(ev) => { const c = [...coachExperience]; c[i].role = ev.target.value; setCoachExperience(c); }} />
+                      <div className="grid grid-cols-2 gap-3 sm:col-span-2">
+                        <div><label className="text-[10px] text-gray-400">Start Date</label><input type="date" className="input-field" value={e.startDate} onChange={(ev) => { const c = [...coachExperience]; c[i].startDate = ev.target.value; setCoachExperience(c); }} /></div>
+                        {!e.current && <div><label className="text-[10px] text-gray-400">End Date</label><input type="date" className="input-field" value={e.endDate} onChange={(ev) => { const c = [...coachExperience]; c[i].endDate = ev.target.value; setCoachExperience(c); }} /></div>}
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer mt-2">
+                      <input type="checkbox" checked={e.current} onChange={(ev) => { const c = [...coachExperience]; c[i].current = ev.target.checked; if (ev.target.checked) c[i].endDate = ''; setCoachExperience(c); }} className="rounded text-brand" />
+                      Currently working here
+                    </label>
+                  </div>
+                ))}
+                {coachExperience.length === 0 && <p className="text-center text-gray-500 py-4">No experience added.</p>}
+              </div>
+            )}
+
+            {user?.role === 'coach' && activeTab === 'tournaments' && (
+              <div className="card p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-gray-900">Tournament Results</h2>
+                  <button onClick={() => setCoachTournaments([...coachTournaments, { tournament: '', team: '', result: '', year: '' }])} className="flex items-center gap-1 text-sm text-brand hover:underline">
+                    <Plus className="w-4 h-4" /> Add
+                  </button>
+                </div>
+                {coachTournaments.map((t, i) => (
+                  <div key={i} className="mb-6 p-4 bg-gray-50 rounded-lg relative space-y-3">
+                    <button onClick={() => setCoachTournaments(coachTournaments.filter((_, j) => j !== i))} className="absolute top-2 right-2 text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <input className="input-field" placeholder="Tournament Name" value={t.tournament} onChange={(e) => { const c = [...coachTournaments]; c[i].tournament = e.target.value; setCoachTournaments(c); }} />
+                      <input className="input-field" placeholder="Team Managed" value={t.team} onChange={(e) => { const c = [...coachTournaments]; c[i].team = e.target.value; setCoachTournaments(c); }} />
+                      <input className="input-field" placeholder="Result (e.g. Winner, Runner Up)" value={t.result} onChange={(e) => { const c = [...coachTournaments]; c[i].result = e.target.value; setCoachTournaments(c); }} />
+                      <input type="number" className="input-field" placeholder="Year" value={t.year} onChange={(e) => { const c = [...coachTournaments]; c[i].year = e.target.value; setCoachTournaments(c); }} />
+                    </div>
+                  </div>
+                ))}
+                {coachTournaments.length === 0 && <p className="text-center text-gray-500 py-4">No tournament results added.</p>}
               </div>
             )}
 

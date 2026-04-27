@@ -61,7 +61,13 @@
       "Bash(cmd.exe /c \"cd /d \\\\\"C:\\\\\\\\Users\\\\\\\\himan\\\\\\\\OneDrive\\\\\\\\Desktop\\\\\\\\LinkSports\\\\\\\\Linksports App\\\\\\\\mobile\\\\\\\\LinksportsApp\\\\\\\\android\\\\\" && set ANDROID_HOME=C:\\\\\\\\Users\\\\\\\\himan\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Android\\\\\\\\Sdk && set PATH=%PATH%;C:\\\\\\\\Users\\\\\\\\himan\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Android\\\\\\\\Sdk\\\\\\\\platform-tools && gradlew.bat app:installDebug -PreactNativeDevServerPort=8081 2>&1\")",
       "Bash(cmd.exe /c \"C:\\\\\\\\Users\\\\\\\\himan\\\\\\\\OneDrive\\\\\\\\Desktop\\\\\\\\LinkSports\\\\\\\\run_app.bat\")",
       "Bash(cmd.exe /c \"\\\\\"C:\\\\\\\\Users\\\\\\\\himan\\\\\\\\OneDrive\\\\\\\\Desktop\\\\\\\\LinkSports\\\\\\\\run_app.bat\\\\\" > \\\\\"C:\\\\\\\\Users\\\\\\\\himan\\\\\\\\OneDrive\\\\\\\\Desktop\\\\\\\\LinkSports\\\\\\\\build_log.txt\\\\\" 2>&1\")",
-      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ':*)"
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ':*)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "WebFetch(domain:www.linksports.in)",
+      "Bash(git push *)",
+      "Bash(ls -la \"c:\\\\\\\\Users\\\\\\\\himan\\\\\\\\OneDrive\\\\\\\\Desktop\\\\\\\\LinkSports\\\\\\\\frontend\\\\\\\\src\\\\\\\\\")"
     ]
   }
 }
