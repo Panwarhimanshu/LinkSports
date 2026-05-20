@@ -1,6 +1,6 @@
 # LinkSports — India's Sports Networking Platform
 
-React + Node.js + MongoDB rewrite of linksports.in
+React + Node.js + MongoDB - linksports.in
 
 ## Quick Start
 
