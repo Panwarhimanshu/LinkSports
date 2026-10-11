@@ -300,8 +300,9 @@ function Header({ step, onBack }: { step: number; onBack?: () => void }) {
   );
 }
 
+// On phones the bar sits just above the app tab bar (MobileTabBar, 64px + home-indicator inset).
 function BottomBar({ children }: { children: React.ReactNode }) {
-  return <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur border-t border-gray-100 p-3 flex gap-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-12 lg:justify-end lg:[&>*]:flex-none lg:[&>*]:min-w-[200px] lg:rounded-b-md">{children}</div>;
+  return <div className="sticky bottom-[calc(64px+env(safe-area-inset-bottom))] md:bottom-0 z-20 bg-white/95 backdrop-blur border-t border-gray-100 p-3 flex gap-2 md:pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-12 lg:justify-end lg:[&>*]:flex-none lg:[&>*]:min-w-[200px] lg:rounded-b-md">{children}</div>;
 }
 
 // ── Step 1: Direct entry & fast login (email OTP, Google when configured) ────
@@ -678,10 +679,55 @@ function ExportStep({ profile, onEdit, onChangeSport }: { profile: Record<string
     return await (await fetch(dataUrl)).blob();
   };
 
+  // Phones: a website can't write to the gallery directly. The share sheet can ("Save Image" on
+  // iPhone, save/gallery targets on Android), but iOS only opens it right after a tap — so the
+  // image is rendered ahead of time and the tap just hands it over.
+  const isPhone = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
+  const prepared = useRef<{ format: string; blob: Blob } | null>(null);
+  const [savePreview, setSavePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    prepared.current = null;
+    if (!story || !isPhone) return;
+    let alive = true;
+    const t = setTimeout(async () => {
+      try {
+        const blob = await render();
+        if (alive) prepared.current = { format, blob };
+      } catch { /* rendered again on tap */ }
+    }, 800);
+    return () => { alive = false; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [story, logo, format, isPhone]);
+
+  const closePreview = () => {
+    if (savePreview) URL.revokeObjectURL(savePreview);
+    setSavePreview(null);
+  };
+
   const downloadStory = async () => {
     setBusy('story');
     try {
-      const blob = await render();
+      const blob = prepared.current?.format === format ? prepared.current.blob : await render();
+
+      if (isPhone) {
+        const file = new File([blob], fileName, { type: blob.type });
+        if (navigator.canShare?.({ files: [file] })) {
+          toast('Choose "Save Image" to add it to your gallery', { icon: '📲', duration: 5000 });
+          try {
+            await navigator.share({ files: [file] });
+            void eventAPI.log('STORY_CARD_EXPORTED', { sport: profile.primarySport, format });
+            return;
+          } catch (e: any) {
+            if (e?.name === 'AbortError') return; // closed the sheet
+            // not allowed / unsupported → fall back to press-and-hold save below
+          }
+        }
+        setSavePreview(URL.createObjectURL(blob));
+        void eventAPI.log('STORY_CARD_EXPORTED', { sport: profile.primarySport, format });
+        return;
+      }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove();
@@ -770,6 +816,17 @@ function ExportStep({ profile, onEdit, onChangeSport }: { profile: Record<string
         <button className={btnPrimary} onClick={downloadStory} disabled={busy !== null || !story}>{busy === 'story' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}Story</button>
         <Link href={`/athlete/${profile.profileUrl}`} className={btnSecondary}><Eye className="w-5 h-5" />Public profile</Link>
       </BottomBar>
+
+      {/* fallback when the share sheet isn't available: long-press saves an <img> to the gallery */}
+      {savePreview && (
+        <div className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center p-4" role="dialog" aria-label="Save your Story card">
+          <p className="text-white text-center text-sm font-semibold max-w-xs">
+            Press and hold the image, then tap <span className="text-blue-300">“Save to Photos”</span> or <span className="text-blue-300">“Download image”</span>
+          </p>
+          <img src={savePreview} alt="Your LinkSports Story card" className="mt-4 max-h-[72vh] w-auto rounded-xl shadow-2xl" />
+          <button onClick={closePreview} className="mt-5 h-11 px-8 rounded-full bg-white text-slate-900 font-semibold">Done</button>
+        </div>
+      )}
     </>
   );
 }
