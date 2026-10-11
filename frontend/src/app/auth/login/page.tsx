@@ -58,7 +58,9 @@ function LoginContent() {
     try {
       await login(data.identifier, data.password);
       toast.success('Welcome back!');
-      const redirect = searchParams.get('redirect') || (CV_ONLY ? '/' : '/dashboard');
+      // admins land on their dashboard; everyone else goes back where they came from
+      const isAdmin = useAuthStore.getState().user?.role === 'admin';
+      const redirect = searchParams.get('redirect') || (isAdmin ? '/admin' : CV_ONLY ? '/' : '/dashboard');
       router.push(redirect);
     } catch (error: unknown) {
       const msg = (error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Login failed';

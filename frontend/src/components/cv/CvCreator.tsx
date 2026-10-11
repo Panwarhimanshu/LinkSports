@@ -170,6 +170,12 @@ export default function CvCreator() {
     );
   }
 
+  // the CV creator is for players; send admins to their dashboard instead of a dead end
+  if (user?.role === 'admin') {
+    if (typeof window !== 'undefined') window.location.replace('/admin');
+    return <Shell><div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand" /></div></Shell>;
+  }
+
   if (user && user.role !== 'athlete') {
     return (
       <Shell>
