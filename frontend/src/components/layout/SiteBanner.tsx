@@ -22,14 +22,14 @@ export default function SiteBanner() {
 
   if (!s || pathname.startsWith('/admin')) return null;
 
-  const tone = { info: 'bg-brand', success: 'bg-green-600', warning: 'bg-amber-500' }[s.banner?.tone || 'info'];
+  const tone = { info: 'bg-brand', success: 'bg-blue-900', warning: 'bg-orange-500' }[s.banner?.tone || 'info'];
   const link = s.banner?.link;
   const external = link && /^https?:\/\//.test(link);
 
   return (
     <>
       {s.maintenance && (
-        <div role="status" className="bg-amber-50 border-b border-amber-200 text-amber-900 text-sm px-4 py-2 flex items-center justify-center gap-2 text-center">
+        <div role="status" className="bg-orange-50 border-b border-orange-200 text-orange-900 text-sm px-4 py-2 flex items-center justify-center gap-2 text-center">
           <Wrench className="w-4 h-4 shrink-0" />
           <span>{s.maintenance.message}{s.supportEmail ? <> Questions? <a className="underline" href={`mailto:${s.supportEmail}`}>{s.supportEmail}</a></> : null}</span>
         </div>

@@ -26,9 +26,9 @@ export default function AboutPage() {
 
         {/* Mission */}
         <section className="mb-16">
-          <div className="bg-blue-50 rounded-2xl p-8">
+          <div className="bg-blue-50 rounded-lg p-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center">
                 <Target className="w-5 h-5 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Our Mission</h2>
@@ -51,7 +51,7 @@ export default function AboutPage() {
                 icon: Trophy,
                 title: 'For Athletes',
                 desc: 'Build a free Sports CV, apply to trials and tournaments, get discovered by academies and scouts.',
-                color: 'text-emerald-600 bg-emerald-50',
+                color: 'text-blue-600 bg-blue-50',
               },
               {
                 icon: Users,
@@ -63,11 +63,11 @@ export default function AboutPage() {
                 icon: Briefcase,
                 title: 'For Organizations',
                 desc: 'Post trials, events, and jobs. Discover talent across India. Manage applications in one dashboard.',
-                color: 'text-purple-600 bg-purple-50',
+                color: 'text-blue-600 bg-blue-50',
               },
             ].map(({ icon: Icon, title, desc, color }) => (
               <div key={title} className="card p-6">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${color}`}>
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${color}`}>
                   <Icon className="w-6 h-6" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
@@ -97,7 +97,7 @@ export default function AboutPage() {
         </section>
 
         {/* Contact */}
-        <section className="bg-gray-50 rounded-2xl p-8 text-center">
+        <section className="bg-gray-50 rounded-lg p-8 text-center">
           <h2 className="text-xl font-bold text-gray-900 mb-2">Get in Touch</h2>
           <p className="text-gray-600 mb-4">
             Questions, partnerships, or feedback — we'd love to hear from you.

@@ -25,8 +25,8 @@ export default function ContactPage() {
 
         {/* Contact options */}
         <div className="grid sm:grid-cols-2 gap-6 mb-12">
-          <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100">
-            <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center mb-4">
+          <div className="bg-blue-50 rounded-lg p-6 border border-blue-100">
+            <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center mb-4">
               <Mail className="w-5 h-5 text-white" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">Email Support</h3>
@@ -41,8 +41,8 @@ export default function ContactPage() {
             </a>
           </div>
 
-          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-            <div className="w-10 h-10 bg-gray-200 rounded-xl flex items-center justify-center mb-4">
+          <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
+            <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center mb-4">
               <Clock className="w-5 h-5 text-gray-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">Response Time</h3>
@@ -54,7 +54,7 @@ export default function ContactPage() {
         </div>
 
         {/* Contact form */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-8">
           <div className="flex items-center gap-3 mb-6">
             <MessageSquare className="w-5 h-5 text-brand" />
             <h2 className="text-xl font-bold text-gray-900">Send us a Message</h2>

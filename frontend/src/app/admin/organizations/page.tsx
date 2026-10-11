@@ -66,7 +66,7 @@ function OrganizationsAdmin() {
               <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{fmtDate(o.createdAt)}</td>
               <td className="px-5 py-3">
                 <div className="flex gap-1.5 justify-end whitespace-nowrap">
-                  {o.verificationStatus !== 'verified' && <button onClick={() => verify(o, 'approve')} className="h-8 px-2.5 rounded-lg bg-green-600 text-white text-xs font-semibold">Verify</button>}
+                  {o.verificationStatus !== 'verified' && <button onClick={() => verify(o, 'approve')} className="h-8 px-2.5 rounded-lg bg-blue-600 text-white text-xs font-semibold">Verify</button>}
                   {o.verificationStatus !== 'rejected' && <button onClick={() => verify(o, 'reject')} className="h-8 px-2.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold">{o.verificationStatus === 'verified' ? 'Revoke' : 'Reject'}</button>}
                   {o.profileUrl && <Link href={`/org/${o.profileUrl}`} target="_blank" aria-label="Open public page" className="h-8 w-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 inline-flex items-center justify-center"><ExternalLink className="w-3.5 h-3.5" /></Link>}
                 </div>

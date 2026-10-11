@@ -84,7 +84,7 @@ function SearchContent() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit mb-6">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -167,7 +167,7 @@ function SearchContent() {
                     </p>
                   )}
                   {profile.availabilityStatus && (
-                    <span className="badge bg-green-100 text-green-700 text-xs mt-2 inline-block">
+                    <span className="badge bg-blue-100 text-blue-700 text-xs mt-2 inline-block">
                       {(profile.availabilityStatus as string).replace(/_/g, ' ')}
                     </span>
                   )}
@@ -177,7 +177,7 @@ function SearchContent() {
                       disabled={!!status}
                       className={`mt-3 flex items-center justify-center gap-1 w-full text-xs py-1.5 rounded-lg transition-colors ${
                         status === 'pending' ? 'bg-gray-100 text-gray-500' :
-                        status === 'accepted' ? 'bg-green-100 text-green-700' :
+                        status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                         'border border-brand text-brand hover:bg-blue-50'
                       }`}
                     >

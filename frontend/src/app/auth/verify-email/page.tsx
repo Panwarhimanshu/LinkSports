@@ -55,11 +55,11 @@ function VerifyEmailContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center">
               <Trophy className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold text-brand">LinkSports</span>

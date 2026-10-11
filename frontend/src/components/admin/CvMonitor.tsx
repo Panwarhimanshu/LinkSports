@@ -12,10 +12,10 @@ interface ActivityRow { event_id: string; user_id: string; user_name: string; sp
 
 const EVENT_STYLE: Record<string, string> = {
   USER_LOGIN: 'bg-gray-100 text-gray-700',
-  SPORT_SELECTED: 'bg-purple-100 text-purple-700',
+  SPORT_SELECTED: 'bg-blue-100 text-blue-700',
   CV_SAVED: 'bg-blue-100 text-blue-700',
-  PDF_DOWNLOADED: 'bg-green-100 text-green-700',
-  STORY_CARD_EXPORTED: 'bg-pink-100 text-pink-700',
+  PDF_DOWNLOADED: 'bg-blue-100 text-blue-700',
+  STORY_CARD_EXPORTED: 'bg-blue-100 text-blue-700',
 };
 
 const POLL_MS = 5000;
@@ -70,9 +70,9 @@ export default function CvMonitor() {
 
   const kpis = [
     { label: 'Registered players', value: stats?.totalPlayers, icon: Users, color: 'text-blue-600 bg-blue-50' },
-    { label: `Completed CVs (≥${stats?.completedThreshold ?? 60}%)`, value: stats?.completedCvs, icon: FileCheck2, color: 'text-green-600 bg-green-50' },
-    { label: 'PDF & Story downloads (24h)', value: stats?.downloads24h, icon: Download, color: 'text-pink-600 bg-pink-50' },
-    { label: 'Most active sport', value: stats ? (stats.mostActiveSport ? `${stats.mostActiveSport.sport} (${stats.mostActiveSport.players})` : '—') : undefined, icon: Trophy, color: 'text-amber-600 bg-amber-50' },
+    { label: `Completed CVs (≥${stats?.completedThreshold ?? 60}%)`, value: stats?.completedCvs, icon: FileCheck2, color: 'text-blue-600 bg-blue-50' },
+    { label: 'PDF & Story downloads (24h)', value: stats?.downloads24h, icon: Download, color: 'text-blue-600 bg-blue-50' },
+    { label: 'Most active sport', value: stats ? (stats.mostActiveSport ? `${stats.mostActiveSport.sport} (${stats.mostActiveSport.players})` : '—') : undefined, icon: Trophy, color: 'text-orange-600 bg-orange-50' },
   ];
 
   return (
@@ -80,7 +80,7 @@ export default function CvMonitor() {
       {/* A. KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-xl p-4">
+          <div key={label} className="bg-white border border-gray-200 rounded-lg p-4">
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color}`}><Icon className="w-5 h-5" /></div>
             <div className="text-2xl font-bold mt-3 text-gray-900">{value === undefined ? <Loader2 className="w-5 h-5 animate-spin text-gray-400" /> : value}</div>
             <div className="text-xs text-gray-500 mt-1">{label}</div>
@@ -90,7 +90,7 @@ export default function CvMonitor() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* B. Directory */}
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-lg overflow-hidden">
           <div className="p-4 border-b border-gray-100 flex items-center gap-3">
             <h2 className="font-semibold text-gray-900">Registered players</h2>
             <div className="relative ml-auto w-full max-w-xs">
@@ -117,7 +117,7 @@ export default function CvMonitor() {
                     <td className="px-4 py-2">{p.sport || '—'}</td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 bg-gray-200 rounded-full"><div className={`h-1.5 rounded-full ${p.completion >= (stats?.completedThreshold ?? 60) ? 'bg-green-500' : 'bg-amber-400'}`} style={{ width: `${Math.min(100, p.completion)}%` }} /></div>
+                        <div className="w-16 h-1.5 bg-gray-200 rounded-full"><div className={`h-1.5 rounded-full ${p.completion >= (stats?.completedThreshold ?? 60) ? 'bg-blue-500' : 'bg-orange-400'}`} style={{ width: `${Math.min(100, p.completion)}%` }} /></div>
                         <span className="text-xs text-gray-600">{p.completion}%</span>
                       </div>
                     </td>
@@ -136,11 +136,11 @@ export default function CvMonitor() {
         </div>
 
         {/* C. Live activity */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col max-h-[640px]">
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col max-h-[640px]">
           <div className="p-4 border-b border-gray-100 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-green-600" />
+            <Activity className="w-4 h-4 text-blue-600" />
             <h2 className="font-semibold text-gray-900">Live activity</h2>
-            <span className="ml-auto flex items-center gap-1 text-xs text-green-600"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />live</span>
+            <span className="ml-auto flex items-center gap-1 text-xs text-blue-600"><span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />live</span>
           </div>
           <ul className="overflow-y-auto divide-y divide-gray-100">
             {feed.length === 0 && <li className="p-6 text-center text-sm text-gray-500">No activity yet.</li>}

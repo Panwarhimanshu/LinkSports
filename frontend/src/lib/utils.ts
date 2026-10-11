@@ -37,9 +37,9 @@ export function getInitials(name: string) {
 
 export function getRoleBadgeColor(role: string) {
   switch (role) {
-    case 'athlete': return 'bg-green-100 text-green-800';
+    case 'athlete': return 'bg-blue-100 text-blue-800';
     case 'coach': return 'bg-blue-100 text-blue-800';
-    case 'professional': return 'bg-purple-100 text-purple-800';
+    case 'professional': return 'bg-blue-100 text-blue-800';
     case 'organization': return 'bg-orange-100 text-orange-800';
     case 'admin': return 'bg-red-100 text-red-800';
     default: return 'bg-gray-100 text-gray-800';
@@ -49,8 +49,8 @@ export function getRoleBadgeColor(role: string) {
 export function getListingTypeBadge(type: string) {
   switch (type) {
     case 'trial': return { label: 'Trial', color: 'bg-blue-100 text-blue-800' };
-    case 'event': return { label: 'Event', color: 'bg-green-100 text-green-800' };
-    case 'tournament': return { label: 'Tournament', color: 'bg-purple-100 text-purple-800' };
+    case 'event': return { label: 'Event', color: 'bg-blue-100 text-blue-800' };
+    case 'tournament': return { label: 'Tournament', color: 'bg-blue-100 text-blue-800' };
     case 'admission': return { label: 'Admission', color: 'bg-orange-100 text-orange-800' };
     default: return { label: type, color: 'bg-gray-100 text-gray-800' };
   }
@@ -58,14 +58,14 @@ export function getListingTypeBadge(type: string) {
 
 export function getStatusBadge(status: string) {
   switch (status) {
-    case 'published': return { label: 'Active', color: 'bg-green-100 text-green-800' };
-    case 'pending': return { label: 'Under Review', color: 'bg-yellow-100 text-yellow-800' };
+    case 'published': return { label: 'Active', color: 'bg-blue-100 text-blue-800' };
+    case 'pending': return { label: 'Under Review', color: 'bg-orange-100 text-orange-800' };
     case 'draft': return { label: 'Draft', color: 'bg-gray-100 text-gray-800' };
     case 'closed': return { label: 'Closed', color: 'bg-red-100 text-red-800' };
     case 'completed': return { label: 'Completed', color: 'bg-blue-100 text-blue-800' };
     case 'cancelled': return { label: 'Cancelled', color: 'bg-red-100 text-red-800' };
     case 'applied': return { label: 'Applied', color: 'bg-blue-100 text-blue-800' };
-    case 'shortlisted': return { label: 'Shortlisted', color: 'bg-green-100 text-green-800' };
+    case 'shortlisted': return { label: 'Shortlisted', color: 'bg-blue-100 text-blue-800' };
     case 'rejected': return { label: 'Not Selected', color: 'bg-red-100 text-red-800' };
     default: return { label: status, color: 'bg-gray-100 text-gray-800' };
   }

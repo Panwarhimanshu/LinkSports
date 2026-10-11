@@ -91,7 +91,7 @@ export default function OrgListingsPage() {
                           <span className={`badge ${typeBadge.color}`}>{typeBadge.label}</span>
                           <span className={`badge ${statusBadge.color}`}>{statusBadge.label}</span>
                           {l.isPaidListing && (
-                            <span className="badge bg-yellow-100 text-yellow-700 flex items-center gap-1">
+                            <span className="badge bg-orange-100 text-orange-700 flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" /> Featured
                             </span>
                           )}

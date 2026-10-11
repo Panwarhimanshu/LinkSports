@@ -382,7 +382,7 @@ export default function ProfileEditPage() {
             {activeTab === 'basic' && (
               <div className="card p-6 flex flex-col items-center gap-4">
                 <div className="relative group">
-                  <div className="w-32 h-32 rounded-full bg-brand text-white flex items-center justify-center text-4xl font-bold overflow-hidden border-4 border-white shadow-md">
+                  <div className="w-32 h-32 rounded-full bg-brand text-white flex items-center justify-center text-4xl font-bold overflow-hidden border-4 border-white shadow-sm">
                     {user?.role === 'organization' ? (
                       getPhotoUrl(orgForm.logo) ? <img src={getPhotoUrl(orgForm.logo)!} className="w-full h-full object-cover" alt="" /> : getInitials(orgForm.name || 'O')
                     ) : (

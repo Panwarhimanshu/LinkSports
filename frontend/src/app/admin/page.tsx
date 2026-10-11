@@ -26,7 +26,7 @@ export default function AdminDashboard() {
 
   return (
     <>
-      <PageHeader title="Dashboard" subtitle="Everything happening on LinkSports — website and app." />
+      <PageHeader title="Dashboard" subtitle="Key numbers for the website and app." />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total users" value={n(d?.users?.total)} icon={Users} />
@@ -48,9 +48,9 @@ export default function AdminDashboard() {
               { label: 'Reported reviews', value: undefined, href: '/admin/reviews?reported=true' },
             ].map((x) => (
               <Link key={x.label} href={x.href} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-blue-50 group">
-                <span className="flex items-center gap-2 text-sm text-gray-700"><Clock className="w-4 h-4 text-amber-500" />{x.label}</span>
+                <span className="flex items-center gap-2 text-sm text-gray-700"><Clock className="w-4 h-4 text-orange-500" />{x.label}</span>
                 <span className="flex items-center gap-2">
-                  {x.value !== undefined && <span className={`text-sm font-bold ${x.value ? 'text-amber-600' : 'text-gray-400'}`}>{x.value ?? '…'}</span>}
+                  {x.value !== undefined && <span className={`text-sm font-bold ${x.value ? 'text-orange-600' : 'text-gray-400'}`}>{x.value ?? '…'}</span>}
                   <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-brand" />
                 </span>
               </Link>

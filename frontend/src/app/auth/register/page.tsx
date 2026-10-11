@@ -37,9 +37,9 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
   if (/[^a-zA-Z0-9]/.test(pw)) score++;
   if (pw.length >= 12) score++;
   if (score <= 1) return { score, label: 'Weak', color: 'bg-red-500' };
-  if (score <= 2) return { score, label: 'Fair', color: 'bg-yellow-500' };
+  if (score <= 2) return { score, label: 'Fair', color: 'bg-orange-500' };
   if (score <= 3) return { score, label: 'Good', color: 'bg-blue-500' };
-  return { score, label: 'Strong', color: 'bg-green-500' };
+  return { score, label: 'Strong', color: 'bg-blue-500' };
 }
 
 const ROLE_COPY: Record<string, { heading: string; sub: string; accent: string }> = {
@@ -51,7 +51,7 @@ const ROLE_COPY: Record<string, { heading: string; sub: string; accent: string }
   coach: {
     heading: 'Create your Coaching profile',
     sub: 'Build your professional coaching profile and find jobs at schools, academies, and clubs.',
-    accent: 'text-purple-600',
+    accent: 'text-blue-600',
   },
   organization: {
     heading: 'Register your Organisation',
@@ -61,7 +61,7 @@ const ROLE_COPY: Record<string, { heading: string; sub: string; accent: string }
   professional: {
     heading: 'Create your Professional profile',
     sub: 'Connect with the sports ecosystem as a physio, nutritionist, or sports professional.',
-    accent: 'text-teal-600',
+    accent: 'text-blue-600',
   },
 };
 
@@ -104,7 +104,7 @@ function RegisterForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-6">
@@ -259,7 +259,7 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center"><div className="w-8 h-8 animate-spin rounded-full border-4 border-brand border-t-transparent" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="w-8 h-8 animate-spin rounded-full border-4 border-brand border-t-transparent" /></div>}>
       <RegisterForm />
     </Suspense>
   );

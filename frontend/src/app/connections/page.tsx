@@ -105,7 +105,7 @@ export default function ConnectionsPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-6">My Network</h1>
 
           {/* Tabs */}
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit mb-6">
             {TABS.map((tab) => {
               const count = tab.id === 'connections' ? connections.length : tab.id === 'pending' ? pendingRequests.length : sentRequests.length;
               return (
@@ -268,7 +268,7 @@ export default function ConnectionsPage() {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900">{name}</h3>
                           <p className="text-sm text-gray-500 capitalize">{role}{sport ? ` · ${sport}` : ''}</p>
-                          <p className="text-xs text-amber-600 mt-0.5">Request pending</p>
+                          <p className="text-xs text-orange-600 mt-0.5">Request pending</p>
                         </div>
                         <button
                           onClick={() => handleWithdrawSent(req._id as string)}

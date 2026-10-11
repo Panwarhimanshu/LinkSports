@@ -17,30 +17,27 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   );
 }
 
-export function StatCard({ label, value, icon: Icon, tone = 'blue', hint }: {
-  label: string; value: ReactNode; icon?: any; tone?: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'gray'; hint?: string;
+export function StatCard({ label, value, icon: Icon, hint }: {
+  label: string; value: ReactNode; icon?: any; tone?: string; hint?: string;
 }) {
-  const tones: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-600', green: 'bg-green-50 text-green-600', purple: 'bg-purple-50 text-purple-600',
-    orange: 'bg-orange-50 text-orange-600', red: 'bg-red-50 text-red-600', gray: 'bg-gray-100 text-gray-600',
-  };
+  // one quiet style for every metric: the number carries the card, not a coloured icon
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+    <div className="bg-white rounded-lg border border-gray-200 p-5">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{label}</p>
-        {Icon && <span className={`w-9 h-9 rounded-lg flex items-center justify-center ${tones[tone]}`}><Icon className="w-5 h-5" /></span>}
+        <p className="text-sm font-medium text-gray-500">{label}</p>
+        {Icon && <Icon className="w-4 h-4 text-gray-400" />}
       </div>
-      <p className="text-2xl font-bold text-gray-900 mt-2">{value}</p>
-      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+      <p className="text-2xl font-semibold text-gray-900 mt-2 tabular-nums">{value}</p>
+      {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
     </div>
   );
 }
 
 export function Card({ title, actions, children, className = '' }: { title?: string; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`bg-white rounded-xl border border-gray-100 shadow-sm ${className}`}>
+    <section className={`bg-white rounded-lg border border-gray-200 ${className}`}>
       {(title || actions) && (
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-gray-200">
           {title && <h2 className="font-semibold text-gray-900">{title}</h2>}
           {actions}
         </div>
@@ -51,14 +48,14 @@ export function Card({ title, actions, children, className = '' }: { title?: str
 }
 
 const BADGE: Record<string, string> = {
-  published: 'bg-green-100 text-green-700', verified: 'bg-green-100 text-green-700', success: 'bg-green-100 text-green-700',
-  active: 'bg-green-100 text-green-700', shortlisted: 'bg-green-100 text-green-700', selected: 'bg-green-100 text-green-700',
-  pending: 'bg-amber-100 text-amber-700', draft: 'bg-gray-100 text-gray-600', applied: 'bg-blue-100 text-blue-700',
+  published: 'bg-blue-100 text-blue-700', verified: 'bg-blue-100 text-blue-700', success: 'bg-blue-100 text-blue-700',
+  active: 'bg-blue-100 text-blue-700', shortlisted: 'bg-blue-100 text-blue-700', selected: 'bg-blue-100 text-blue-700',
+  pending: 'bg-orange-100 text-orange-700', draft: 'bg-gray-100 text-gray-600', applied: 'bg-blue-100 text-blue-700',
   closed: 'bg-gray-200 text-gray-700', completed: 'bg-gray-200 text-gray-700',
   rejected: 'bg-red-100 text-red-700', cancelled: 'bg-red-100 text-red-700', failed: 'bg-red-100 text-red-700',
   suspended: 'bg-red-100 text-red-700', withdrawn: 'bg-gray-100 text-gray-600', reported: 'bg-red-100 text-red-700',
-  admin: 'bg-purple-100 text-purple-700', athlete: 'bg-blue-100 text-blue-700', coach: 'bg-teal-100 text-teal-700',
-  professional: 'bg-cyan-100 text-cyan-700', organization: 'bg-orange-100 text-orange-700',
+  admin: 'bg-blue-100 text-blue-700', athlete: 'bg-blue-100 text-blue-700', coach: 'bg-blue-100 text-blue-700',
+  professional: 'bg-blue-100 text-blue-700', organization: 'bg-orange-100 text-orange-700',
 };
 export function Badge({ value, label }: { value?: string; label?: string }) {
   if (!value) return null;
@@ -136,7 +133,7 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-start sm:items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
       <div role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}
-        className={`bg-white rounded-2xl shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} my-8`}>
+        className={`bg-white rounded-lg shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} my-8`}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">{title}</h2>
           <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center"><X className="w-5 h-5" /></button>

@@ -48,7 +48,7 @@ function PersonCard({
 }) {
   const photoUrl = getPhotoUrl(photo || null);
   return (
-    <div className="flex-shrink-0 w-44 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col items-center text-center">
+    <div className="flex-shrink-0 w-44 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col items-center text-center">
       <Link href={profileHref}>
         <div className="w-16 h-16 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xl font-bold overflow-hidden mb-3 ring-2 ring-white shadow">
           {photoUrl ? (
@@ -81,7 +81,7 @@ function PersonCard({
             'mt-3 w-full text-xs font-semibold py-1.5 rounded-lg transition-all',
             connState === 'none' && 'bg-brand text-white hover:bg-brand-dark',
             connState === 'pending' && 'bg-orange-100 text-orange-600 cursor-default',
-            connState === 'connected' && 'bg-green-100 text-green-700 cursor-default',
+            connState === 'connected' && 'bg-blue-100 text-blue-700 cursor-default',
           )}
         >
           {connState === 'none' && 'Connect'}
@@ -135,7 +135,7 @@ function HScrollSection({ title, icon: Icon, href, onDismiss, children }: {
 // ── Skeleton cards ─────────────────────────────────────────────────
 function CardSkeleton() {
   return (
-    <div className="flex-shrink-0 w-44 bg-gray-50 rounded-2xl border border-gray-100 p-4 flex flex-col items-center animate-pulse">
+    <div className="flex-shrink-0 w-44 bg-gray-50 rounded-lg border border-gray-100 p-4 flex flex-col items-center animate-pulse">
       <div className="w-16 h-16 rounded-full bg-gray-200 mb-3" />
       <div className="h-3 bg-gray-200 rounded w-24 mb-1.5" />
       <div className="h-2.5 bg-gray-200 rounded w-16 mb-1" />
@@ -246,7 +246,7 @@ export default function DashboardPage() {
           <div className="max-w-4xl mx-auto space-y-5">
 
               {/* ── Welcome banner ── */}
-              <div className="bg-gradient-to-r from-brand to-blue-500 rounded-2xl p-6 text-white relative overflow-hidden">
+              <div className="bg-brand rounded-lg p-6 text-white relative overflow-hidden">
                 <div className="absolute right-0 top-0 w-48 h-full opacity-10">
                   <Trophy className="w-full h-full" />
                 </div>
@@ -288,7 +288,7 @@ export default function DashboardPage() {
                       const rp = (req as any).requesterProfile;
                       const name = rp?.fullName || rp?.name || (req.requesterId as any)?.email || 'Someone';
                       return (
-                        <div key={req._id as string} className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-3 py-2">
+                        <div key={req._id as string} className="flex items-center gap-2.5 bg-gray-50 rounded-lg px-3 py-2">
                           <div className="w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xs font-bold overflow-hidden flex-shrink-0">
                             {getPhotoUrl(rp?.photo) ? (
                               <img src={getPhotoUrl(rp.photo)!} alt={name} className="w-full h-full object-cover" />
@@ -409,9 +409,9 @@ export default function DashboardPage() {
                         const photoUrl = getPhotoUrl((org.logo as string) || null);
                         const loc = (org.contact as Record<string, string>) || {};
                         return (
-                          <div key={org._id as string} className="flex-shrink-0 w-44 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col items-center text-center">
+                          <div key={org._id as string} className="flex-shrink-0 w-44 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col items-center text-center">
                             <Link href={`/org/${(org.profileUrl as string) || (org._id as string)}`}>
-                              <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center overflow-hidden mb-3 ring-2 ring-white shadow">
+                              <div className="w-16 h-16 rounded-lg bg-orange-50 flex items-center justify-center overflow-hidden mb-3 ring-2 ring-white shadow">
                                 {photoUrl
                                   ? <img src={photoUrl} alt={org.name as string} className="w-full h-full object-cover" />
                                   : <Building2 className="w-7 h-7 text-orange-500" />}
@@ -427,7 +427,7 @@ export default function DashboardPage() {
                               </p>
                             )}
                             {!!(org.isVerified) && (
-                              <span className="mt-2 flex items-center gap-1 text-[11px] text-green-600 font-medium">
+                              <span className="mt-2 flex items-center gap-1 text-[11px] text-blue-600 font-medium">
                                 <CheckCircle2 className="w-3 h-3" /> Verified
                               </span>
                             )}
@@ -450,7 +450,7 @@ export default function DashboardPage() {
                 {coreLoading ? (
                   <div className="p-5 grid sm:grid-cols-2 gap-3">
                     {Array(4).fill(0).map((_, i) => (
-                      <div key={i} className="animate-pulse bg-gray-100 rounded-xl h-20" />
+                      <div key={i} className="animate-pulse bg-gray-100 rounded-lg h-20" />
                     ))}
                   </div>
                 ) : upcomingListings.length === 0 ? (
@@ -465,7 +465,7 @@ export default function DashboardPage() {
                         <Link
                           key={listing._id as string}
                           href={`/listings/${listing._id}`}
-                          className="group flex gap-3 p-3 rounded-xl border border-gray-100 hover:border-brand/30 hover:bg-blue-50/30 transition-all"
+                          className="group flex gap-3 p-3 rounded-lg border border-gray-100 hover:border-brand/30 hover:bg-blue-50/30 transition-all"
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 mb-1">
@@ -501,7 +501,7 @@ export default function DashboardPage() {
                   <div className="divide-y divide-gray-50">
                     {Array(3).fill(0).map((_, i) => (
                       <div key={i} className="p-4 flex gap-3 animate-pulse">
-                        <div className="w-10 h-10 rounded-xl bg-gray-100 flex-shrink-0" />
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0" />
                         <div className="flex-1"><div className="h-3.5 bg-gray-100 rounded w-3/4 mb-2" /><div className="h-3 bg-gray-100 rounded w-1/2" /></div>
                       </div>
                     ))}
@@ -518,7 +518,7 @@ export default function DashboardPage() {
                           href={`/jobs/${job._id}`}
                           className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors group"
                         >
-                          <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
                             <Building2 className="w-5 h-5 text-brand" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -546,7 +546,7 @@ export default function DashboardPage() {
                 <div className="card">
                   <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Trophy className="w-4 h-4 text-green-600" />
+                      <Trophy className="w-4 h-4 text-blue-600" />
                       <h2 className="font-semibold text-gray-900">Recent Applications</h2>
                     </div>
                     <Link href="/profile/applications" className="text-xs text-brand hover:underline flex items-center gap-1">

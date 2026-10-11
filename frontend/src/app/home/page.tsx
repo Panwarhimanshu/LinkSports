@@ -64,26 +64,26 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <Link
                   href="/auth/register?role=athlete"
-                  className="flex items-center justify-center gap-2 bg-brand text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
+                  className="flex items-center justify-center gap-2 bg-brand text-white font-semibold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
                 >
                   I'm an Athlete / Coach → Join Free
                 </Link>
                 <Link
                   href="/auth/register?role=organization"
-                  className="flex items-center justify-center gap-2 bg-white border-2 border-brand text-brand font-semibold px-6 py-3 rounded-xl hover:bg-blue-50 transition-colors"
+                  className="flex items-center justify-center gap-2 bg-white border-2 border-brand text-brand font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
                 >
                   I'm an Organization → Register
                 </Link>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500">
-                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Free forever for athletes &amp; coaches</span>
-                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Takes under 5 minutes</span>
-                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> 50+ sports supported</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-blue-500" /> Free forever for athletes &amp; coaches</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-blue-500" /> Takes under 5 minutes</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-blue-500" /> 50+ sports supported</span>
               </div>
             </div>
             {/* Right — mock Sports CV preview */}
             <div className="hidden lg:block">
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden max-w-sm mx-auto">
+              <div className="bg-white rounded-lg border border-gray-200 shadow-lg overflow-hidden max-w-sm mx-auto">
                 <div className="bg-brand px-6 py-3 flex items-center justify-between">
                   <span className="text-white text-xs font-semibold tracking-wide">SPORTS CV</span>
                   <span className="text-blue-200 text-xs">@arjun-sharma</span>
@@ -101,7 +101,7 @@ export default function HomePage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     {[{ v: '47', l: 'Matches' }, { v: '12', l: 'Goals' }, { v: '3', l: 'Medals' }].map(({ v, l }) => (
-                      <div key={l} className="bg-gray-50 rounded-xl p-2.5 text-center">
+                      <div key={l} className="bg-gray-50 rounded-lg p-2.5 text-center">
                         <p className="text-lg font-bold text-gray-900">{v}</p>
                         <p className="text-xs text-gray-400">{l}</p>
                       </div>
@@ -128,9 +128,9 @@ export default function HomePage() {
               </div>
               {/* Floating badge */}
               <div className="flex justify-center mt-4 gap-3">
-                <div className="bg-green-50 border border-green-200 rounded-full px-4 py-1.5 flex items-center gap-2">
-                  <CheckCircle className="w-3.5 h-3.5 text-green-600" />
-                  <span className="text-xs font-medium text-green-700">Discovered by 3 academies</span>
+                <div className="bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 flex items-center gap-2">
+                  <CheckCircle className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="text-xs font-medium text-blue-700">Discovered by 3 academies</span>
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 flex items-center gap-2">
                   <Trophy className="w-3.5 h-3.5 text-brand" />
@@ -152,7 +152,7 @@ export default function HomePage() {
               { value: '80%', desc: 'higher cost of physical scouting compared to digital pre-shortlisting' },
               { value: '0', desc: 'platforms exist in India that connect athletes, coaches, and organizations in one place' },
             ].map(({ value, desc }) => (
-              <div key={value} className="text-center p-8 bg-gray-800 rounded-2xl">
+              <div key={value} className="text-center p-8 bg-gray-800 rounded-lg">
                 <p className="text-5xl font-bold text-brand mb-3">{value}</p>
                 <p className="text-gray-300 text-sm leading-relaxed">{desc}</p>
               </div>
@@ -212,7 +212,7 @@ export default function HomePage() {
               <p className="text-xs text-gray-400 mt-3">Free forever. No credit card. No hidden fees. Under 5 minutes to set up.</p>
             </div>
             {/* Mock Sports CV Card */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
               {/* Card header */}
               <div className="bg-brand px-6 py-4 flex items-center justify-between">
                 <span className="text-white text-xs font-semibold tracking-wide">SPORTS CV</span>
@@ -233,7 +233,7 @@ export default function HomePage() {
                 {/* Stats row */}
                 <div className="grid grid-cols-3 gap-3 mb-5">
                   {[{ v: '47', l: 'Matches' }, { v: '12', l: 'Goals' }, { v: '3', l: 'Medals' }].map(({ v, l }) => (
-                    <div key={l} className="bg-gray-50 rounded-xl p-3 text-center">
+                    <div key={l} className="bg-gray-50 rounded-lg p-3 text-center">
                       <p className="text-xl font-bold text-gray-900">{v}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{l}</p>
                     </div>
@@ -269,18 +269,18 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             {/* Mock Coaching Profile Card */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden order-2 md:order-1">
-              <div className="bg-purple-600 px-6 py-4 flex items-center justify-between">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden order-2 md:order-1">
+              <div className="bg-blue-600 px-6 py-4 flex items-center justify-between">
                 <span className="text-white text-xs font-semibold tracking-wide">COACHING PROFILE</span>
-                <span className="text-purple-200 text-xs">@coach-ravi</span>
+                <span className="text-blue-200 text-xs">@coach-ravi</span>
               </div>
               <div className="p-6">
                 <div className="flex items-center gap-4 mb-5">
-                  <div className="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-lg flex-shrink-0">RK</div>
+                  <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg flex-shrink-0">RK</div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-lg">Ravi Kumar</h3>
                     <div className="flex items-center gap-2 flex-wrap mt-1">
-                      <span className="bg-purple-50 text-purple-700 text-xs font-medium px-2 py-0.5 rounded-full">Football Coach</span>
+                      <span className="bg-blue-50 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-full">Football Coach</span>
                       <span className="text-gray-400 text-xs">12 yrs experience</span>
                     </div>
                   </div>
@@ -288,7 +288,7 @@ export default function HomePage() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 mb-5">
                   {[{ v: '200+', l: 'Athletes Trained' }, { v: 'AFC D', l: 'Certification' }, { v: '8', l: 'State Titles' }].map(({ v, l }) => (
-                    <div key={l} className="bg-gray-50 rounded-xl p-3 text-center">
+                    <div key={l} className="bg-gray-50 rounded-lg p-3 text-center">
                       <p className="text-base font-bold text-gray-900 leading-tight">{v}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{l}</p>
                     </div>
@@ -313,13 +313,13 @@ export default function HomePage() {
                 </ul>
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                   <Link2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-purple-600 truncate">@coach-ravi</span>
+                  <span className="text-xs text-blue-600 truncate">@coach-ravi</span>
                   <span className="ml-auto text-xs text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-100">Copy</span>
                 </div>
               </div>
             </div>
             <div className="order-1 md:order-2">
-              <span className="inline-block text-xs font-semibold text-purple-600 uppercase tracking-wider bg-purple-50 px-3 py-1 rounded-full mb-4">
+              <span className="inline-block text-xs font-semibold text-blue-600 uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-full mb-4">
                 For Coaches & PE Teachers
               </span>
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -338,8 +338,8 @@ export default function HomePage() {
                   { icon: BarChart2, text: 'Track Your Impact — See who views your profile and which institutions are searching for coaches like you' },
                 ].map(({ icon: Icon, text }) => (
                   <li key={text} className="flex items-start gap-3 text-sm text-gray-700">
-                    <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Icon className="w-4 h-4 text-purple-600" />
+                    <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon className="w-4 h-4 text-blue-600" />
                     </div>
                     <span>{text}</span>
                   </li>
@@ -347,7 +347,7 @@ export default function HomePage() {
               </ul>
               <Link
                 href="/auth/register?role=coach"
-                className="inline-flex items-center gap-2 bg-purple-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Build Your Coaching Profile — Free <ArrowRight className="w-4 h-4" />
               </Link>
@@ -389,14 +389,14 @@ export default function HomePage() {
               </ul>
               <Link
                 href="/auth/register?role=organization"
-                className="inline-flex items-center gap-2 bg-orange-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-orange-700 transition-colors"
+                className="inline-flex items-center gap-2 bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors"
               >
                 Register Your Organization <ArrowRight className="w-4 h-4" />
               </Link>
               <p className="text-xs text-gray-400 mt-3">Event and trial listings start at just ₹50. Organization registration is free.</p>
             </div>
             {/* Mock applicant management card */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
               <div className="bg-orange-600 px-6 py-3 flex items-center justify-between">
                 <span className="text-white text-xs font-semibold tracking-wide">APPLICANT DASHBOARD</span>
                 <span className="text-orange-200 text-xs">Hindustan United FC</span>
@@ -404,13 +404,13 @@ export default function HomePage() {
               <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-semibold text-gray-900">U-29 Trial — Applicants</p>
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">24 applied</span>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">24 applied</span>
                 </div>
                 <div className="space-y-2.5 mb-4">
                   {[
-                    { name: 'Arjun Sharma', sport: 'Football · Midfielder', status: 'Shortlisted', color: 'bg-green-100 text-green-700' },
-                    { name: 'Rohit Patel', sport: 'Football · Striker', status: 'Under Review', color: 'bg-yellow-100 text-yellow-700' },
-                    { name: 'Priya Nair', sport: 'Football · Defender', status: 'Shortlisted', color: 'bg-green-100 text-green-700' },
+                    { name: 'Arjun Sharma', sport: 'Football · Midfielder', status: 'Shortlisted', color: 'bg-blue-100 text-blue-700' },
+                    { name: 'Rohit Patel', sport: 'Football · Striker', status: 'Under Review', color: 'bg-orange-100 text-orange-700' },
+                    { name: 'Priya Nair', sport: 'Football · Defender', status: 'Shortlisted', color: 'bg-blue-100 text-blue-700' },
                     { name: 'Suresh Yadav', sport: 'Football · Goalkeeper', status: 'Rejected', color: 'bg-red-100 text-red-600' },
                   ].map(({ name, sport, status, color }) => (
                     <div key={name} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
@@ -451,7 +451,7 @@ export default function HomePage() {
               { step: '2', emoji: '🔗', title: 'Share & Get Discovered', desc: 'Your profile gets a unique shareable link. Organizations and scouts can search and find you by sport, location, and level.' },
               { step: '3', emoji: '🎯', title: 'Find Opportunities', desc: 'Browse trials, tournaments, and jobs. Apply with one click. Your complete Sports CV is attached automatically.' },
             ].map(({ step, emoji, title, desc }) => (
-              <div key={step} className="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100">
+              <div key={step} className="text-center p-8 bg-gray-50 rounded-lg border border-gray-100">
                 <div className="w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center text-lg font-bold mx-auto mb-4">
                   {step}
                 </div>
@@ -478,14 +478,14 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { icon: Users, title: 'Sports CV & Profiles', desc: 'Build a professional digital sports identity with achievements, media, career history, and stats. Download as PDF anytime.', color: 'bg-blue-50 text-blue-600' },
-              { icon: Search, title: 'Trials & Tournaments', desc: 'Discover and apply to trials, selection camps, and tournaments across India. Never miss an opportunity again.', color: 'bg-green-50 text-green-600' },
-              { icon: Briefcase, title: 'Sports Job Board', desc: 'Find coaching positions, PE teacher jobs, trainer roles, and sports management openings. One-click apply.', color: 'bg-purple-50 text-purple-600' },
+              { icon: Search, title: 'Trials & Tournaments', desc: 'Discover and apply to trials, selection camps, and tournaments across India. Never miss an opportunity again.', color: 'bg-blue-50 text-blue-600' },
+              { icon: Briefcase, title: 'Sports Job Board', desc: 'Find coaching positions, PE teacher jobs, trainer roles, and sports management openings. One-click apply.', color: 'bg-blue-50 text-blue-600' },
               { icon: Shield, title: 'Verified Organizations', desc: 'Every academy and club is document-verified. Athletes and parents can trust who they connect with.', color: 'bg-orange-50 text-orange-600' },
               { icon: Trophy, title: 'Professional Networking', desc: 'Connect with coaches, athletes, and organizations. Build meaningful sports relationships that advance your career.', color: 'bg-red-50 text-red-600' },
-              { icon: Star, title: 'Multi-Sport Platform', desc: 'Cricket, football, kabaddi, badminton, athletics, swimming, hockey, wrestling, boxing — and 40+ more sports supported.', color: 'bg-yellow-50 text-yellow-600' },
+              { icon: Star, title: 'Multi-Sport Platform', desc: 'Cricket, football, kabaddi, badminton, athletics, swimming, hockey, wrestling, boxing — and 40+ more sports supported.', color: 'bg-orange-50 text-orange-600' },
             ].map(({ icon: Icon, title, desc, color }) => (
               <div key={title} className="card p-6">
-                <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center mb-4`}>
+                <div className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center mb-4`}>
                   <Icon className="w-6 h-6" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
@@ -512,7 +512,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <div className="max-w-2xl mx-auto bg-gray-50 rounded-2xl p-8 border border-gray-200">
+          <div className="max-w-2xl mx-auto bg-gray-50 rounded-lg p-8 border border-gray-200">
             <p className="text-4xl text-gray-300 leading-none mb-4">"</p>
             <p className="text-gray-700 leading-relaxed italic mb-6">
               We built LinkSports because we saw talented athletes in Tier-2 cities
@@ -563,17 +563,17 @@ export default function HomePage() {
               "Early organizations get the first pick of India's emerging talent pipeline.",
             ].map((point) => (
               <li key={point} className="flex items-start gap-2 text-blue-100 text-sm">
-                <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-400" />
+                <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
                 <span>{point}</span>
               </li>
             ))}
           </ul>
           <p className="text-white font-medium mb-8">The best time to create your Sports CV was yesterday. The second best time is now.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/register" className="bg-white text-brand font-semibold px-8 py-3 rounded-xl hover:bg-blue-50 transition-colors">
+            <Link href="/auth/register" className="bg-white text-brand font-semibold px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors">
               Create Free Profile →
             </Link>
-            <Link href="/auth/register?role=organization" className="bg-blue-600 border border-blue-400 text-white font-semibold px-8 py-3 rounded-xl hover:bg-blue-500 transition-colors">
+            <Link href="/auth/register?role=organization" className="bg-blue-600 border border-blue-400 text-white font-semibold px-8 py-3 rounded-lg hover:bg-blue-500 transition-colors">
               Register Organization →
             </Link>
           </div>
@@ -617,7 +617,7 @@ export default function HomePage() {
                 a: 'LinkedIn is a general professional network — it doesn\'t have sport-specific features like Sports CVs, trial listings, achievement tracking, or scouting filters. Instagram is great for highlights but not searchable by scouts looking for "left-handed batsman, age 17, Gujarat." LinkSports is purpose-built for the sports ecosystem with tools that neither LinkedIn nor Instagram can offer.',
               },
             ].map(({ q, a }) => (
-              <details key={q} className="border border-gray-200 rounded-xl overflow-hidden">
+              <details key={q} className="border border-gray-200 rounded-lg overflow-hidden">
                 <summary className="flex items-center justify-between p-5 cursor-pointer font-medium text-gray-900 hover:bg-gray-50 transition-colors list-none">
                   <span>{q}</span>
                   <span className="ml-4 text-gray-400 text-xl flex-shrink-0">+</span>
@@ -645,13 +645,13 @@ export default function HomePage() {
             </Link>
             <Link
               href="/auth/register?role=coach"
-              className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
             >
               I'm a Coach <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/auth/register?role=organization"
-              className="inline-flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-xl hover:border-gray-300 transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:border-gray-300 transition-colors"
             >
               I'm an Organization <ArrowRight className="w-4 h-4" />
             </Link>

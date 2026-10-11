@@ -87,7 +87,7 @@ export default function OrgJobsPage() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className="badge bg-purple-100 text-purple-700">{j.category as string}</span>
+                          <span className="badge bg-blue-100 text-blue-700">{j.category as string}</span>
                           <span className={`badge ${statusBadge.color}`}>{statusBadge.label}</span>
                           <span className="badge bg-gray-100 text-gray-600 capitalize">
                             {(j.jobType as string)?.replace(/_/g, ' ')}

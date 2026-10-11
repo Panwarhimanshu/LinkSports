@@ -185,7 +185,7 @@ function MessagesContent() {
           style={{ height: 'calc(100vh - 64px)' }}
         >
           {/* Sidebar — hidden on mobile when chat is open */}
-          <div className={`${showChatOnMobile ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 flex-shrink-0 bg-white sm:rounded-xl border border-gray-200 flex-col overflow-hidden`}>
+          <div className={`${showChatOnMobile ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 flex-shrink-0 bg-white sm:rounded-lg border border-gray-200 flex-col overflow-hidden`}>
             <div className="p-4 border-b border-gray-100">
               <h2 className="font-semibold text-gray-900 mb-3">Messages</h2>
               <div className="relative">
@@ -276,7 +276,7 @@ function MessagesContent() {
           </div>
 
           {/* Chat panel — full screen on mobile when active */}
-          <div className={`${showChatOnMobile ? 'flex' : 'hidden sm:flex'} flex-1 flex-col bg-white sm:rounded-xl border border-gray-200 overflow-hidden`}>
+          <div className={`${showChatOnMobile ? 'flex' : 'hidden sm:flex'} flex-1 flex-col bg-white sm:rounded-lg border border-gray-200 overflow-hidden`}>
             {!activeConvId ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                 <MessageCircle className="w-16 h-16 text-gray-200 mb-4" />
@@ -337,7 +337,7 @@ function MessagesContent() {
                       const own = isOwn(msg);
                       return (
                         <div key={msg._id} className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${own ? 'bg-brand text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm'}`}>
+                          <div className={`max-w-[75%] px-4 py-2 rounded-lg text-sm ${own ? 'bg-brand text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm'}`}>
                             <p className="break-words">{msg.content}</p>
                             <p className={`text-xs mt-1 ${own ? 'text-blue-200' : 'text-gray-400'}`}>
                               {formatRelativeTime(msg.createdAt)}
@@ -359,12 +359,12 @@ function MessagesContent() {
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                       placeholder="Type a message..."
-                      className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                      className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                     />
                     <button
                       onClick={sendMessage}
                       disabled={!newMessage.trim() || isSending}
-                      className="p-2.5 bg-brand text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex-shrink-0"
+                      className="p-2.5 bg-brand text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex-shrink-0"
                     >
                       {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                     </button>

@@ -148,7 +148,7 @@ export default function JobDetailPage() {
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <span className="badge bg-purple-100 text-purple-700 text-xs px-2.5 py-1">
+                    <span className="badge bg-blue-100 text-blue-700 text-xs px-2.5 py-1">
                       {job.category as string}
                     </span>
                     <span className="badge bg-gray-100 text-gray-700 text-xs px-2.5 py-1 capitalize">
@@ -169,7 +169,7 @@ export default function JobDetailPage() {
                 {isAuthenticated && user?.role !== 'organization' && (
                   <div className="shrink-0">
                     {hasApplied ? (
-                      <div className="flex items-center gap-2 text-green-600 font-bold px-6 py-3 bg-green-50 rounded-xl border border-green-100">
+                      <div className="flex items-center gap-2 text-blue-600 font-bold px-6 py-3 bg-blue-50 rounded-lg border border-blue-100">
                         <CheckCircle className="w-5 h-5" /> Applied
                       </div>
                     ) : (
@@ -184,9 +184,9 @@ export default function JobDetailPage() {
                 )}
               </div>
 
-              <div className="grid sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-2xl mb-8 border border-gray-100">
+              <div className="grid sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg mb-8 border border-gray-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100">
+                  <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100">
                     <MapPin className="w-5 h-5 text-brand" />
                   </div>
                   <div>
@@ -195,8 +195,8 @@ export default function JobDetailPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100">
-                    <DollarSign className="w-5 h-5 text-green-600" />
+                  <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100">
+                    <DollarSign className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Salary</p>
@@ -204,7 +204,7 @@ export default function JobDetailPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100">
+                  <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100">
                     <Calendar className="w-5 h-5 text-orange-600" />
                   </div>
                   <div>
@@ -250,7 +250,7 @@ export default function JobDetailPage() {
                 {job.benefits && (
                   <div className="mt-8">
                     <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Award className="w-5 h-5 text-yellow-600" /> Benefits
+                      <Award className="w-5 h-5 text-orange-600" /> Benefits
                     </h3>
                     <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{job.benefits as string}</p>
                   </div>
@@ -260,7 +260,7 @@ export default function JobDetailPage() {
 
             {/* Apply Section */}
             {!isOwner && isAuthenticated && user?.role !== 'organization' && !hasApplied && (
-              <div id="apply-section" className="card p-8 border-2 border-brand/10 bg-gradient-to-br from-white to-blue-50/30">
+              <div id="apply-section" className="card p-8 border-2 border-brand/10 bg-white">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Quick Apply</h3>
                 <div className="space-y-4">
                   <div>
@@ -309,7 +309,7 @@ export default function JobDetailPage() {
                           const applicant = app.userId as Record<string, unknown>;
                           return (
                             <div key={app._id as string} className="card p-6 flex flex-col sm:flex-row items-center gap-6">
-                               <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl font-bold text-brand uppercase">
+                               <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center text-2xl font-bold text-brand uppercase">
                                   {applicant?.name ? (applicant.name as string)[0] : 'U'}
                                </div>
                                <div className="flex-1 text-center sm:text-left">
@@ -329,7 +329,7 @@ export default function JobDetailPage() {
                                        <button onClick={() => handleUpdateStatus(app._id as string, 'rejected')} className="btn-secondary py-2 px-6 text-sm text-red-600">Reject</button>
                                     </>
                                   ) : (
-                                     <span className={`badge ${app.status === 'shortlisted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-center py-2 px-4`}>
+                                     <span className={`badge ${app.status === 'shortlisted' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'} text-center py-2 px-4`}>
                                         {app.status as string}
                                      </span>
                                   )}
@@ -349,7 +349,7 @@ export default function JobDetailPage() {
                 <h3 className="font-bold text-gray-900 mb-4 pb-4 border-b border-gray-100">Recruiter Details</h3>
                 <div className="space-y-5">
                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-brand/5 flex items-center justify-center text-brand">
+                      <div className="w-12 h-12 rounded-lg bg-brand/5 flex items-center justify-center text-brand">
                          <Building2 className="w-6 h-6" />
                       </div>
                       <div className="min-w-0">
@@ -358,7 +358,7 @@ export default function JobDetailPage() {
                       </div>
                    </div>
                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                      <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                          <Globe className="w-6 h-6" />
                       </div>
                       <div className="min-w-0">
@@ -371,7 +371,7 @@ export default function JobDetailPage() {
                       </div>
                    </div>
                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+                      <div className="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
                          <Mail className="w-6 h-6" />
                       </div>
                       <div className="min-w-0">
@@ -392,11 +392,11 @@ export default function JobDetailPage() {
              </div>
              
              {/* Security Advice */}
-             <div className="p-5 bg-yellow-50 rounded-2xl border border-yellow-100">
-                <h4 className="text-sm font-bold text-yellow-800 flex items-center gap-2 mb-2">
+             <div className="p-5 bg-orange-50 rounded-lg border border-orange-100">
+                <h4 className="text-sm font-bold text-orange-800 flex items-center gap-2 mb-2">
                    <Clock className="w-4 h-4" /> Safety Tip
                 </h4>
-                <p className="text-xs text-yellow-700 leading-relaxed">
+                <p className="text-xs text-orange-700 leading-relaxed">
                    Never share your banking details or pay money to any recruiter on this platform. LinkSports does not charge for applications.
                 </p>
              </div>

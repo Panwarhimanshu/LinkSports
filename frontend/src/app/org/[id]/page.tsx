@@ -87,7 +87,7 @@ export default function OrgProfilePage() {
       <Navbar />
 
       {/* Banner */}
-      <div className="relative w-full h-48 sm:h-64 bg-gradient-to-r from-brand to-blue-800 overflow-hidden">
+      <div className="relative w-full h-48 sm:h-64 bg-brand overflow-hidden">
         {org.banner && (
           <img src={getPhotoUrl(org.banner as string) || ''} alt="" className="w-full h-full object-cover opacity-60" />
         )}
@@ -102,11 +102,11 @@ export default function OrgProfilePage() {
 
         {/* Verification pending banner for org owner */}
         {isOwnProfile && !org.isVerified && (
-          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-amber-800 text-sm">Verification Pending</p>
-              <p className="text-xs text-amber-700 mt-0.5">
+              <p className="font-semibold text-orange-800 text-sm">Verification Pending</p>
+              <p className="text-xs text-orange-700 mt-0.5">
                 Your organization profile is under admin review. It will be visible publicly only after verification.
                 This usually takes 1-2 business days.
               </p>
@@ -118,7 +118,7 @@ export default function OrgProfilePage() {
         <div className="card p-6 -mt-16 relative z-10 mb-6">
           <div className="flex flex-col sm:flex-row items-start gap-5">
             {/* Logo */}
-            <div className="w-24 h-24 rounded-2xl bg-brand text-white flex items-center justify-center text-3xl font-bold flex-shrink-0 overflow-hidden border-4 border-white shadow-md">
+            <div className="w-24 h-24 rounded-lg bg-brand text-white flex items-center justify-center text-3xl font-bold flex-shrink-0 overflow-hidden border-4 border-white shadow-sm">
               {getPhotoUrl(org.logo as string)
                 ? <img src={getPhotoUrl(org.logo as string)!} alt="" className="w-full h-full object-cover" />
                 : getInitials(org.name as string || 'O')}
@@ -352,7 +352,7 @@ export default function OrgProfilePage() {
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {achievements.map((a, i) => (
-                    <div key={i} className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4">
+                    <div key={i} className="bg-gray-50 border border-blue-100 rounded-lg p-4">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <p className="font-semibold text-gray-900 text-sm leading-tight">{a.title}</p>
                         {a.year && (
@@ -381,7 +381,7 @@ export default function OrgProfilePage() {
                     <Link
                       key={coach._id as string}
                       href={`/coach/${coach._id}`}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-blue-50 hover:border-blue-100 border border-transparent transition-colors"
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 hover:border-blue-100 border border-transparent transition-colors"
                     >
                       <div className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
                         {coach.photo
@@ -419,7 +419,7 @@ export default function OrgProfilePage() {
                       <Link
                         key={l._id as string}
                         href={`/listings/${l._id}`}
-                        className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-colors"
+                        className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-colors"
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -470,15 +470,15 @@ export default function OrgProfilePage() {
                       <Link
                         key={j._id as string}
                         href={`/jobs/${j._id}`}
-                        className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-colors"
+                        className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-colors"
                       >
-                        <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+                        <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
                           <Briefcase className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm text-gray-900">{j.title as string}</p>
                           <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
-                            {j.category && <span className="badge bg-purple-100 text-purple-700">{j.category as string}</span>}
+                            {j.category && <span className="badge bg-blue-100 text-blue-700">{j.category as string}</span>}
                             {j.jobType && (
                               <span className="capitalize">{(j.jobType as string).replace(/_/g, ' ')}</span>
                             )}
@@ -488,7 +488,7 @@ export default function OrgProfilePage() {
                               <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{loc.city as string}</span>
                             ) : null}
                             {salary && (
-                              <span className="text-green-600 font-medium">
+                              <span className="text-blue-600 font-medium">
                                 {formatCurrency(salary.min)} – {formatCurrency(salary.max)}/mo
                               </span>
                             )}

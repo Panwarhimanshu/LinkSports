@@ -47,7 +47,7 @@ export default function AdminSettingsPage() {
     if (v && !s.sports.some((x) => x.toLowerCase() === v.toLowerCase())) setS({ ...s, sports: [...s.sports, v] });
     setNewSport('');
   };
-  const toneCls = { info: 'bg-blue-600', success: 'bg-green-600', warning: 'bg-amber-500' }[s.banner.tone];
+  const toneCls = { info: 'bg-brand', success: 'bg-blue-900', warning: 'bg-orange-500' }[s.banner.tone];
 
   return (
     <>
@@ -58,10 +58,10 @@ export default function AdminSettingsPage() {
         <Card title="Announcement banner">
           <Toggle checked={s.banner.active} onChange={(v) => setS({ ...s, banner: { ...s.banner, active: v } })} label="Show a banner at the top of every page" />
           <div className="space-y-3 mt-4">
-            <input className={inputCls} maxLength={300} placeholder="e.g. Football trials in Delhi — register by 30 Oct" value={s.banner.text} onChange={(e) => setS({ ...s, banner: { ...s.banner, text: e.target.value } })} />
+            <input className={inputCls} maxLength={300} placeholder="e.g. Football trials in Delhi. Register by 30 Oct." value={s.banner.text} onChange={(e) => setS({ ...s, banner: { ...s.banner, text: e.target.value } })} />
             <input className={inputCls} placeholder="Link (optional), e.g. /listings" value={s.banner.link} onChange={(e) => setS({ ...s, banner: { ...s.banner, link: e.target.value } })} />
             <select className={inputCls} value={s.banner.tone} onChange={(e) => setS({ ...s, banner: { ...s.banner, tone: e.target.value as Settings['banner']['tone'] } })}>
-              <option value="info">Blue (information)</option><option value="success">Green (good news)</option><option value="warning">Amber (important)</option>
+              <option value="info">Blue (information)</option><option value="success">Dark blue (news)</option><option value="warning">Orange (important)</option>
             </select>
             {s.banner.text && <div className={`${toneCls} text-white text-sm text-center rounded-lg px-4 py-2`}>{s.banner.text}</div>}
           </div>

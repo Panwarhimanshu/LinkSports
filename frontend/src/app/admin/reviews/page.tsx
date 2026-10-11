@@ -38,7 +38,7 @@ function ReviewsAdmin() {
             <tr key={r._id} className="hover:bg-gray-50 align-top">
               <td className="px-5 py-3 max-w-[360px]">
                 <div className="flex items-center gap-0.5 mb-1">
-                  {Array.from({ length: 5 }).map((_, i) => <Star key={i} className={`w-3.5 h-3.5 ${i < (r.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />)}
+                  {Array.from({ length: 5 }).map((_, i) => <Star key={i} className={`w-3.5 h-3.5 ${i < (r.rating || 0) ? 'fill-orange-400 text-orange-400' : 'text-gray-200'}`} />)}
                   {r.isReported && <span className="ml-2"><Badge value="reported" /></span>}
                 </div>
                 <p className="text-gray-700 whitespace-pre-wrap break-words">{r.comment || <span className="text-gray-400">No comment</span>}</p>

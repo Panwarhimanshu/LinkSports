@@ -137,7 +137,7 @@ export default function Navbar() {
                   </button>
 
                   {isNotifOpen && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
                       <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                         <span className="font-bold text-gray-900">Notifications</span>
                         <Link href="/notifications" className="text-xs text-brand hover:underline" onClick={() => setIsNotifOpen(false)}>
@@ -195,7 +195,7 @@ export default function Navbar() {
                   </button>
 
                   {isProfileOpen && (
-                    <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                    <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
                       <div className="px-4 py-2 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {(profile as any)?.username
@@ -233,7 +233,7 @@ export default function Navbar() {
                             <Briefcase className="w-4 h-4 text-brand" /> My Listings
                           </Link>
                           <Link href="/org/jobs" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                            <Briefcase className="w-4 h-4 text-purple-500" /> My Jobs
+                            <Briefcase className="w-4 h-4 text-blue-500" /> My Jobs
                           </Link>
                           <Link href="/settings" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
                             <Settings className="w-4 h-4" /> Settings
@@ -329,7 +329,7 @@ export default function Navbar() {
                   {user?.role === 'organization' ? (
                     <>
                       <Link href="/org/listings" className="block px-3 py-2 rounded-lg text-sm font-medium text-brand hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>My Listings</Link>
-                      <Link href="/org/jobs" className="block px-3 py-2 rounded-lg text-sm font-medium text-purple-600 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>My Jobs</Link>
+                      <Link href="/org/jobs" className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-600 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>My Jobs</Link>
                     </>
                   ) : (
                     <Link href="/profile/applications" className="block px-3 py-2 rounded-lg text-sm font-medium text-orange-600 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>My Applications</Link>

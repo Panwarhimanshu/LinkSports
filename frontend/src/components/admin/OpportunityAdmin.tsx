@@ -108,7 +108,7 @@ export default function OpportunityAdmin({ kind }: { kind: Kind }) {
                 <div className="flex gap-1.5 justify-end whitespace-nowrap">
                   {r.status === 'pending' && (
                     <>
-                      <button onClick={() => review(r, 'approve')} className="h-8 px-2.5 rounded-lg bg-green-600 text-white text-xs font-semibold">Approve</button>
+                      <button onClick={() => review(r, 'approve')} className="h-8 px-2.5 rounded-lg bg-blue-600 text-white text-xs font-semibold">Approve</button>
                       <button onClick={() => review(r, 'reject')} className="h-8 px-2.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold">Reject</button>
                     </>
                   )}

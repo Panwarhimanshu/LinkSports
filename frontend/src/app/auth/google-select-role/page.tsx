@@ -13,9 +13,9 @@ import { cn } from '@/lib/utils';
 type Role = 'athlete' | 'coach' | 'professional' | 'organization';
 
 const roles: { id: Role; label: string; desc: string; detail: string; icon: React.ElementType; accent: string; bg: string; border: string; ring: string }[] = [
-  { id: 'athlete', label: 'Athlete', desc: 'I play sports', detail: 'Find trials, showcase your profile, connect with coaches and academies.', icon: Dumbbell, accent: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-400', ring: 'ring-emerald-300' },
+  { id: 'athlete', label: 'Athlete', desc: 'I play sports', detail: 'Find trials, showcase your profile, connect with coaches and academies.', icon: Dumbbell, accent: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-400', ring: 'ring-blue-300' },
   { id: 'coach', label: 'Coach', desc: 'I train & coach athletes', detail: 'Share your expertise, recruit athletes and grow your coaching career.', icon: User, accent: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-400', ring: 'ring-blue-300' },
-  { id: 'professional', label: 'Professional', desc: 'I work in sports', detail: 'Physio, nutritionist, sports agent or any sports support professional.', icon: Stethoscope, accent: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-400', ring: 'ring-purple-300' },
+  { id: 'professional', label: 'Professional', desc: 'I work in sports', detail: 'Physio, nutritionist, sports agent or any sports support professional.', icon: Stethoscope, accent: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-400', ring: 'ring-blue-300' },
   { id: 'organization', label: 'Organization', desc: 'I run a sports body', detail: 'Academy, club, school, federation or any sports organisation.', icon: Building2, accent: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-400', ring: 'ring-orange-300' },
 ];
 
@@ -40,7 +40,7 @@ export default function GoogleSelectRolePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex hover:opacity-90 transition-opacity">
@@ -67,12 +67,12 @@ export default function GoogleSelectRolePage() {
                   disabled={isDisabled || isLoading}
                   onClick={() => handleSelect(id)}
                   className={cn(
-                    'relative flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition-all duration-150',
+                    'relative flex items-start gap-4 p-5 rounded-lg border-2 text-left transition-all duration-150',
                     isLoading ? `${border} ${bg} ring-2 ${ring} ring-offset-1` : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm',
                     isDisabled && 'opacity-40 cursor-not-allowed',
                   )}
                 >
-                  <div className={cn('p-2.5 rounded-xl flex-shrink-0', isLoading ? bg : 'bg-gray-100')}>
+                  <div className={cn('p-2.5 rounded-lg flex-shrink-0', isLoading ? bg : 'bg-gray-100')}>
                     <Icon className={cn('w-6 h-6', isLoading ? accent : 'text-gray-500')} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -81,7 +81,7 @@ export default function GoogleSelectRolePage() {
                     <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">{detail}</p>
                   </div>
                   {isLoading && (
-                    <div className="absolute inset-0 rounded-2xl flex items-center justify-center bg-white/60">
+                    <div className="absolute inset-0 rounded-lg flex items-center justify-center bg-white/60">
                       <Loader2 className={cn('w-6 h-6 animate-spin', accent)} />
                     </div>
                   )}

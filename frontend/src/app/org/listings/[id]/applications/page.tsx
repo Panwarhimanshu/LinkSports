@@ -112,7 +112,7 @@ export default function ListingApplicationsPage() {
                      <Trophy className="w-4 h-4 text-brand" /> Listing Info
                   </h3>
                   <div className="space-y-3 text-sm">
-                     <div className="flex justify-between"><span className="text-gray-500">Status</span><span className="badge bg-green-100 text-green-700 uppercase leading-none">{listing?.status as string}</span></div>
+                     <div className="flex justify-between"><span className="text-gray-500">Status</span><span className="badge bg-blue-100 text-blue-700 uppercase leading-none">{listing?.status as string}</span></div>
                      <div className="flex justify-between"><span className="text-gray-500">Start Date</span><span className="font-medium">{formatDate(listing?.startDate as string)}</span></div>
                      <div className="flex justify-between"><span className="text-gray-500">Spots</span><span className="font-medium">{listing?.participantCount as number} / {listing?.participantLimit as number || '∞'}</span></div>
                   </div>
@@ -122,7 +122,7 @@ export default function ListingApplicationsPage() {
                <div className="card p-5">
                   <h3 className="font-bold text-gray-900 mb-4">Summary</h3>
                   <div className="space-y-2">
-                     <div className="flex justify-between text-sm"><span className="text-gray-500">Shortlisted</span><span className="font-bold text-green-600">{applications.filter(a => a.status === 'shortlisted').length}</span></div>
+                     <div className="flex justify-between text-sm"><span className="text-gray-500">Shortlisted</span><span className="font-bold text-blue-600">{applications.filter(a => a.status === 'shortlisted').length}</span></div>
                      <div className="flex justify-between text-sm"><span className="text-gray-500">Rejected</span><span className="font-bold text-red-600">{applications.filter(a => a.status === 'rejected').length}</span></div>
                      <div className="flex justify-between text-sm"><span className="text-gray-500">Pending</span><span className="font-bold text-blue-600">{applications.filter(a => a.status === 'applied').length}</span></div>
                   </div>
@@ -172,7 +172,7 @@ export default function ListingApplicationsPage() {
                         return (
                            <div key={app._id as string} className="card overflow-hidden">
                               <div className="p-6 flex flex-col md:flex-row gap-6">
-                                 <div className="w-20 h-20 rounded-2xl bg-brand/10 text-brand flex items-center justify-center text-2xl font-bold flex-shrink-0 overflow-hidden">
+                                 <div className="w-20 h-20 rounded-lg bg-brand/10 text-brand flex items-center justify-center text-2xl font-bold flex-shrink-0 overflow-hidden">
                                     {u.photo
                                       ? <img src={u.photo} alt="" className="w-full h-full object-cover" />
                                       : (u.name[0]?.toUpperCase() || '?')}
@@ -194,7 +194,7 @@ export default function ListingApplicationsPage() {
                                     </div>
                                     
                                     {answers.length > 0 && (
-                                       <div className="bg-gray-50 p-4 rounded-xl space-y-3 mb-4">
+                                       <div className="bg-gray-50 p-4 rounded-lg space-y-3 mb-4">
                                           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Application Answers</p>
                                           {answers.map((ans, i) => (
                                              <div key={i}>
@@ -213,7 +213,7 @@ export default function ListingApplicationsPage() {
                                           <>
                                              <button 
                                                 onClick={() => handleUpdateStatus(app._id as string, 'shortlisted')}
-                                                className="btn-primary text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 border-none"
+                                                className="btn-primary text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 border-none"
                                              >
                                                 Shortlist
                                              </button>

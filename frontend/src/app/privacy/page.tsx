@@ -38,7 +38,7 @@ export default function PrivacyPage() {
 
           {/* Sidebar TOC */}
           <aside className="hidden lg:block">
-            <div className="sticky top-24 bg-white rounded-xl border border-gray-200 p-5">
+            <div className="sticky top-24 bg-white rounded-lg border border-gray-200 p-5">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Contents</p>
               <ul className="space-y-1">
                 {toc.map((item) => (
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
           </aside>
 
           {/* Content */}
-          <article className="bg-white rounded-xl border border-gray-200 p-8 sm:p-10 prose prose-gray max-w-none
+          <article className="bg-white rounded-lg border border-gray-200 p-8 sm:p-10 prose prose-gray max-w-none
             prose-headings:font-bold prose-headings:text-gray-900
             prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-100
             prose-h3:text-base prose-h3:mt-6 prose-h3:mb-2
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
                 <span>Last updated: <strong className="text-gray-700">{LAST_UPDATED}</strong></span>
                 <span>Effective: <strong className="text-gray-700">{EFFECTIVE_DATE}</strong></span>
               </div>
-              <div className="mt-5 p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
+              <div className="mt-5 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
                 Your privacy matters. This policy explains exactly what personal data we collect, why we collect it, how we use and protect it, and the choices you have.
               </div>
             </div>
@@ -272,7 +272,7 @@ export default function PrivacyPage() {
             <p>
               In accordance with the Information Technology Act, 2000 and the IT Rules, 2011, the name and contact details of our Grievance Officer are:
             </p>
-            <div className="not-prose mt-4 p-5 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-700 space-y-1.5">
+            <div className="not-prose mt-4 p-5 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-700 space-y-1.5">
               <p><strong>Grievance Officer — LinkSports Technologies Private Limited</strong></p>
               <p>Email: <a href={`mailto:${CONTACT_EMAIL}`} className="text-brand hover:underline">{CONTACT_EMAIL}</a></p>
               <p>General support: <a href="mailto:support@linksports.in" className="text-brand hover:underline">support@linksports.in</a></p>

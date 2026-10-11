@@ -143,7 +143,7 @@ export default function AthleteProfilePage() {
                 </p>
               )}
               {profile.availabilityStatus && (
-                <span className="badge bg-green-100 text-green-700 mt-3 inline-block">
+                <span className="badge bg-blue-100 text-blue-700 mt-3 inline-block">
                   {(profile.availabilityStatus as string).replace(/_/g, ' ')}
                 </span>
               )}
@@ -349,7 +349,7 @@ export default function AthleteProfilePage() {
                 {(profile.isParaAthlete as boolean | undefined) && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Para Athlete</span>
-                    <span className="badge bg-purple-100 text-purple-700">Yes</span>
+                    <span className="badge bg-blue-100 text-blue-700">Yes</span>
                   </div>
                 )}
                 {(profile.secondarySports as string[])?.length > 0 && (
@@ -422,7 +422,7 @@ export default function AthleteProfilePage() {
                 <div className="space-y-3">
                   {achievements.map((a, i) => (
                     <div key={i} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
-                      <Medal className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                      <Medal className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-medium text-sm text-gray-900">{a.title as string}</p>
                         {a.year && <p className="text-xs text-gray-500">{a.year as string} {a.level ? `· ${a.level}` : ''}</p>}
@@ -445,7 +445,7 @@ export default function AthleteProfilePage() {
                     <div key={i} className="p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-start justify-between">
                         <p className="font-medium text-sm text-gray-900">{t.name as string}</p>
-                        {t.result && <span className="badge bg-green-100 text-green-700">{t.result as string}</span>}
+                        {t.result && <span className="badge bg-blue-100 text-blue-700">{t.result as string}</span>}
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
                         {t.sport as string} {t.year ? `· ${t.year}` : ''} {t.level ? `· ${t.level}` : ''}

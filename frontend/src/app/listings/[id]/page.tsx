@@ -126,7 +126,7 @@ export default function ListingDetailPage() {
               <img
                 src={listing.banner as string}
                 alt={listing.title as string}
-                className="w-full h-48 object-cover rounded-xl"
+                className="w-full h-48 object-cover rounded-lg"
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
             )}
@@ -227,8 +227,8 @@ export default function ListingDetailPage() {
                   </div>
                 ))}
                 {fee > 0 && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm font-medium text-yellow-800">Participation fee: {formatCurrency(fee)}</p>
+                  <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm font-medium text-orange-800">Participation fee: {formatCurrency(fee)}</p>
                     <div className="flex gap-2 mt-2">
                       <input type="text" placeholder="Coupon code" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="input-field text-sm" />
                     </div>
@@ -262,7 +262,7 @@ export default function ListingDetailPage() {
                   <div>
                     <p className="font-medium text-sm text-gray-900">{(org?.name as string) || 'Unknown Organisation'}</p>
                     <div className="flex items-center gap-1">
-                      {org?.isVerified && <CheckCircle className="w-3 h-3 text-green-500" />}
+                      {org?.isVerified && <CheckCircle className="w-3 h-3 text-blue-500" />}
                       <span className="text-xs text-gray-500 capitalize">{(org?.type as string) || 'Organisation'}</span>
                     </div>
                   </div>
@@ -278,7 +278,7 @@ export default function ListingDetailPage() {
                 {fee > 0 ? (
                   <p className="text-2xl font-bold text-gray-900">{formatCurrency(fee)}</p>
                 ) : (
-                  <p className="text-lg font-semibold text-green-600">Free to Apply</p>
+                  <p className="text-lg font-semibold text-blue-600">Free to Apply</p>
                 )}
               </div>
 

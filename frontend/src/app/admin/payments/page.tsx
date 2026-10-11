@@ -54,7 +54,7 @@ export default function AdminPaymentsPage() {
               <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{fmtDate(p.createdAt)}</td>
               <td className="px-5 py-3 text-gray-700 max-w-[200px] truncate">{p.userId?.email || '—'}</td>
               <td className="px-5 py-3 text-gray-600 capitalize">{String(p.type || '').replace(/_/g, ' ')}</td>
-              <td className="px-5 py-3 font-semibold text-gray-900">{fmtMoney(p.amount)}{p.discountAmount ? <span className="text-xs text-green-600 font-normal"> (−{fmtMoney(p.discountAmount)})</span> : null}</td>
+              <td className="px-5 py-3 font-semibold text-gray-900">{fmtMoney(p.amount)}{p.discountAmount ? <span className="text-xs text-blue-600 font-normal"> (−{fmtMoney(p.discountAmount)})</span> : null}</td>
               <td className="px-5 py-3 text-gray-600">{p.couponCode || '—'}</td>
               <td className="px-5 py-3"><Badge value={p.status} /></td>
               <td className="px-5 py-3 text-xs text-gray-400 font-mono">{p.razorpayPaymentId || p.razorpayOrderId || '—'}</td>

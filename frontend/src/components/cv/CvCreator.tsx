@@ -223,7 +223,7 @@ function Shell({ children, aside, wide }: { children: React.ReactNode; aside?: R
   return (
     <div className="min-h-screen bg-slate-100">
       <div className={`mx-auto w-full max-w-[430px] ${layout}`}>
-        <main className={`w-full min-h-screen bg-white flex flex-col shadow-xl relative ${wide || aside ? '' : 'lg:min-h-[calc(100vh-3rem)] lg:rounded-md'}`}>{children}</main>
+        <main className={`w-full min-h-screen bg-white flex flex-col border-x border-gray-200 relative ${wide || aside ? '' : 'lg:min-h-[calc(100vh-3rem)] lg:rounded-md'}`}>{children}</main>
         {aside && <aside className="hidden lg:flex flex-col items-center justify-center sticky top-0 h-screen">{aside}</aside>}
       </div>
     </div>
@@ -355,14 +355,14 @@ function AuthStep({ onToken }: { onToken: (t: string) => void }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 min-h-screen bg-gray-50">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center text-center mb-8">
           <Link href="/" aria-label="LinkSports"><Logo /></Link>
           <p className="text-sm text-gray-500 mt-2">India&apos;s Sports Networking Platform</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8">
           <h1 className="text-2xl font-bold text-gray-900">{stage === 'otp' ? 'Check your email' : joining ? 'Join LinkSports' : 'Welcome back'}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {stage === 'otp'
@@ -432,7 +432,7 @@ function AuthStep({ onToken }: { onToken: (t: string) => void }) {
         {process.env.NEXT_PUBLIC_DEV_LOGIN === 'true' && (
           <button
             type="button"
-            className="mt-4 w-full h-10 rounded-lg border border-dashed border-amber-500 text-amber-700 text-xs font-semibold"
+            className="mt-4 w-full h-10 rounded-lg border border-dashed border-orange-500 text-orange-700 text-xs font-semibold"
             onClick={async () => {
               try {
                 const res = await authAPI.devLogin();
@@ -787,7 +787,7 @@ function ExportStep({ profile, onChangeSport }: { profile: Record<string, any>; 
         <h1 className="font-display text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-slate-900">Your CV is ready</h1>
         <p className="text-slate-600 mt-2">Download the PDF, or post the Story card on Instagram and WhatsApp.</p>
 
-        <div ref={wrapRef} className="mt-4 w-full rounded-2xl overflow-hidden shadow-lg bg-slate-900 lg:hidden" style={{ aspectRatio: '9 / 16', position: 'relative' }}>
+        <div ref={wrapRef} className="mt-4 w-full rounded-lg overflow-hidden shadow-lg bg-slate-900 lg:hidden" style={{ aspectRatio: '9 / 16', position: 'relative' }}>
           {story ? (
             <div style={{ width: STORY_W, height: STORY_H, transform: `scale(${scale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0 }}>
               <StoryCard data={story} logoSrc={logo} />
@@ -830,7 +830,7 @@ function ExportStep({ profile, onChangeSport }: { profile: Record<string, any>; 
           <p className="text-white text-center text-sm font-semibold max-w-xs">
             Press and hold the image, then tap <span className="text-blue-300">“Save to Photos”</span> or <span className="text-blue-300">“Download image”</span>
           </p>
-          <img src={savePreview} alt="Your LinkSports Story card" className="mt-4 max-h-[72vh] w-auto rounded-xl shadow-2xl" />
+          <img src={savePreview} alt="Your LinkSports Story card" className="mt-4 max-h-[72vh] w-auto rounded-lg shadow-2xl" />
           <button onClick={closePreview} className="mt-5 h-11 px-8 rounded-full bg-white text-slate-900 font-semibold">Done</button>
         </div>
       )}

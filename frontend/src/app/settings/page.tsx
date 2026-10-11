@@ -60,7 +60,7 @@ function AccountTab() {
         <p className="text-sm text-gray-500 mt-0.5">Your basic account details</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+      <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
         {/* Email */}
         <div className="px-5 py-4 flex items-center justify-between">
           <div>
@@ -77,7 +77,7 @@ function AccountTab() {
             <p className="text-sm text-gray-500 mt-0.5 capitalize">{user?.role}</p>
           </div>
           <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize ${
-            user?.isVerified ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'
+            user?.isVerified ? 'bg-blue-50 text-blue-700' : 'bg-orange-50 text-orange-700'
           }`}>
             {user?.isVerified ? 'Verified' : 'Unverified'}
           </span>
@@ -133,7 +133,7 @@ function AccountTab() {
       <div>
         <h2 className="text-lg font-semibold text-gray-900">Linked Accounts</h2>
         <p className="text-sm text-gray-500 mt-0.5 mb-4">How you sign in to LinkSports</p>
-        <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex items-center gap-3">
+        <div className="bg-white rounded-lg border border-gray-200 px-5 py-4 flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
             {(user as any)?.authProvider === 'google' ? (
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -152,7 +152,7 @@ function AccountTab() {
             </p>
             <p className="text-xs text-gray-500">Primary sign-in method</p>
           </div>
-          <CheckCircle className="w-4 h-4 text-green-500 ml-auto" />
+          <CheckCircle className="w-4 h-4 text-blue-500 ml-auto" />
         </div>
       </div>
     </div>
@@ -195,7 +195,7 @@ function PrivacyTab() {
         <p className="text-sm text-gray-500 mt-0.5">Control who can see your profile and activity</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+      <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
         <div className="px-5 py-4">
           <p className="text-sm font-medium text-gray-700 mb-3">Profile Visibility</p>
           <div className="space-y-2">
@@ -226,7 +226,7 @@ function PrivacyTab() {
             <p className="text-xs text-gray-500">Controlled by your visibility setting above</p>
           </div>
           <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-            visibility === 'public' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
+            visibility === 'public' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'
           }`}>
             {visibility === 'public' ? 'Yes' : 'No'}
           </span>
@@ -238,7 +238,7 @@ function PrivacyTab() {
             <p className="text-xs text-gray-500">Others can send you connection requests</p>
           </div>
           <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-            visibility !== 'private' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
+            visibility !== 'private' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'
           }`}>
             {visibility !== 'private' ? 'Enabled' : 'Disabled'}
           </span>
@@ -314,7 +314,7 @@ function NotificationsTab() {
         <p className="text-sm text-gray-500 mt-0.5">Choose what you want to be notified about</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+      <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
         {items.map(({ key, label, desc }) => (
           <div key={key as string} className="px-5 py-4 flex items-center justify-between">
             <div>
@@ -396,7 +396,7 @@ function SecurityTab() {
       </div>
 
       {/* Change Password */}
-      <div className="bg-white rounded-xl border border-gray-200 px-5 py-5">
+      <div className="bg-white rounded-lg border border-gray-200 px-5 py-5">
         <h3 className="text-sm font-semibold text-gray-800 mb-4">Change Password</h3>
         {isGoogleUser ? (
           <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
@@ -449,7 +449,7 @@ function SecurityTab() {
       </div>
 
       {/* Sessions */}
-      <div className="bg-white rounded-xl border border-gray-200 px-5 py-5">
+      <div className="bg-white rounded-lg border border-gray-200 px-5 py-5">
         <h3 className="text-sm font-semibold text-gray-800 mb-1">Active Sessions</h3>
         <p className="text-xs text-gray-500 mb-4">Sign out of all devices where you're currently logged in</p>
         <button
@@ -496,7 +496,7 @@ function DangerZoneTab() {
         <p className="text-sm text-gray-500 mt-0.5">These actions are permanent and cannot be undone</p>
       </div>
 
-      <div className="bg-white rounded-xl border-2 border-red-200 px-5 py-5">
+      <div className="bg-white rounded-lg border-2 border-red-200 px-5 py-5">
         <div className="flex items-start gap-3 mb-4">
           <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
           <div>
@@ -561,7 +561,7 @@ export default function SettingsPage() {
           <div className="flex flex-col md:flex-row gap-6">
             {/* Sidebar */}
             <aside className="md:w-56 flex-shrink-0">
-              <nav className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <nav className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 {tabs.map(({ id, label, icon: Icon, desc }) => (
                   <button
                     key={id}

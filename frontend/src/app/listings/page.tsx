@@ -307,7 +307,7 @@ function OpportunitiesContent() {
                           ) : listing.participantFee ? (
                             <span className="badge bg-gray-100 text-gray-600">{formatCurrency(listing.participantFee as number)}</span>
                           ) : (
-                            <span className="badge bg-green-100 text-green-700">Free</span>
+                            <span className="badge bg-blue-100 text-blue-700">Free</span>
                           )}
                         </div>
                         <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-brand transition-colors line-clamp-2 min-h-[2.5rem]">{listing.title as string}</h3>
@@ -402,7 +402,7 @@ function OpportunitiesContent() {
               <div className="space-y-3">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="card p-5 animate-pulse flex gap-4">
-                    <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0" />
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0" />
                     <div className="flex-1">
                       <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
                       <div className="h-3 bg-gray-200 rounded w-1/2" />
@@ -430,7 +430,7 @@ function OpportunitiesContent() {
                   const applied = myJobApplications.includes(job._id as string);
                   return (
                     <Link key={job._id as string} href={`/jobs/${job._id}`} className="card p-5 flex items-start gap-4 hover:shadow-md transition-shadow group">
-                      <div className="w-12 h-12 rounded-xl bg-brand/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-12 h-12 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
                         <Building2 className="w-6 h-6 text-brand" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -441,7 +441,7 @@ function OpportunitiesContent() {
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {applied ? (
-                              <span className="badge bg-green-100 text-green-700">Applied</span>
+                              <span className="badge bg-blue-100 text-blue-700">Applied</span>
                             ) : user?.role !== 'organization' && (
                               <button onClick={(e) => handleApplyJob(job._id as string, e)} className="btn-primary text-sm px-4 py-1.5">
                                 Apply

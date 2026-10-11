@@ -61,7 +61,7 @@ export default function MyConnectionsPage() {
               placeholder="Search by name or username..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand bg-white"
+              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
             />
           </div>
 
@@ -112,7 +112,7 @@ export default function MyConnectionsPage() {
                 return (
                   <div
                     key={conn._id as string}
-                    className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3"
+                    className="bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3"
                   >
                     {/* Avatar */}
                     <Link href={profileUrl} className="flex-shrink-0">
@@ -141,7 +141,7 @@ export default function MyConnectionsPage() {
                     {/* Message button */}
                     <Link
                       href={`/messages?userId=${userId}`}
-                      className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-blue-50 text-brand hover:bg-brand hover:text-white transition-colors"
+                      className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-blue-50 text-brand hover:bg-brand hover:text-white transition-colors"
                       title="Send message"
                     >
                       <MessageCircle className="w-4 h-4" />

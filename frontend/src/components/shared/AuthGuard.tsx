@@ -57,7 +57,7 @@ export default function AuthGuard({ children, roles, allowedRoles, redirectTo = 
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md bg-white border border-gray-200 rounded-lg p-8 text-center">
-          <ShieldAlert className="w-10 h-10 text-amber-500 mx-auto" />
+          <ShieldAlert className="w-10 h-10 text-orange-500 mx-auto" />
           <h1 className="text-lg font-semibold text-gray-900 mt-4">You don&apos;t have access to this page</h1>
           <p className="text-sm text-gray-600 mt-2">
             You&apos;re signed in as <span className="font-medium text-gray-900">{user.email}</span> ({user.role}).

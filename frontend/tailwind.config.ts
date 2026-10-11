@@ -11,22 +11,28 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50: '#eef4fb', 100: '#d6e4f5', 200: '#adc8ea', 300: '#7aa5d9', 400: '#4a82c7',
+          500: '#1f62b8', 600: '#004fab', 700: '#00428f', 800: '#003674', 900: '#002a5b', 950: '#001b3b',
         },
         brand: {
-          DEFAULT: '#1a56db',
-          light: '#3b82f6',
-          dark: '#1e40af',
+          DEFAULT: '#004fab', // LinkSports logo blue
+          light: '#1f62b8',
+          dark: '#00428f',
+        },
+        // Palette is deliberately small: LinkSports blue (built around the logo colour),
+        // one accent (orange), neutral grays, and red only for errors/destructive actions.
+        blue: {
+          50: '#eef4fb',
+          100: '#d6e4f5',
+          200: '#adc8ea',
+          300: '#7aa5d9',
+          400: '#4a82c7',
+          500: '#1f62b8',
+          600: '#004fab',
+          700: '#00428f',
+          800: '#003674',
+          900: '#002a5b',
+          950: '#001b3b',
         },
       },
       fontFamily: {

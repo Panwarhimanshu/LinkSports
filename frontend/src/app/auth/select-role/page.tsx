@@ -29,10 +29,10 @@ const roles: {
     desc: 'I play sports',
     detail: 'Find trials, showcase your profile, connect with coaches and academies.',
     icon: Dumbbell,
-    accent: 'text-emerald-700',
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-400',
-    ring: 'ring-emerald-300',
+    accent: 'text-blue-700',
+    bg: 'bg-blue-50',
+    border: 'border-blue-400',
+    ring: 'ring-blue-300',
   },
   {
     id: 'coach',
@@ -51,10 +51,10 @@ const roles: {
     desc: 'I work in sports',
     detail: 'Physio, nutritionist, sports agent or any sports support professional.',
     icon: Stethoscope,
-    accent: 'text-purple-700',
-    bg: 'bg-purple-50',
-    border: 'border-purple-400',
-    ring: 'ring-purple-300',
+    accent: 'text-blue-700',
+    bg: 'bg-blue-50',
+    border: 'border-blue-400',
+    ring: 'ring-blue-300',
   },
   {
     id: 'organization',
@@ -143,7 +143,7 @@ export default function SelectRolePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -184,7 +184,7 @@ export default function SelectRolePage() {
                   disabled={isDisabled || isLoading}
                   onClick={() => handleSelect(id)}
                   className={cn(
-                    'relative flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition-all duration-150',
+                    'relative flex items-start gap-4 p-5 rounded-lg border-2 text-left transition-all duration-150',
                     isSelected
                       ? `${border} ${bg} ring-2 ${ring} ring-offset-1`
                       : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm',
@@ -192,7 +192,7 @@ export default function SelectRolePage() {
                   )}
                 >
                   {/* Icon bubble */}
-                  <div className={cn('p-2.5 rounded-xl flex-shrink-0', isSelected ? bg : 'bg-gray-100')}>
+                  <div className={cn('p-2.5 rounded-lg flex-shrink-0', isSelected ? bg : 'bg-gray-100')}>
                     <Icon className={cn('w-6 h-6', isSelected ? accent : 'text-gray-500')} />
                   </div>
 
@@ -209,7 +209,7 @@ export default function SelectRolePage() {
 
                   {/* Spinner overlay */}
                   {isLoading && (
-                    <div className="absolute inset-0 rounded-2xl flex items-center justify-center bg-white/60">
+                    <div className="absolute inset-0 rounded-lg flex items-center justify-center bg-white/60">
                       <Loader2 className={cn('w-6 h-6 animate-spin', accent)} />
                     </div>
                   )}

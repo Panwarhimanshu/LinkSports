@@ -84,7 +84,7 @@ export default function JobApplicationsPage() {
                      <Briefcase className="w-4 h-4 text-brand" /> Job Details
                   </h3>
                   <div className="space-y-3 text-sm">
-                     <div className="flex justify-between"><span className="text-gray-500">Status</span><span className="badge bg-green-100 text-green-700 uppercase leading-none">{job?.status as string}</span></div>
+                     <div className="flex justify-between"><span className="text-gray-500">Status</span><span className="badge bg-blue-100 text-blue-700 uppercase leading-none">{job?.status as string}</span></div>
                      <div className="flex justify-between"><span className="text-gray-500">Category</span><span className="font-medium">{job?.category as string}</span></div>
                      <div className="flex justify-between"><span className="text-gray-500">Type</span><span className="font-medium capitalize">{((job?.jobType as string) || '').replace(/_/g, ' ')}</span></div>
                   </div>
@@ -131,7 +131,7 @@ export default function JobApplicationsPage() {
                         return (
                            <div key={app._id as string} className="card overflow-hidden">
                               <div className="p-6 flex flex-col md:flex-row gap-6">
-                                 <div className="w-20 h-20 rounded-2xl bg-brand/10 text-brand flex items-center justify-center text-2xl font-bold flex-shrink-0">
+                                 <div className="w-20 h-20 rounded-lg bg-brand/10 text-brand flex items-center justify-center text-2xl font-bold flex-shrink-0">
                                     {user?.name ? (user.name as string)[0] : '?'}
                                  </div>
                                  <div className="flex-1 min-w-0">
@@ -151,7 +151,7 @@ export default function JobApplicationsPage() {
                                     </div>
                                     
                                     {app.coverLetter && (
-                                       <div className="bg-gray-50 p-4 rounded-xl mb-4 border-l-4 border-brand">
+                                       <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-brand">
                                           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                                              <FileText className="w-3 h-3" /> Cover Letter / Note
                                           </p>
@@ -169,7 +169,7 @@ export default function JobApplicationsPage() {
                                           <>
                                              <button 
                                                 onClick={() => handleUpdateStatus(app._id as string, 'shortlisted')}
-                                                className="btn-primary text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 border-none"
+                                                className="btn-primary text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 border-none"
                                              >
                                                 Shortlist
                                              </button>

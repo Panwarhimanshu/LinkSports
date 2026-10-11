@@ -111,7 +111,7 @@ export default function CoachProfilePage() {
                 </p>
               )}
               {profile.isAvailableForHire && (
-                <span className="badge bg-green-100 text-green-700 mt-3 inline-block">Available for Hire</span>
+                <span className="badge bg-blue-100 text-blue-700 mt-3 inline-block">Available for Hire</span>
               )}
 
               {isOwnProfile ? (

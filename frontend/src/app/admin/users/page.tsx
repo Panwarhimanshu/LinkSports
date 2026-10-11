@@ -48,7 +48,7 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <PageHeader title="Users" subtitle="Every account on LinkSports — players, coaches, organizations and admins."
+      <PageHeader title="Users" subtitle="Players, coaches, organizations and admins."
         actions={<Btn onClick={() => setEditing({})}><Plus className="w-4 h-4" />Add user</Btn>} />
       <Card
         title={`${pg.total} users`}

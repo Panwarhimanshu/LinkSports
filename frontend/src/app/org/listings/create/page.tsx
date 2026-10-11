@@ -105,11 +105,11 @@ export default function CreateListingPage() {
           <div className="flex items-center gap-2 mb-8">
             {['Listing Type', 'Details', 'Eligibility', 'Questions'].map((s, i) => (
               <div key={s} className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white transition-colors ${step > i + 1 ? 'bg-green-500' : step === i + 1 ? 'bg-brand' : 'bg-gray-300'}`}>
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white transition-colors ${step > i + 1 ? 'bg-blue-500' : step === i + 1 ? 'bg-brand' : 'bg-gray-300'}`}>
                   {step > i + 1 ? '✓' : i + 1}
                 </div>
                 <span className={`text-xs font-medium hidden sm:block ${step === i + 1 ? 'text-brand' : 'text-gray-400'}`}>{s}</span>
-                {i < 3 && <div className={`flex-1 h-0.5 w-8 ${step > i + 1 ? 'bg-green-400' : 'bg-gray-200'}`} />}
+                {i < 3 && <div className={`flex-1 h-0.5 w-8 ${step > i + 1 ? 'bg-blue-400' : 'bg-gray-200'}`} />}
               </div>
             ))}
           </div>
@@ -121,7 +121,7 @@ export default function CreateListingPage() {
               <div className="space-y-3">
                 {LISTING_TYPES.map(({ value, label, desc }) => (
                   <button key={value} type="button" onClick={() => setForm({ ...form, type: value })}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${form.type === value ? 'border-brand bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                    className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 text-left transition-all ${form.type === value ? 'border-brand bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
                     <Trophy className={`w-6 h-6 flex-shrink-0 ${form.type === value ? 'text-brand' : 'text-gray-400'}`} />
                     <div>
                       <p className="font-medium text-gray-900">{label}</p>
