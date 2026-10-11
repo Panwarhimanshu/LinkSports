@@ -1,0 +1,121 @@
+import crypto from 'crypto';
+import { Request, Response } from 'express';
+import { User } from '../models/User';
+import { AthleteProfile } from '../models/AthleteProfile';
+import { EmailOtp } from '../models/EmailOtp';
+import { generateOTP, generateSlug } from '../utils/jwt';
+import { emailTemplates, isEmailConfigured, sendEmail } from '../utils/email';
+import { sendSuccess, sendError } from '../utils/response';
+import { startSession } from '../utils/session';
+
+// Passwordless sign-in: a 6-digit code is emailed with nodemailer (SMTP settings in the root .env)
+// and exchanged for a session. The same code signs in an existing account or creates a new player.
+
+const OTP_TTL_MS = 10 * 60 * 1000;
+const RESEND_GAP_MS = 30 * 1000;
+const MAX_ATTEMPTS = 5;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+const normalizeEmail = (raw: unknown): string | null => {
+  const e = String(raw ?? '').trim().toLowerCase();
+  return EMAIL_RE.test(e) && e.length <= 254 ? e : null;
+};
+
+const hashOtp = (otp: string, email: string) =>
+  crypto.createHash('sha256').update(`${otp}:${email}:${process.env.JWT_SECRET}`).digest('hex');
+
+export const sendEmailOtp = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    if (!email) {
+      sendError(res, 'Enter a valid email address', 400, 'INVALID_EMAIL');
+      return;
+    }
+
+    const existing = await EmailOtp.findOne({ email });
+    if (existing && Date.now() - existing.sentAt.getTime() < RESEND_GAP_MS) {
+      sendError(res, 'Please wait 30 seconds before requesting another code', 429, 'OTP_TOO_SOON');
+      return;
+    }
+
+    const otp = generateOTP();
+    await EmailOtp.findOneAndUpdate(
+      { email },
+      { email, otpHash: hashOtp(otp, email), attempts: 0, sentAt: new Date(), expiresAt: new Date(Date.now() + OTP_TTL_MS) },
+      { upsert: true },
+    );
+
+    const isProd = process.env.NODE_ENV === 'production';
+    if (isEmailConfigured()) {
+      const sent = await sendEmail({ to: email, ...emailTemplates.loginOtp(otp, OTP_TTL_MS / 60_000) });
+      if (!sent) {
+        await EmailOtp.deleteOne({ email });
+        sendError(res, 'Could not send the email right now. Please try again in a minute.', 503, 'EMAIL_UNAVAILABLE');
+        return;
+      }
+    } else if (isProd) {
+      await EmailOtp.deleteOne({ email });
+      sendError(res, 'Email sign-in is not available right now.', 503, 'EMAIL_UNAVAILABLE');
+      return;
+    } else {
+      // Local development without SMTP settings: print the code so sign-in can still be tested.
+      console.log(`[Email OTP:dev] ${email} → ${otp}`);
+    }
+
+    // Local testing only: hand the code back so it can be filled in without reading the terminal.
+    const exposeForDev = !isProd && process.env.DEV_LOGIN === 'true';
+    sendSuccess(res, exposeForDev ? { devOtp: otp } : null, 'OTP sent');
+  } catch {
+    sendError(res, 'Could not send the code', 500);
+  }
+};
+
+export const verifyEmailOtp = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const otp = String(req.body?.otp ?? '').trim();
+    if (!email || !/^\d{6}$/.test(otp)) {
+      sendError(res, 'Enter the 6-digit code', 400, 'VALIDATION_ERROR');
+      return;
+    }
+
+    const record = await EmailOtp.findOne({ email });
+    if (!record || record.expiresAt < new Date()) {
+      sendError(res, 'This code has expired. Request a new one.', 400, 'OTP_EXPIRED');
+      return;
+    }
+    if (record.attempts >= MAX_ATTEMPTS) {
+      await EmailOtp.deleteOne({ email });
+      sendError(res, 'Too many wrong attempts. Request a new code.', 429, 'OTP_LOCKED');
+      return;
+    }
+    if (record.otpHash !== hashOtp(otp, email)) {
+      record.attempts += 1;
+      await record.save();
+      sendError(res, 'Incorrect code', 400, 'INVALID_OTP');
+      return;
+    }
+    await EmailOtp.deleteOne({ email }); // single use
+
+    let user = await User.findOne({ email }).select('+refreshTokens');
+    let isNew = false;
+
+    if (user?.isSuspended) {
+      sendError(res, 'Your account has been suspended', 403, 'SUSPENDED');
+      return;
+    }
+
+    if (!user) {
+      isNew = true;
+      user = await User.create({ email, role: 'athlete', isVerified: true, isApproved: true });
+      const name = email.split('@')[0];
+      await AthleteProfile.create({ userId: user._id, fullName: 'Player', profileUrl: generateSlug(name) });
+    } else if (!user.isVerified) {
+      user.isVerified = true; // they just proved they own this inbox
+    }
+
+    await startSession(req, res, user, isNew, 'email_otp');
+  } catch {
+    sendError(res, 'Verification failed', 500);
+  }
+};
