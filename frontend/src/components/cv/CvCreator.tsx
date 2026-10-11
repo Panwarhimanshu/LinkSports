@@ -201,7 +201,6 @@ export default function CvCreator() {
       {step === 4 && profile && (
         <ExportStep
           profile={profile}
-          onEdit={() => { setStep(3); setSection(0); }}
           onChangeSport={() => setStep(2)}
         />
       )}
@@ -641,7 +640,7 @@ function MediaSection({ form, set }: { form: CvForm; set: <K extends keyof CvFor
 }
 
 // ── Step 4: preview, export, share ───────────────────────────────────────────
-function ExportStep({ profile, onEdit, onChangeSport }: { profile: Record<string, any>; onEdit: () => void; onChangeSport: () => void }) {
+function ExportStep({ profile, onChangeSport }: { profile: Record<string, any>; onChangeSport: () => void }) {
   const [story, setStory] = useState<StoryData | null>(null);
   const [logo, setLogo] = useState<string | null>(null);
   const [format, setFormat] = useState<'png' | 'jpg'>('png');
@@ -813,7 +812,7 @@ function ExportStep({ profile, onEdit, onChangeSport }: { profile: Record<string
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3">
           <button className={btnGhost} onClick={copyLink}><Copy className="w-4 h-4" />Copy link</button>
           {canShareFiles && <button className={btnGhost} onClick={shareStory} disabled={busy !== null || !story}>{busy === 'share' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}Share</button>}
-          <button className={btnGhost} onClick={onEdit}>Edit CV</button>
+          <Link href="/profile/edit" className={btnGhost}>Edit CV</Link>
           <button className={btnGhost} onClick={onChangeSport}>Change sport</button>
         </div>
         <p className="text-xs text-slate-500 mt-3 break-all">Your link: {link}</p>
