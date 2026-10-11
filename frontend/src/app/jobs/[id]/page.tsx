@@ -62,7 +62,7 @@ export default function JobDetailPage() {
     };
 
     if (id) loadJob();
-  }, [id, isAuthenticated, user, router]);
+  }, [id, isAuthenticated, user?.id, router]); // user?.id, not user: the object is replaced on every profile refresh
 
   useEffect(() => {
      if (job && user && user.role === 'organization') {

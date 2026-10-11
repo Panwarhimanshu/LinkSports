@@ -10,6 +10,8 @@ import { cn, getInitials, getPhotoUrl } from '@/lib/utils';
 import Logo from '@/components/shared/Logo';
 import toast from 'react-hot-toast';
 
+let profileRefreshed = false; // per browser tab: reset on a full page load
+
 export default function Navbar() {
   const router = useRouter();
   const { user, profile, isAuthenticated, logout, fetchMe } = useAuthStore();
@@ -23,10 +25,14 @@ export default function Navbar() {
 
   const isAdmin = user?.role === 'admin';
 
-  // Refresh the signed-in profile once per page load so the avatar shows the current photo
-  // (the cached copy may be missing after a reload or stale after an edit made elsewhere).
+  // Refresh the signed-in profile once per visit so the avatar shows the current photo (the cached
+  // copy may be missing after a reload or stale after an edit made elsewhere). Once, not on every
+  // mount: pages that swap the navbar out for a loading screen would otherwise refresh in a loop.
   useEffect(() => {
-    if (isAuthenticated) fetchMe();
+    if (isAuthenticated && !profileRefreshed) {
+      profileRefreshed = true;
+      fetchMe();
+    }
   }, [isAuthenticated, fetchMe]);
 
   useEffect(() => {

@@ -127,7 +127,9 @@ export default function ProfileEditPage() {
     sportsOffered: [] as string[],
   });
 
-  useEffect(() => { loadProfile(); }, [user]);
+  // Keyed on the account id: the store hands out a new `user` object on every /auth/me refresh,
+  // and reloading on that would reset the form (and re-trigger the refresh) in a loop.
+  useEffect(() => { loadProfile(); }, [user?.id]);
 
   const loadProfile = async () => {
     if (!user) return;
