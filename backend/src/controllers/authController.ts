@@ -8,6 +8,7 @@ import { generateAccessToken, generateRefreshToken, generateOTP, generateSlug, v
 import { sendEmail, emailTemplates } from '../utils/email';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../types';
+import { signupsAllowed, SIGNUPS_CLOSED_MSG } from '../models/SiteSettings';
 import { deviceFromUserAgent, logEvent } from '../utils/activity';
 
 const COOKIE_OPTIONS = {
@@ -33,6 +34,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       sendError(res, 'Email already registered', 409, 'DUPLICATE_EMAIL');
       return;
     }
+
+    if (!(await signupsAllowed())) { sendError(res, SIGNUPS_CLOSED_MSG, 403, 'SIGNUPS_CLOSED'); return; }
 
     const passwordHash = await bcrypt.hash(password, 12);
     const otp = generateOTP();

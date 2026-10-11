@@ -6,6 +6,7 @@ import { EmailOtp } from '../models/EmailOtp';
 import { generateOTP, generateSlug } from '../utils/jwt';
 import { emailTemplates, isEmailConfigured, sendEmail } from '../utils/email';
 import { sendSuccess, sendError } from '../utils/response';
+import { signupsAllowed, SIGNUPS_CLOSED_MSG } from '../models/SiteSettings';
 import { startSession } from '../utils/session';
 
 // Passwordless sign-in: a 6-digit code is emailed with nodemailer (SMTP settings in the root .env)
@@ -106,6 +107,7 @@ export const verifyEmailOtp = async (req: Request, res: Response): Promise<void>
     }
 
     if (!user) {
+      if (!(await signupsAllowed())) { sendError(res, SIGNUPS_CLOSED_MSG, 403, 'SIGNUPS_CLOSED'); return; }
       isNew = true;
       user = await User.create({ email, role: 'athlete', isVerified: true, isApproved: true });
       const name = email.split('@')[0];

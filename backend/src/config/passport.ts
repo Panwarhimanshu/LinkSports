@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { User } from '../models/User';
 import { AthleteProfile } from '../models/AthleteProfile';
+import { signupsAllowed, SIGNUPS_CLOSED_MSG } from '../models/SiteSettings';
 import { generateSlug } from '../utils/jwt';
 
 export const configurePassport = () => {
@@ -23,6 +24,7 @@ export const configurePassport = () => {
           let user = await User.findOne({ email });
 
           if (!user) {
+            if (!(await signupsAllowed())) return done(new Error(SIGNUPS_CLOSED_MSG));
             const name = profile.displayName || email.split('@')[0];
             user = await User.create({
               email,

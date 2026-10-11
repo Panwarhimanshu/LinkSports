@@ -11,6 +11,7 @@ import { Payment, Coupon } from '../models/Payment';
 import { Notification } from '../models/Notification';
 import { ActivityEvent } from '../models/ActivityEvent';
 import { sendSuccess, sendError } from '../utils/response';
+import { escapeRegex } from './adminManageController';
 
 export const getDashboard = async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -46,7 +47,10 @@ export const getUsers = async (req: AuthRequest, res: Response): Promise<void> =
 
     if (role) query.role = role;
     if (suspended !== undefined) query.isSuspended = suspended === 'true';
-    if (q) query.email = new RegExp(q as string, 'i');
+    if (q) {
+      const re = new RegExp(escapeRegex(String(q)), 'i');
+      query.$or = [{ email: re }, { phone: re }];
+    }
 
     const [users, total] = await Promise.all([
       User.find(query).skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
@@ -63,6 +67,7 @@ export const suspendUser = async (req: AuthRequest, res: Response): Promise<void
   try {
     const user = await User.findById(req.params.id);
     if (!user) { sendError(res, 'User not found', 404); return; }
+    if (String(user._id) === String(req.user!._id)) { sendError(res, 'You cannot suspend yourself', 400); return; }
     user.isSuspended = !user.isSuspended;
     await user.save();
     sendSuccess(res, user, `User ${user.isSuspended ? 'suspended' : 'unsuspended'}`);
@@ -85,6 +90,10 @@ export const updateUser = async (req: AuthRequest, res: Response): Promise<void>
     const { role, phone, isVerified, isSuspended, password } = req.body;
     const user = await User.findById(req.params.id).select('+passwordHash');
     if (!user) { sendError(res, 'User not found', 404); return; }
+    const isSelf = String(user._id) === String(req.user!._id);
+    if (isSelf && ((role && role !== 'admin') || isSuspended === true)) {
+      sendError(res, 'You cannot remove your own admin access or suspend yourself', 400); return;
+    }
     if (role) user.role = role;
     if (phone !== undefined) user.phone = phone;
     if (isVerified !== undefined) user.isVerified = isVerified;
@@ -266,21 +275,26 @@ export const createCoupon = async (req: AuthRequest, res: Response): Promise<voi
     if (!code || !discountType || discountValue === undefined) {
       sendError(res, 'code, discountType and discountValue are required', 400); return;
     }
-    if (!['percentage', 'flat'].includes(discountType)) {
-      sendError(res, 'discountType must be percentage or flat', 400); return;
+    // the schema stores flat discounts as 'fixed'; accept both spellings
+    const type = discountType === 'flat' ? 'fixed' : discountType;
+    if (!['percentage', 'fixed'].includes(type)) {
+      sendError(res, 'discountType must be percentage or fixed', 400); return;
     }
-    if (typeof discountValue !== 'number' || discountValue <= 0) {
-      sendError(res, 'discountValue must be a positive number', 400); return;
+    if (typeof discountValue !== 'number' || discountValue <= 0 || (type === 'percentage' && discountValue > 100)) {
+      sendError(res, 'discountValue must be a positive number (max 100 for a percentage)', 400); return;
+    }
+    if (await Coupon.exists({ code: String(code).toUpperCase().trim() })) {
+      sendError(res, 'A coupon with this code already exists', 409); return;
     }
     const coupon = await Coupon.create({
       code: String(code).toUpperCase().trim(),
-      discountType,
+      discountType: type,
       discountValue,
-      maxUses: maxUses ? Number(maxUses) : undefined,
-      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
-      description: description ? String(description).slice(0, 500) : undefined,
+      usageLimit: maxUses ? Number(maxUses) : undefined, // field names follow the Coupon schema
+      validUntil: expiresAt ? new Date(expiresAt) : undefined,
       createdBy: req.user!._id,
     });
+    void description; // the schema has no description field
     sendSuccess(res, coupon, 'Coupon created', 201);
   } catch { sendError(res, 'Failed to create coupon', 500); }
 };

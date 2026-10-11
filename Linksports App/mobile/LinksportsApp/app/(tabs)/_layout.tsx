@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/store/auth';
 import { colors, shadow } from '../../src/theme';
+import SiteNotice from '../../src/components/SiteNotice';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -26,6 +27,7 @@ export default function TabsLayout() {
   const isAthlete = user.role === 'athlete';
 
   return (
+    <View style={{ flex: 1 }}>
     <Tabs
       initialRouteName={isAthlete ? 'cv' : 'index'}
       screenOptions={{
@@ -50,5 +52,8 @@ export default function TabsLayout() {
       />
       <Tabs.Screen name="account" options={{ title: 'Me', tabBarIcon: icon('person-circle') }} />
     </Tabs>
+    {/* banner / maintenance notice from the web admin, floating above the tab bar */}
+    <SiteNotice bottom={64 + insets.bottom + 10} />
+    </View>
   );
 }

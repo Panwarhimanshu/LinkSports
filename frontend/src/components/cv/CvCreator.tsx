@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import {
   ArrowLeft, Check, ChevronRight, Copy, Download, Eye, FileText, ImageIcon, Loader2, Mail, Plus, Search, Share2, Trash2, Camera,
 } from 'lucide-react';
-import { authAPI, eventAPI, profileAPI, uploadAPI } from '@/lib/api';
+import { authAPI, eventAPI, profileAPI, settingsAPI, uploadAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { buildStoryData, MIN_COMPLETE, shareUrlFor, toDataUrl, type StoryData } from '@/lib/cv';
 import { getPhotoUrl } from '@/lib/utils';
@@ -458,7 +458,15 @@ function AuthStep({ onToken }: { onToken: (t: string) => void }) {
 // ── Step 2: Select sport ─────────────────────────────────────────────────────
 function SportStep({ selected, busy, onPick }: { selected: string; busy: boolean; onPick: (s: string) => void }) {
   const [q, setQ] = useState('');
-  const list = useMemo(() => SPORTS.filter((s) => s.name.toLowerCase().includes(q.trim().toLowerCase())), [q]);
+  // the list can be edited in Admin → Site & App Settings; fall back to the built-in list
+  const [sports, setSports] = useState(SPORTS);
+  useEffect(() => {
+    settingsAPI.get().then((r) => {
+      const names: string[] = r.data.data?.sports || [];
+      if (names.length) setSports(names.map((name) => ({ name, emoji: '' })));
+    }).catch(() => undefined);
+  }, []);
+  const list = useMemo(() => sports.filter((s) => s.name.toLowerCase().includes(q.trim().toLowerCase())), [q, sports]);
   return (
     <div className="flex-1 px-4 pt-4 pb-8 lg:px-12 lg:pt-8">
       <h1 className="font-display text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-slate-900">What do you play?</h1>

@@ -8,6 +8,7 @@ import { QueryClientProvider } from '@/components/shared/QueryProvider';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import SessionExpiredHandler from '@/components/shared/SessionExpiredHandler';
 import MobileTabBar from '@/components/layout/MobileTabBar';
+import SiteBanner from '@/components/layout/SiteBanner';
 
 export const metadata: Metadata = {
   title: { default: 'LinkSports - India\'s Sports Networking Platform', template: '%s | LinkSports' },
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={display.variable}>
         <QueryClientProvider>
           <SessionExpiredHandler />
+          <SiteBanner />
           <ErrorBoundary>
             {children}
           </ErrorBoundary>

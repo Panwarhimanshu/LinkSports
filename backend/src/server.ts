@@ -29,6 +29,7 @@ import paymentRoutes from './routes/payments';
 import adminRoutes from './routes/admin';
 import uploadRoutes from './routes/upload';
 import eventRoutes from './routes/events';
+import settingsRoutes from './routes/settings';
 import userReviewRoutes, { reviewRouter } from './routes/reviews';
 
 const app = express();
@@ -177,6 +178,7 @@ app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/events', eventRoutes);
+app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/users', userReviewRoutes);
 app.use('/api/v1/reviews', reviewRouter);
 

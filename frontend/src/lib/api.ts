@@ -215,7 +215,33 @@ export const adminAPI = {
   getCvStats: () => api.get('/admin/cv/stats'),
   getCvUsers: (params?: Record<string, unknown>) => api.get('/admin/cv/users', { params }),
   getCvActivity: (params?: Record<string, unknown>) => api.get('/admin/cv/activity', { params }),
+
+  // full management
+  getUser: (id: string) => api.get(`/admin/users/${id}`),
+  updateProfile: (kind: 'athlete' | 'coach' | 'organization', id: string, data: Record<string, unknown>) =>
+    api.patch(`/admin/profiles/${kind}/${id}`, data),
+  getListings: (params?: Record<string, unknown>) => api.get('/admin/listings', { params }),
+  updateListing: (id: string, data: Record<string, unknown>) => api.patch(`/admin/listings/${id}`, data),
+  deleteListing: (id: string) => api.delete(`/admin/listings/${id}`),
+  getListingApplications: (id: string) => api.get(`/admin/listings/${id}/applications`),
+  getJobs: (params?: Record<string, unknown>) => api.get('/admin/jobs', { params }),
+  updateJob: (id: string, data: Record<string, unknown>) => api.patch(`/admin/jobs/${id}`, data),
+  deleteJob: (id: string) => api.delete(`/admin/jobs/${id}`),
+  getJobApplications: (id: string) => api.get(`/admin/jobs/${id}/applications`),
+  updateApplication: (kind: 'listing' | 'job', id: string, data: Record<string, unknown>) =>
+    api.patch(`/admin/applications/${kind}/${id}`, data),
+  getOrganizations: (params?: Record<string, unknown>) => api.get('/admin/organizations', { params }),
+  getReviews: (params?: Record<string, unknown>) => api.get('/admin/reviews', { params }),
+  deleteReview: (id: string) => api.delete(`/admin/reviews/${id}`),
+  dismissReview: (id: string) => api.patch(`/admin/reviews/${id}/dismiss`),
+  getPayments: (params?: Record<string, unknown>) => api.get('/admin/payments', { params }),
+  getAnnouncements: () => api.get('/admin/announcements'),
+  getSettings: () => api.get('/admin/settings'),
+  updateSettings: (data: Record<string, unknown>) => api.put('/admin/settings', data),
 };
+
+/** Public site/app settings managed in the admin panel (banner, maintenance notice, sports list). */
+export const settingsAPI = { get: () => api.get('/settings') };
 
 // ── Activity events (CV sprint) ───────────────────────────────────────────────
 export const eventAPI = {

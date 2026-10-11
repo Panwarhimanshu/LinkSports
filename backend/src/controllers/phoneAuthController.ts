@@ -6,6 +6,7 @@ import { PhoneOtp } from '../models/PhoneOtp';
 import { generateOTP, generateSlug } from '../utils/jwt';
 import { sendSms } from '../utils/sms';
 import { sendSuccess, sendError } from '../utils/response';
+import { signupsAllowed, SIGNUPS_CLOSED_MSG } from '../models/SiteSettings';
 import { startSession } from '../utils/session';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -97,6 +98,7 @@ export const verifyPhoneOtp = async (req: Request, res: Response): Promise<void>
     }
 
     if (!user) {
+      if (!(await signupsAllowed())) { sendError(res, SIGNUPS_CLOSED_MSG, 403, 'SIGNUPS_CLOSED'); return; }
       isNew = true;
       user = await User.create({
         email: `p${phone}@phone.linksports.local`, // email is required + unique; real email can be added later
