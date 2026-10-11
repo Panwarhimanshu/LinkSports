@@ -90,6 +90,19 @@ export default function AthleteProfilePage() {
   const education = (profile.education as any[]) || [];
   const playingHistory = (profile.playingHistory as any[]) || [];
   const media = (profile.media as any[]) || [];
+  // Age only when the date of birth gives a believable value (placeholder dates produce "0 years").
+  const dobRaw = (profile.dob || profile.dateOfBirth) as string | undefined;
+  const ageYears = dobRaw ? Math.floor((Date.now() - new Date(dobRaw).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : NaN;
+  const age = ageYears >= 4 && ageYears <= 100 ? ageYears : null;
+  // Contact details are private: only the player sees them on their own profile.
+  const showContact = isOwnProfile;
+  const hasDetails = Boolean(
+    profile.position || profile.height || profile.weight || age || profile.gender
+    || (showContact && (profile.email || profile.phone)) || profile.experienceLevel || profile.isParaAthlete
+    || ((profile.secondarySports as string[]) || []).length,
+  );
+  const hasMainContent = Boolean(profile.tagline || profile.aboutBio)
+    || achievements.length + tournaments.length + playingHistory.length + education.length + media.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -121,7 +134,7 @@ export default function AthleteProfilePage() {
               </div>
               <h1 className="text-xl font-bold text-gray-900">{profile.fullName as string}</h1>
               {profile.username && (
-                <p className="text-sm text-gray-400 mt-0.5">@{profile.username as string}</p>
+                <p className="text-sm text-gray-400 mt-0.5">@{(profile.username as string).replace(/^@+/, '')}</p>
               )}
               {profile.primarySport && <p className="text-brand font-medium mt-1">{profile.primarySport as string}</p>}
               {loc?.city && (
@@ -280,16 +293,33 @@ export default function AthleteProfilePage() {
               </div>
             </div>
 
-            {/* Quick stats */}
+            {/* Quick stats — hidden when the player hasn't filled in any of these */}
+            {hasDetails && (
             <div className="card p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Details</h3>
               <div className="space-y-2 text-sm">
-                {((profile.dob || profile.dateOfBirth) as string | undefined) && (
+                {(profile.position as string | undefined) && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Position</span>
+                    <span className="font-medium text-gray-900">{profile.position as string}</span>
+                  </div>
+                )}
+                {(profile.height as number | undefined) ? (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Height</span>
+                    <span className="font-medium text-gray-900">{profile.height as number} {(profile.heightUnit as string) || 'cm'}</span>
+                  </div>
+                ) : null}
+                {(profile.weight as number | undefined) ? (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Weight</span>
+                    <span className="font-medium text-gray-900">{profile.weight as number} kg</span>
+                  </div>
+                ) : null}
+                {age !== null && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Age</span>
-                    <span className="font-medium text-gray-900">
-                      {Math.floor((Date.now() - new Date((profile.dob || profile.dateOfBirth) as string).getTime()) / (365.25 * 24 * 60 * 60 * 1000))} years
-                    </span>
+                    <span className="font-medium text-gray-900">{age} years</span>
                   </div>
                 )}
                 {(profile.gender as string | undefined) && (
@@ -298,13 +328,13 @@ export default function AthleteProfilePage() {
                     <span className="font-medium text-gray-900 capitalize">{profile.gender as string}</span>
                   </div>
                 )}
-                {(profile.email as string | undefined) && (
-                  <div className="flex justify-between">
+                {showContact && (profile.email as string | undefined) && (
+                  <div className="flex justify-between gap-3">
                     <span className="text-gray-500">Email</span>
-                    <span className="font-medium text-gray-900">{profile.email as string}</span>
+                    <span className="font-medium text-gray-900 truncate">{profile.email as string}</span>
                   </div>
                 )}
-                {(profile.phone as string | undefined) && (
+                {showContact && (profile.phone as string | undefined) && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Mobile</span>
                     <span className="font-medium text-gray-900">{profile.phone as string}</span>
@@ -334,6 +364,7 @@ export default function AthleteProfilePage() {
                 )}
               </div>
             </div>
+            )}
 
             {/* Social links */}
             {profile.socialLinks && Object.values(profile.socialLinks as Record<string, string>).some(Boolean) && (
@@ -352,6 +383,27 @@ export default function AthleteProfilePage() {
 
           {/* Main content */}
           <div className="lg:col-span-2 space-y-4">
+            {!hasMainContent && (
+              <div className="card p-8 text-center">
+                <div className="w-14 h-14 rounded-full bg-blue-50 text-brand flex items-center justify-center mx-auto mb-4"><Trophy className="w-7 h-7" /></div>
+                {isOwnProfile ? (
+                  <>
+                    <h2 className="font-semibold text-gray-900 text-lg">Your profile is almost empty</h2>
+                    <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">Add your bio, teams, tournaments and achievements so scouts and academies can see what you can do.</p>
+                    <div className="flex flex-wrap justify-center gap-2 mt-5">
+                      <Link href="/" className="btn-primary px-5 py-2">Build my CV</Link>
+                      <Link href="/profile/edit" className="btn-secondary px-5 py-2">Edit profile</Link>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="font-semibold text-gray-900 text-lg">No details yet</h2>
+                    <p className="text-sm text-gray-500 mt-1">{(profile.fullName as string) || 'This player'} hasn&apos;t added achievements or experience yet.</p>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* About (Tagline & Bio) */}
             {(profile.tagline || profile.aboutBio) && (
               <div className="card p-6">

@@ -90,7 +90,8 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'linksports-auth',
-      partialize: (state) => ({ user: state.user, accessToken: state.accessToken, isAuthenticated: state.isAuthenticated }),
+      // profile is kept too so the navbar avatar renders immediately; Navbar refreshes it from /auth/me on load
+      partialize: (state) => ({ user: state.user, profile: state.profile, accessToken: state.accessToken, isAuthenticated: state.isAuthenticated }),
     }
   )
 );

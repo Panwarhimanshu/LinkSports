@@ -41,6 +41,17 @@ const sanitizePlayingHistory = (arr: unknown[]) =>
 const sanitizeCertifications = (arr: unknown[]) =>
   arr.map((c: any) => ({ ...c, year: toNum(c.year) }));
 
+/** Email and phone are private: only the owner and accepted connections receive them. */
+const withContactPrivacy = (profile: any, canSeeContact: boolean) => {
+  const p = typeof profile?.toJSON === 'function' ? profile.toJSON() : { ...profile };
+  if (!canSeeContact) {
+    delete p.email;
+    delete p.phone;
+    if (p.userId && typeof p.userId === 'object') delete p.userId.email;
+  }
+  return p;
+};
+
 // ── ATHLETE ──────────────────────────────────────────────────────────────────
 
 export const getAthleteProfile = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -56,7 +67,9 @@ export const getAthleteProfile = async (req: AuthRequest, res: Response): Promis
 
     if (!profile) { sendError(res, 'Profile not found', 404); return; }
 
-    if (profile.visibility === 'private' && profile.userId.toString() !== req.user?._id.toString()) {
+    // userId is populated, so compare its _id (calling toString() on the populated document never matches)
+    const ownerId = ((profile.userId as any)?._id || profile.userId)?.toString();
+    if (profile.visibility === 'private' && ownerId !== req.user?._id.toString()) {
       sendError(res, 'This profile is private', 403); return;
     }
 
@@ -81,7 +94,8 @@ export const getAthleteProfile = async (req: AuthRequest, res: Response): Promis
 
     const profileOwnerId = ((profile.userId as any)?._id || profile.userId)?.toString();
     const isOwnProfile = req.user ? req.user._id.toString() === profileOwnerId : false;
-    sendSuccess(res, { profile, connectionStatus, connectionId, isOwnProfile });
+    const canSeeContact = isOwnProfile || connectionStatus === 'accepted';
+    sendSuccess(res, { profile: withContactPrivacy(profile, canSeeContact), connectionStatus, connectionId, isOwnProfile });
   } catch (err) {
     console.error('getAthleteProfile error:', err);
     sendError(res, 'Failed to get profile', 500); 
@@ -231,7 +245,8 @@ export const getCoachProfile = async (req: AuthRequest, res: Response): Promise<
 
     const profileOwnerId = ((profile.userId as any)?._id || profile.userId)?.toString();
     const isOwnProfile = req.user ? req.user._id.toString() === profileOwnerId : false;
-    sendSuccess(res, { profile, connectionStatus, connectionId, isOwnProfile });
+    const canSeeContact = isOwnProfile || connectionStatus === 'accepted';
+    sendSuccess(res, { profile: withContactPrivacy(profile, canSeeContact), connectionStatus, connectionId, isOwnProfile });
   } catch (err) {
     console.error('getCoachProfile error:', err);
     sendError(res, 'Failed to get coach profile', 500);

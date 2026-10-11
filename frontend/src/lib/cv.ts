@@ -21,7 +21,8 @@ export function ageFromDob(dob?: string | Date): number | null {
 
 /** Fetch an image and inline it as a data URL so html-to-image can render it without CORS/taint problems. */
 export async function toDataUrl(src?: string | null): Promise<string | null> {
-  const url = src?.startsWith('data:') ? src : getPhotoUrl(src);
+  // "/logo.png"-style paths are this site's own public files; everything else is a stored photo
+  const url = src?.startsWith('/') && !src.startsWith('//') ? src : getPhotoUrl(src);
   if (!url) return null;
   if (url.startsWith('data:')) return url;
   try {

@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 
 export default function Navbar() {
   const router = useRouter();
-  const { user, profile, isAuthenticated, logout } = useAuthStore();
+  const { user, profile, isAuthenticated, logout, fetchMe } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -22,6 +22,12 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const isAdmin = user?.role === 'admin';
+
+  // Refresh the signed-in profile once per page load so the avatar shows the current photo
+  // (the cached copy may be missing after a reload or stale after an edit made elsewhere).
+  useEffect(() => {
+    if (isAuthenticated) fetchMe();
+  }, [isAuthenticated, fetchMe]);
 
   useEffect(() => {
     if (isAuthenticated) {

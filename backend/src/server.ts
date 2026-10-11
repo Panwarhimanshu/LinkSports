@@ -92,6 +92,8 @@ const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:3000',
   'https://www.linksports.in',
   'https://linksports.in',
+  // extra web origins for this deployment, comma-separated (e.g. a *.vercel.app alias next to the custom domain)
+  ...(process.env.CORS_EXTRA_ORIGINS || '').split(',').map((o) => o.trim()).filter(Boolean),
 ];
 
 app.use(cors({
@@ -120,6 +122,18 @@ app.use(mongoSanitize({ replaceWith: '_' }));
 
 app.use(passport.initialize());
 configurePassport();
+
+// On Vercel the app runs as a serverless function with no start-up phase, so connect on first use.
+if (process.env.VERCEL) {
+  app.use(async (_req, _res, next) => {
+    try {
+      await connectDB();
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
+}
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
@@ -235,6 +249,15 @@ app.get('/api/v1/search', searchLimiter, async (req, res) => {
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
+// Opening the API host in a browser should explain itself instead of showing "Route not found".
+app.get('/', (_req, res) => res.json({
+  name: 'LinkSports API',
+  status: 'ok',
+  api: '/api/v1',
+  health: '/health',
+  website: process.env.CLIENT_URL || 'https://www.linksports.in',
+}));
+
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);
 app.use(errorHandler);
@@ -249,6 +272,9 @@ const start = async () => {
   });
 };
 
-start().catch(console.error);
+// Vercel imports the default export and serves it as a function; it cannot keep a port (or
+// Socket.IO connections) open, so only listen when running as a normal server.
+if (!process.env.VERCEL) start().catch(console.error);
 
 export { io };
+export default app;

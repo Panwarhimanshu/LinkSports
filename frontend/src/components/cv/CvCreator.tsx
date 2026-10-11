@@ -122,6 +122,7 @@ export default function CvCreator() {
       const res = await profileAPI.updateAthleteProfile(toPayload(sport, form));
       const p = res.data.data;
       setProfile(p);
+      useAuthStore.getState().setProfile(p); // keeps the navbar avatar/name in sync
       return p;
     } catch (e: any) {
       toast.error(e.response?.data?.error?.message || 'Could not save. Check your connection and try again.');
@@ -137,6 +138,7 @@ export default function CvCreator() {
     try {
       const res = await profileAPI.updateAthleteProfile({ primarySport: name });
       setProfile(res.data.data);
+      useAuthStore.getState().setProfile(res.data.data);
       void eventAPI.log('SPORT_SELECTED', { sport: name });
       setStep(3);
       setSection(0);
@@ -666,8 +668,13 @@ function ExportStep({ profile, onEdit, onChangeSport }: { profile: Record<string
   const render = async (): Promise<Blob> => {
     if (!exportRef.current) throw new Error('Card not ready');
     await document.fonts?.ready;
+    // make sure the photo and logo are fully decoded before drawing
+    await Promise.all(Array.from(exportRef.current.querySelectorAll('img')).map((img) => img.decode?.().catch(() => undefined)));
     const opts = { width: STORY_W, height: STORY_H, pixelRatio: 1, canvasWidth: STORY_W, canvasHeight: STORY_H, backgroundColor: '#0f172a' };
-    const dataUrl = format === 'png' ? await toPng(exportRef.current, opts) : await toJpeg(exportRef.current, { ...opts, quality: 0.95 });
+    const shoot = () => (format === 'png' ? toPng(exportRef.current!, opts) : toJpeg(exportRef.current!, { ...opts, quality: 0.95 }));
+    // Safari (iPhone) often leaves images blank on the first capture; the second pass is reliable
+    await shoot().catch(() => undefined);
+    const dataUrl = await shoot();
     return await (await fetch(dataUrl)).blob();
   };
 

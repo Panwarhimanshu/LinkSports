@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Response } from 'express';
 import { AuthRequest } from '../types';
 import { Listing } from '../models/Listing';
@@ -111,6 +112,8 @@ export const getListings = async (req: AuthRequest, res: Response): Promise<void
 
 export const getListing = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    // a malformed id (old link, typo) is "not found", not a server error
+    if (!mongoose.isValidObjectId(req.params.id)) { sendError(res, 'Listing not found', 404); return; }
     const listing = await Listing.findById(req.params.id)
       .populate('organizationId', 'name logo isVerified type contact');
 

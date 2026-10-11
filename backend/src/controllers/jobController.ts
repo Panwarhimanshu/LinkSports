@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Response } from 'express';
 import { AuthRequest } from '../types';
 import { Job } from '../models/Job';
@@ -64,6 +65,8 @@ export const getJobs = async (req: AuthRequest, res: Response): Promise<void> =>
 
 export const getJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    // a malformed id (old link, typo) is "not found", not a server error
+    if (!mongoose.isValidObjectId(req.params.id)) { sendError(res, 'Job not found', 404); return; }
     const job = await Job.findById(req.params.id).populate('organizationId', 'name logo isVerified type contact');
     if (!job) { sendError(res, 'Job not found', 404); return; }
 

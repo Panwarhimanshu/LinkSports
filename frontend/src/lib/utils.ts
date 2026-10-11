@@ -26,8 +26,9 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || '
 
 export function getPhotoUrl(photo: string | null | undefined): string | null {
   if (!photo) return null;
-  if (photo.startsWith('http://') || photo.startsWith('https://')) return photo;
-  return `${BACKEND_URL}/${photo}`;
+  // full URLs and inline images (data:/blob:, e.g. photos stored without Cloudinary) are used as-is
+  if (/^(https?:|data:|blob:)/.test(photo)) return photo;
+  return `${BACKEND_URL}/${photo.replace(/^\/+/, '')}`;
 }
 
 export function getInitials(name: string) {

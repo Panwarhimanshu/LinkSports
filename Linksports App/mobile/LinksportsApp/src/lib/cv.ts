@@ -92,7 +92,8 @@ export const logEvent = (eventType: 'SPORT_SELECTED' | 'PDF_DOWNLOADED' | 'STORY
 /** Uploaded photos may be stored as relative backend paths; make them absolute. */
 export const absoluteUrl = (u?: string) => {
   if (!u) return undefined;
-  if (/^https?:\/\//.test(u)) return u;
+  // full URLs and inline images (data:, file:, content: from the picker) are used as-is
+  if (/^(https?:|data:|file:|content:)/.test(u)) return u;
   const origin = API_URL.replace(/\/api\/v1\/?$/, '');
   return `${origin}/${u.replace(/^\//, '')}`;
 };
