@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Eye, Pencil, Plus, ExternalLink } from 'lucide-react';
+import { Ban, Eye, ExternalLink, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { adminAPI } from '@/lib/api';
 import {
   Badge, Btn, Card, ConfirmButton, Modal, PageHeader, Pagination, SearchInput, Select, Table, errMsg, fmtDate,
@@ -60,12 +60,14 @@ export default function AdminUsersPage() {
           </div>
         }
       >
-        <Table head={['Email', 'Role', 'Phone', 'Status', 'Joined', 'Last login', '']} loading={loading} empty={!rows.length}>
+        <Table head={['Account', 'Role', 'Status', 'Joined', 'Last login', '']} loading={loading} empty={!rows.length}>
           {rows.map((u) => (
             <tr key={u._id} className="hover:bg-gray-50">
-              <td className="px-5 py-3 font-medium text-gray-900 max-w-[240px] truncate">{u.email}</td>
+              <td className="px-5 py-3 max-w-[260px]">
+                <p className="font-medium text-gray-900 truncate">{u.email}</p>
+                {u.phone && <p className="text-xs text-gray-500 mt-0.5">{u.phone}</p>}
+              </td>
               <td className="px-5 py-3"><Badge value={u.role} /></td>
-              <td className="px-5 py-3 text-gray-600 whitespace-nowrap">{u.phone || '—'}</td>
               <td className="px-5 py-3 whitespace-nowrap">
                 {u.isSuspended ? <Badge value="suspended" /> : <Badge value="active" />}{' '}
                 {!u.isVerified && <Badge value="pending" label="unverified" />}
@@ -76,8 +78,8 @@ export default function AdminUsersPage() {
                 <div className="flex gap-1.5 justify-end whitespace-nowrap">
                   <button onClick={() => setViewId(u._id)} title="View details" aria-label="View details" className="h-8 w-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 inline-flex items-center justify-center"><Eye className="w-4 h-4" /></button>
                   <button onClick={() => setEditing(u)} title="Edit account" aria-label="Edit account" className="h-8 w-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 inline-flex items-center justify-center"><Pencil className="w-4 h-4" /></button>
-                  <ConfirmButton small tone={u.isSuspended ? 'blue' : 'red'} label={u.isSuspended ? 'Unsuspend' : 'Suspend'} confirmLabel={u.isSuspended ? 'Unsuspend' : 'Suspend'} onConfirm={() => toggleSuspend(u)} />
-                  <ConfirmButton small label="Delete" confirmLabel="Delete forever" onConfirm={() => remove(u)} />
+                  <ConfirmButton small tone={u.isSuspended ? 'blue' : 'red'} title={u.isSuspended ? 'Unsuspend' : 'Suspend'} label={u.isSuspended ? <RotateCcw className="w-4 h-4" /> : <Ban className="w-4 h-4" />} confirmLabel={u.isSuspended ? 'Unsuspend' : 'Suspend'} onConfirm={() => toggleSuspend(u)} />
+                  <ConfirmButton small title="Delete" label={<Trash2 className="w-4 h-4" />} confirmLabel="Delete forever" onConfirm={() => remove(u)} />
                 </div>
               </td>
             </tr>

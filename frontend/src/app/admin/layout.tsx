@@ -8,6 +8,7 @@ import {
   Menu, X, ExternalLink, LogOut,
 } from 'lucide-react';
 import AuthGuard from '@/components/shared/AuthGuard';
+import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '@/store/authStore';
 
 const NAV = [
@@ -49,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <header className="sticky top-0 z-30 h-14 bg-white border-b border-gray-200 flex items-center gap-3 px-4">
           <button onClick={() => setOpen(true)} aria-label="Open menu" className="lg:hidden w-9 h-9 -ml-1 rounded-lg hover:bg-gray-100 flex items-center justify-center"><Menu className="w-5 h-5" /></button>
           <Link href="/admin" className="flex items-center gap-2">
-            <img src="/logo.png" alt="LinkSports.in" className="h-10 w-auto object-contain -my-2" />
+            <Logo height={28} />
             <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider text-brand bg-blue-50 px-2 py-0.5 rounded">Admin</span>
           </Link>
           <div className="ml-auto flex items-center gap-2">

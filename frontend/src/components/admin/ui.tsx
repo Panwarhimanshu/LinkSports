@@ -145,14 +145,14 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
 }
 
 /** Button that asks for confirmation inline before running a destructive action. */
-export function ConfirmButton({ label, confirmLabel = 'Confirm', onConfirm, tone = 'red', small }: {
-  label: ReactNode; confirmLabel?: string; onConfirm: () => Promise<void> | void; tone?: 'red' | 'blue'; small?: boolean;
+export function ConfirmButton({ label, confirmLabel = 'Confirm', onConfirm, tone = 'red', small, title }: {
+  label: ReactNode; confirmLabel?: string; onConfirm: () => Promise<void> | void; tone?: 'red' | 'blue'; small?: boolean; title?: string;
 }) {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
-  const base = small ? 'h-8 px-2.5 text-xs' : 'h-9 px-3 text-sm';
+  const base = small ? 'h-8 min-w-8 px-2 text-xs' : 'h-9 px-3 text-sm';
   const color = tone === 'red' ? 'text-red-600 hover:bg-red-50 border-red-200' : 'text-brand hover:bg-blue-50 border-blue-200';
-  if (!asking) return <button onClick={() => setAsking(true)} className={`${base} rounded-lg border font-medium ${color}`}>{label}</button>;
+  if (!asking) return <button onClick={() => setAsking(true)} title={title} aria-label={title} className={`${base} rounded-lg border font-medium inline-flex items-center justify-center ${color}`}>{label}</button>;
   return (
     <span className="inline-flex gap-1">
       <button disabled={busy} onClick={async () => { setBusy(true); try { await onConfirm(); } finally { setBusy(false); setAsking(false); } }}

@@ -51,7 +51,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="hover:opacity-90 transition-opacity mb-4 block">
-              <Logo className="scale-75 origin-left" />
+              <Logo height={28} />
             </Link>
             <p className="text-xs leading-relaxed">
               India's Sports Professional Network. Where Sports Meets Opportunity.

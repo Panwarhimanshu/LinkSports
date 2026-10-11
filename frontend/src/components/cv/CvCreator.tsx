@@ -282,7 +282,7 @@ function Header({ step, onBack }: { step: number; onBack?: () => void }) {
       {onBack ? (
         <button onClick={onBack} aria-label="Back" className="w-10 h-10 -ml-2 flex items-center justify-center rounded-md hover:bg-slate-100"><ArrowLeft className="w-5 h-5" /></button>
       ) : null}
-      <Link href="/" aria-label="LinkSports home" className="flex items-center"><img src="/logo.png" alt="LinkSports.in" className="h-12 w-auto object-contain -my-2" /></Link>
+      <Link href="/" aria-label="LinkSports home" className="flex items-center"><Logo height={30} /></Link>
       <ol className="ml-auto flex items-center gap-4 sm:gap-6">
         {labels.map((l, i) => {
           const n = i + 2;
