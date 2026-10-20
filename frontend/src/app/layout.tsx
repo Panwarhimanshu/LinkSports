@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Barlow_Condensed } from 'next/font/google';
-
-const display = Barlow_Condensed({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display', display: 'swap' });
+import { Fredoka, Space_Mono } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { QueryClientProvider } from '@/components/shared/QueryProvider';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
@@ -10,6 +8,10 @@ import SessionExpiredHandler from '@/components/shared/SessionExpiredHandler';
 import MobileTabBar from '@/components/layout/MobileTabBar';
 import SiteBanner from '@/components/layout/SiteBanner';
 import ImageFallback from '@/components/shared/ImageFallback';
+
+// Chunky rounded display face for headings, monospace for small labels, Inter (globals.css) for body text.
+const display = Fredoka({ subsets: ['latin'], weight: ['500', '600', '700'], variable: '--font-display', display: 'swap' });
+const mono = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-mono', display: 'swap' });
 
 export const metadata: Metadata = {
   title: { default: 'LinkSports - India\'s Sports Networking Platform', template: '%s | LinkSports' },
@@ -46,7 +48,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={display.variable}>
+      <body className={`${display.variable} ${mono.variable}`}>
         <QueryClientProvider>
           <SessionExpiredHandler />
           <ImageFallback />
