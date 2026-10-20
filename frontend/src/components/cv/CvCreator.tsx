@@ -888,7 +888,7 @@ function ExportStep({ profile, onChangeSport }: { profile: Record<string, any>; 
         <div className="flex items-center gap-2 mt-4">
           <span className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Image format</span>
           {(['png', 'jpg'] as const).map((f) => (
-            <button key={f} onClick={() => setFormat(f)} className={`h-9 rounded-full border px-4 font-mono text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${format === f ? 'border-ink bg-ink text-white' : 'border-line text-ink-soft hover:border-ink'}`}>{f}</button>
+            <button key={f} onClick={() => setFormat(f)} className={`h-11 rounded-full border px-5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${format === f ? 'border-ink bg-ink text-white' : 'border-line text-ink-soft hover:border-ink'}`}>{f}</button>
           ))}
         </div>
 
@@ -902,9 +902,9 @@ function ExportStep({ profile, onChangeSport }: { profile: Record<string, any>; 
       </div>
 
       <BottomBar>
-        <button className={btnPrimary} onClick={downloadPdf} disabled={busy !== null}>{busy === 'pdf' ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-5 h-5" />}PDF CV</button>
-        <button className={btnPrimary} onClick={downloadStory} disabled={busy !== null || !story}>{busy === 'story' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}Story</button>
-        <Link href={`/athlete/${profile.profileUrl}`} className={btnSecondary}><Eye className="w-5 h-5" />Public profile</Link>
+        <button className={btnPrimary + ' !px-3 whitespace-nowrap'} onClick={downloadPdf} disabled={busy !== null}>{busy === 'pdf' ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-5 h-5" />}PDF CV</button>
+        <button className={btnPrimary + ' !px-3 whitespace-nowrap'} onClick={downloadStory} disabled={busy !== null || !story}>{busy === 'story' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}Story</button>
+        <Link href={`/athlete/${profile.profileUrl}`} className={btnSecondary + ' !px-3 whitespace-nowrap'}><Eye className="w-5 h-5" /><span className="sm:hidden">Profile</span><span className="hidden sm:inline">Public profile</span></Link>
       </BottomBar>
 
       {/* fallback when the share sheet isn't available: long-press saves an <img> to the gallery */}

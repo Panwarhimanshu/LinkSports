@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Home, Trophy, Users, UserCircle2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -16,7 +17,11 @@ const HIDDEN_ON = ['/admin', '/auth'];
  */
 export default function MobileTabBar() {
   const pathname = usePathname() || '/';
-  const { profile } = useAuthStore();
+  const { profile, isAuthenticated } = useAuthStore();
+  // signed-in navigation only: the login screen stays clean
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted || !isAuthenticated) return null;
   if (HIDDEN_ON.some((p) => pathname.startsWith(p))) return null;
 
   const ownProfileUrl = (profile as any)?.profileUrl as string | undefined;
