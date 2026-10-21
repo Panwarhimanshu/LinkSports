@@ -5,7 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard', '/edit', '/me', '/profile/edit', '/org/', '/admin/', '/settings', '/messages', '/notifications', '/auth/'],
+      // private app screens and the admin area
+      disallow: ['/edit', '/me', '/admin', '/auth/'],
     },
     sitemap: 'https://www.linksports.in/sitemap.xml',
   };

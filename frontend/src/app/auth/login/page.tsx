@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI } from '@/lib/api';
-import { CV_ONLY } from '@/lib/cv';
 import { Trophy, Eye, EyeOff, Loader2 } from 'lucide-react';
 import Logo from '@/components/shared/Logo';
 import toast from 'react-hot-toast';
@@ -35,15 +34,10 @@ function LoginContent() {
     if (token) {
       setAccessToken(token);
       if (newUser === 'true') {
-        // Fetch user so isAuthenticated is set before role selection page loads
-        if (CV_ONLY) {
-          // CV sprint: skip role selection, every new sign-in is a player
-          fetchMe().then(() => authAPI.updateRole('athlete')).catch(() => undefined).finally(() => router.replace('/'));
-        } else {
-          fetchMe().finally(() => router.replace('/auth/google-select-role'));
-        }
+        // every new sign-in is a player: no role picker
+        fetchMe().then(() => authAPI.updateRole('athlete')).catch(() => undefined).finally(() => router.replace('/'));
       } else {
-        fetchMe().then(() => router.replace(CV_ONLY ? '/' : '/dashboard'));
+        fetchMe().then(() => router.replace('/'));
       }
     }
   }, []);
@@ -60,7 +54,7 @@ function LoginContent() {
       toast.success('Welcome back!');
       // admins land on their dashboard; everyone else goes back where they came from
       const isAdmin = useAuthStore.getState().user?.role === 'admin';
-      const redirect = searchParams.get('redirect') || (isAdmin ? '/admin' : CV_ONLY ? '/' : '/dashboard');
+      const redirect = searchParams.get('redirect') || (isAdmin ? '/admin' : '/');
       router.push(redirect);
     } catch (error: unknown) {
       const msg = (error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Login failed';
@@ -152,8 +146,8 @@ function LoginContent() {
           </a>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            Don't have an account?{' '}
-            <Link href="/auth/register" className="text-brand font-medium hover:underline">Join free</Link>
+            Prefer a one-time email code?{' '}
+            <Link href="/" className="text-brand font-medium hover:underline">Sign in with email code</Link>
           </p>
 
         </div>

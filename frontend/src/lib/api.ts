@@ -84,7 +84,6 @@ export default api;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const authAPI = {
-  register: (data: Record<string, unknown>) => api.post('/auth/register', data),
   login: (data: { email: string; password: string }) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
   verifyEmail: (data: { email: string; otp: string }) => api.post('/auth/verify-email', data),
@@ -105,89 +104,10 @@ export const authAPI = {
 
 // ── Profiles ──────────────────────────────────────────────────────────────────
 export const profileAPI = {
-  searchProfiles: (params: Record<string, unknown>) => api.get('/profiles/search', { params }),
   getAthleteProfile: (id: string) => api.get(`/profiles/athlete/${id}`),
   getMyAthleteProfile: () => api.get('/profiles/athlete/me'),
   updateAthleteProfile: (data: Record<string, unknown>) => api.patch('/profiles/athlete', data),
-  getCoachProfile: (id: string) => api.get(`/profiles/coach/${id}`),
-  getMyCoachProfile: () => api.get('/profiles/coach/me'),
-  updateCoachProfile: (data: Record<string, unknown>) => api.patch('/profiles/coach', data),
-  getOrganizationProfile: (id: string) => api.get(`/profiles/organization/${id}`),
-  getMyOrganizationProfile: () => api.get('/profiles/organization/me'),
-  updateOrganizationProfile: (data: Record<string, unknown>) => api.patch('/profiles/organization', data),
-  uploadVerificationDocuments: (documents: string[]) => api.post('/profiles/organization/documents', { documents }),
   downloadAthleteCV: (id: string) => api.get(`/profiles/athlete/${id}/cv`, { responseType: 'blob' }),
-  downloadCoachCV: (id: string) => api.get(`/profiles/coach/${id}/cv`, { responseType: 'blob' }),
-};
-
-// ── Connections ───────────────────────────────────────────────────────────────
-export const connectionAPI = {
-  getConnections: (params?: Record<string, unknown>) => api.get('/connections', { params }),
-  sendRequest: (recipientId: string, note?: string) => api.post('/connections/request', { recipientId, note }),
-  respondToRequest: (id: string, action: 'accept' | 'reject') => api.post(`/connections/${id}/respond`, { action }),
-  withdrawConnection: (id: string) => api.delete(`/connections/${id}`),
-  getPendingRequests: () => api.get('/connections/pending'),
-  getSentRequests: () => api.get('/connections/sent'),
-  withdrawSentRequest: (id: string) => api.delete(`/connections/request/${id}`),
-  followUser: (followingId: string) => api.post('/connections/follow', { followingId }),
-  blockUser: (blockedId: string) => api.post('/connections/block', { blockedId }),
-  getConnectionStatus: (userId: string) => api.get(`/connections/status/${userId}`),
-};
-
-// ── Listings ──────────────────────────────────────────────────────────────────
-export const listingAPI = {
-  getListings: (params?: Record<string, unknown>) => api.get('/listings', { params }),
-  getListing: (id: string) => api.get(`/listings/${id}`),
-  createListing: (data: Record<string, unknown>) => api.post('/listings', data),
-  updateListing: (id: string, data: Record<string, unknown>) => api.patch(`/listings/${id}`, data),
-  submitForReview: (id: string) => api.post(`/listings/${id}/submit`),
-  cancelListing: (id: string, reason: string) => api.post(`/listings/${id}/cancel`, { reason }),
-  applyToListing: (id: string, data: Record<string, unknown>) => api.post(`/listings/${id}/apply`, data),
-  getApplications: (id: string, params?: Record<string, unknown>) => api.get(`/listings/${id}/applications`, { params }),
-  updateApplicationStatus: (appId: string, status: string, reason?: string) =>
-    api.patch(`/listings/applications/${appId}/status`, { status, reason }),
-  getMyListings: () => api.get('/listings/my'),
-  getMyApplications: () => api.get('/listings/applications/mine'),
-};
-
-// ── Jobs ──────────────────────────────────────────────────────────────────────
-export const jobAPI = {
-  getJobs: (params?: Record<string, unknown>) => api.get('/jobs', { params }),
-  getJob: (id: string) => api.get(`/jobs/${id}`),
-  createJob: (data: Record<string, unknown>) => api.post('/jobs', data),
-  submitForReview: (id: string) => api.post(`/jobs/${id}/submit`),
-  applyToJob: (id: string, coverLetter?: string) => api.post(`/jobs/${id}/apply`, { coverLetter }),
-  getJobApplications: (id: string, params?: Record<string, unknown>) => api.get(`/jobs/${id}/applications`, { params }),
-  updateApplicationStatus: (id: string, appId: string, status: string, reason?: string) =>
-    api.patch(`/jobs/${id}/applications/${appId}/status`, { status, reason }),
-  getMyJobApplications: () => api.get('/jobs/mine/applications'),
-  getMyOrgJobs: () => api.get('/jobs/mine/listings'),
-};
-
-// ── Messages ──────────────────────────────────────────────────────────────────
-export const messageAPI = {
-  getConversations: () => api.get('/messages/conversations'),
-  getOrCreateConversation: (userId: string) => api.get(`/messages/conversations/${userId}/with`),
-  getMessages: (conversationId: string, params?: Record<string, unknown>) =>
-    api.get(`/messages/conversations/${conversationId}/messages`, { params }),
-  sendMessage: (conversationId: string, data: Record<string, unknown>) =>
-    api.post(`/messages/conversations/${conversationId}/messages`, data),
-  getUnreadCount: () => api.get('/messages/unread'),
-};
-
-// ── Notifications ─────────────────────────────────────────────────────────────
-export const notificationAPI = {
-  getNotifications: (params?: Record<string, unknown>) => api.get('/notifications', { params }),
-  markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
-  markAllAsRead: () => api.patch('/notifications/read-all'),
-};
-
-// ── Payments ──────────────────────────────────────────────────────────────────
-export const paymentAPI = {
-  createOrder: (data: Record<string, unknown>) => api.post('/payments/create-order', data),
-  verifyPayment: (data: Record<string, unknown>) => api.post('/payments/verify', data),
-  getHistory: () => api.get('/payments/history'),
-  validateCoupon: (code: string) => api.post('/payments/validate-coupon', { code }),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -198,20 +118,6 @@ export const adminAPI = {
   updateUser: (id: string, data: Record<string, unknown>) => api.patch(`/admin/users/${id}`, data),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   suspendUser: (id: string) => api.patch(`/admin/users/${id}/suspend`),
-  getPendingListings: () => api.get('/admin/listings/pending'),
-  reviewListing: (id: string, action: string, reason?: string) =>
-    api.patch(`/admin/listings/${id}/review`, { action, reason }),
-  getPendingJobs: () => api.get('/admin/jobs/pending'),
-  reviewJob: (id: string, action: string, reason?: string) =>
-    api.patch(`/admin/jobs/${id}/review`, { action, reason }),
-  getPendingOrganizations: () => api.get('/admin/organizations/pending'),
-  verifyOrganization: (id: string, action: string, reason?: string) =>
-    api.patch(`/admin/organizations/${id}/verify`, { action, reason }),
-  getCoupons: () => api.get('/admin/coupons'),
-  createCoupon: (data: Record<string, unknown>) => api.post('/admin/coupons', data),
-  toggleCoupon: (id: string) => api.patch(`/admin/coupons/${id}/toggle`),
-  getRevenue: () => api.get('/admin/revenue'),
-  sendAnnouncement: (data: Record<string, unknown>) => api.post('/admin/announcements', data),
   getCvStats: () => api.get('/admin/cv/stats'),
   getCvUsers: (params?: Record<string, unknown>) => api.get('/admin/cv/users', { params }),
   exportCvUsers: (params?: Record<string, unknown>) => api.get('/admin/cv/users/export', { params, responseType: 'blob' }),
@@ -222,22 +128,6 @@ export const adminAPI = {
   getUser: (id: string) => api.get(`/admin/users/${id}`),
   updateProfile: (kind: 'athlete' | 'coach' | 'organization', id: string, data: Record<string, unknown>) =>
     api.patch(`/admin/profiles/${kind}/${id}`, data),
-  getListings: (params?: Record<string, unknown>) => api.get('/admin/listings', { params }),
-  updateListing: (id: string, data: Record<string, unknown>) => api.patch(`/admin/listings/${id}`, data),
-  deleteListing: (id: string) => api.delete(`/admin/listings/${id}`),
-  getListingApplications: (id: string) => api.get(`/admin/listings/${id}/applications`),
-  getJobs: (params?: Record<string, unknown>) => api.get('/admin/jobs', { params }),
-  updateJob: (id: string, data: Record<string, unknown>) => api.patch(`/admin/jobs/${id}`, data),
-  deleteJob: (id: string) => api.delete(`/admin/jobs/${id}`),
-  getJobApplications: (id: string) => api.get(`/admin/jobs/${id}/applications`),
-  updateApplication: (kind: 'listing' | 'job', id: string, data: Record<string, unknown>) =>
-    api.patch(`/admin/applications/${kind}/${id}`, data),
-  getOrganizations: (params?: Record<string, unknown>) => api.get('/admin/organizations', { params }),
-  getReviews: (params?: Record<string, unknown>) => api.get('/admin/reviews', { params }),
-  deleteReview: (id: string) => api.delete(`/admin/reviews/${id}`),
-  dismissReview: (id: string) => api.patch(`/admin/reviews/${id}/dismiss`),
-  getPayments: (params?: Record<string, unknown>) => api.get('/admin/payments', { params }),
-  getAnnouncements: () => api.get('/admin/announcements'),
   getSettings: () => api.get('/admin/settings'),
   updateSettings: (data: Record<string, unknown>) => api.put('/admin/settings', data),
 };

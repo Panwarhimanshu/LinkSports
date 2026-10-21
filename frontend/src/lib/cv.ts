@@ -1,8 +1,5 @@
 import { getPhotoUrl } from './utils';
 
-/** Sprint mode: root opens the CV creator and networking features are off. Set NEXT_PUBLIC_CV_ONLY=false to restore the old site. */
-export const CV_ONLY = process.env.NEXT_PUBLIC_CV_ONLY !== 'false';
-
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.linksports.in').replace(/\/$/, '');
 
 /** The player's public handle: their username, or the older link slug if they have none yet. */

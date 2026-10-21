@@ -17,9 +17,22 @@ try {
 const nextConfig = {
   async redirects() {
     return [
-      { source: '/opportunities', destination: '/listings', permanent: true },
       { source: '/privacy-policy', destination: '/privacy', permanent: true },
       { source: '/terms-of-service', destination: '/terms', permanent: true },
+      // Old shared profile links keep working: /athlete/{slug} is now the public CV page
+      { source: '/athlete/:id', destination: '/cv/:id', permanent: true },
+      // The web app is only the player CV now. Old sections go back to the start page
+      // (temporary redirects, so a section can come back later without browsers remembering the move).
+      ...[
+        '/listings', '/jobs', '/search', '/dashboard', '/connections', '/my-connections', '/messages',
+        '/notifications', '/settings', '/profile', '/about', '/contact', '/home', '/opportunities',
+        '/auth/register', '/auth/select-role', '/auth/google-select-role',
+      ].flatMap((path) => [
+        { source: path, destination: '/', permanent: false },
+        { source: `${path}/:rest*`, destination: '/', permanent: false },
+      ]),
+      { source: '/org/:path*', destination: '/', permanent: false },
+      { source: '/coach/:path*', destination: '/', permanent: false },
     ];
   },
   images: {
@@ -36,7 +49,6 @@ const nextConfig = {
     NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000',
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.linksports.in',
     NEXT_PUBLIC_DEV_LOGIN: process.env.NEXT_PUBLIC_DEV_LOGIN || 'false',
-    NEXT_PUBLIC_CV_ONLY: process.env.NEXT_PUBLIC_CV_ONLY || 'true',
   },
 };
 

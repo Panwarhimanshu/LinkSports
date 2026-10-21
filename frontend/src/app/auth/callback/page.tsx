@@ -21,7 +21,7 @@ function CallbackHandler() {
 
     setAccessToken(token);
     fetchMe()
-      .then(() => router.replace('/dashboard'))
+      .then(() => router.replace('/'))
       .catch(() => router.replace('/auth/login?error=oauth_failed'));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

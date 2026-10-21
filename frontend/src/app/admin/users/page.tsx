@@ -159,7 +159,7 @@ function UserDetail({ id, onClose }: { id: string; onClose: () => void }) {
   if (!data) return <Modal title="Loading…" onClose={onClose}><p className="text-sm text-gray-500">Loading user…</p></Modal>;
   const { user, profile, counts } = data;
   const kind = user.role === 'organization' ? 'organization' : user.role === 'athlete' ? 'athlete' : user.role === 'coach' || user.role === 'professional' ? 'coach' : null;
-  const publicUrl = profile?.profileUrl ? (kind === 'organization' ? `/org/${profile.profileUrl}` : kind === 'coach' ? `/coach/${profile.profileUrl}` : `/athlete/${profile.profileUrl}`) : null;
+  const publicUrl = kind === 'athlete' && (profile?.username || profile?.profileUrl) ? `/cv/${profile.username || profile.profileUrl}` : null;
 
   const saveProfile = async () => {
     if (!kind || !profile?._id) return;

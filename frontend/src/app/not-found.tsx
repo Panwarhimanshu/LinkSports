@@ -23,8 +23,8 @@ export default function NotFound() {
             <Link href="/" className="btn-primary px-6 py-2.5">
               Go to Homepage
             </Link>
-            <Link href="/listings" className="btn-secondary px-6 py-2.5">
-              Browse Opportunities
+            <Link href="/me" className="btn-secondary px-6 py-2.5">
+              My Profile
             </Link>
           </div>
         </div>

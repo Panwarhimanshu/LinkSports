@@ -3,10 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  LayoutDashboard, Contact, Users, Trophy, Briefcase, Building2, ShieldAlert, IndianRupee, Bell, Activity, Settings,
-  Menu, X, ExternalLink, LogOut,
-} from 'lucide-react';
+import { LayoutDashboard, Contact, Users, Activity, Settings, Menu, X, ExternalLink, LogOut } from 'lucide-react';
 import AuthGuard from '@/components/shared/AuthGuard';
 import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '@/store/authStore';
@@ -15,12 +12,6 @@ const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/cv', label: 'Players & CVs', icon: Contact },
   { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/listings', label: 'Trials & Events', icon: Trophy },
-  { href: '/admin/jobs', label: 'Jobs', icon: Briefcase },
-  { href: '/admin/organizations', label: 'Organizations', icon: Building2 },
-  { href: '/admin/reviews', label: 'Moderation', icon: ShieldAlert },
-  { href: '/admin/payments', label: 'Payments & Coupons', icon: IndianRupee },
-  { href: '/admin/notifications', label: 'Notifications', icon: Bell },
   { href: '/admin/activity', label: 'Activity', icon: Activity },
   { href: '/admin/settings', label: 'Site & App Settings', icon: Settings },
 ];
