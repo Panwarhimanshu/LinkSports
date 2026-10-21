@@ -5,7 +5,6 @@ import { Toaster } from 'react-hot-toast';
 import { QueryClientProvider } from '@/components/shared/QueryProvider';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import SessionExpiredHandler from '@/components/shared/SessionExpiredHandler';
-import MobileTabBar from '@/components/layout/MobileTabBar';
 import SiteBanner from '@/components/layout/SiteBanner';
 import ImageFallback from '@/components/shared/ImageFallback';
 
@@ -56,7 +55,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ErrorBoundary>
             {children}
           </ErrorBoundary>
-          <MobileTabBar />
           <Toaster
             position="top-right"
             toastOptions={{

@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   description:
     'Create your free digital sports resume. Pick your sport, add your stats and achievements, then download a PDF CV and an Instagram Story card. Football, cricket, badminton, athletics, kabaddi and more.',
   keywords: [
-    'Sports CV', 'Free Sports CV', 'Player CV Creator', 'Digital Sports Resume', 'Football CV Maker',
-    'Cricket Player Profile', 'Athlete Portfolio India', 'Grassroots Sports Identity', 'Scout Verification Link',
+    'Sports CV', 'Free Sports CV', 'Create Player CV Online', 'Digital Sports Resume India', 'Football Player CV',
+    'Cricket Profile Maker', 'Athlete Portfolio PDF', 'LinkSports Player Profile',
   ],
   alternates: { canonical: 'https://www.linksports.in/' },
   openGraph: {
@@ -18,15 +18,28 @@ export const metadata: Metadata = {
   },
 };
 
+// The app itself plus the organisation behind it, so search engines and AI assistants can tie "free Sports CV" to LinkSports.
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'LinkSports Player CV Creator',
-  url: 'https://www.linksports.in/',
-  applicationCategory: 'SportsApplication',
-  operatingSystem: 'Any',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
-  description: 'Free digital sports resume and Instagram Story card maker for Indian athletes.',
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      name: 'LinkSports Player CV Creator',
+      url: 'https://www.linksports.in/',
+      applicationCategory: 'SportsApplication',
+      operatingSystem: 'Any',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
+      description: 'Free digital sports resume and Instagram Story card maker for Indian athletes.',
+    },
+    {
+      '@type': 'SportsOrganization',
+      name: 'LinkSports',
+      url: 'https://www.linksports.in/',
+      logo: 'https://www.linksports.in/logo.png',
+      areaServed: { '@type': 'Country', name: 'India' },
+      description: "India's sports networking platform: free Sports CVs for players, coaches and academies.",
+    },
+  ],
 };
 
 export default function Page() {

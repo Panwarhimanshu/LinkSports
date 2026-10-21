@@ -38,6 +38,30 @@ const sanitizeEducation = (arr: unknown[]) =>
 const sanitizePlayingHistory = (arr: unknown[]) =>
   arr.map((h: any) => ({ ...h, startDate: toDate(h.startDate), endDate: toDate(h.endDate) }));
 
+const clip = (v: unknown, n: number) => String(v ?? '').trim().slice(0, n);
+
+const sanitizeCareerStats = (arr: unknown[]) =>
+  arr.slice(0, 12).map((s: any) => ({ label: clip(s?.label, 40), value: clip(s?.value, 20) })).filter((s) => s.label && s.value);
+
+const sanitizeCustomSections = (arr: unknown[]) =>
+  arr.slice(0, 6).map((c: any) => ({
+    title: clip(c?.title, 60),
+    items: (Array.isArray(c?.items) ? c.items : []).slice(0, 12)
+      .map((i: any) => ({ label: clip(i?.label, 60), value: clip(i?.value, 200) })).filter((i: { value: string }) => i.value),
+  })).filter((c) => c.title && c.items.length);
+
+// Sprint spec: at most 4 action photos (the profile avatar is a separate field) and a few video links.
+export const MAX_ACTION_PHOTOS = 4;
+const sanitizeMedia = (arr: unknown[]) => {
+  const list = (arr as any[]).filter((m) => m && typeof m.url === 'string' && m.url);
+  return [
+    ...list.filter((m) => m.type === 'photo').slice(0, MAX_ACTION_PHOTOS),
+    ...list.filter((m) => m.type === 'video').slice(0, 6),
+  ];
+};
+
+const photoCount = (media: unknown) => ((media as any[]) || []).filter((m) => m?.type === 'photo').length;
+
 const sanitizeCertifications = (arr: unknown[]) =>
   arr.map((c: any) => ({ ...c, year: toNum(c.year) }));
 
@@ -133,9 +157,12 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
       'media', 'socialLinks', 'tagline', 'aboutBio', 'careerHighlights', 'goalsAspirations',
       'yearsOfExperience', 'experienceLevel', 'strengths', 'featuredVideoUrl', 'institutionName', 'currentEducation',
       'availabilityStatus', 'visibility', 'coachReferences',
+      'secondaryPosition', 'careerStats', 'customSections',
     ];
 
     const numericFields = new Set(['height', 'weight', 'yearsOfExperience']);
+
+    const photosBefore = photoCount(profile.media);
 
     allowedFields.forEach((field) => {
       let value = req.body[field];
@@ -156,6 +183,12 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
         value = sanitizeEducation(value);
       } else if (field === 'certifications' && Array.isArray(value)) {
         value = sanitizeCertifications(value);
+      } else if (field === 'careerStats' && Array.isArray(value)) {
+        value = sanitizeCareerStats(value);
+      } else if (field === 'customSections' && Array.isArray(value)) {
+        value = sanitizeCustomSections(value);
+      } else if (field === 'media' && Array.isArray(value)) {
+        value = sanitizeMedia(value);
       } else if (field === 'dob') {
         value = toDate(value);
       }
@@ -164,10 +197,11 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
 
     profile.profileCompletion = calculateAthleteCompletion(profile);
     await profile.save();
-    void logEvent(req.user!._id.toString(), 'CV_SAVED', {
-      sport: profile.primarySport,
-      meta: { completion: profile.profileCompletion, device: deviceFromUserAgent(req.headers['user-agent'], req.headers['x-app-platform'] as string | undefined) },
-    });
+    const device = deviceFromUserAgent(req.headers['user-agent'], req.headers['x-app-platform'] as string | undefined);
+    void logEvent(req.user!._id.toString(), 'CV_UPDATED', { sport: profile.primarySport, meta: { device } });
+    if (photoCount(profile.media) > photosBefore) {
+      void logEvent(req.user!._id.toString(), 'PHOTOS_UPLOADED', { sport: profile.primarySport, meta: { device } });
+    }
     sendSuccess(res, profile, 'Profile updated');
   } catch (err) {
     console.error('updateAthleteProfile error:', err);
@@ -435,6 +469,18 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
       // organization role falls through — always allowed
     }
 
+    // Images are fetched up front so the PDF stream never stalls half-way; any that fail are simply skipped.
+    const fetchImage = async (url?: string): Promise<Buffer | null> => {
+      if (!url || !/^https?:\/\//.test(url)) return null;
+      try {
+        const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+        if (!r.ok) return null;
+        return Buffer.from(await r.arrayBuffer());
+      } catch { return null; }
+    };
+    const galleryUrls = ((profile.media as any[]) || []).filter((m) => m?.type === 'photo').slice(0, 4).map((m) => m.url as string);
+    const [avatarBuf, ...galleryBufs] = await Promise.all([fetchImage(profile.photo), ...galleryUrls.map((u) => fetchImage(u))]);
+
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const filename = `${profile.fullName.replace(/\s+/g, '_')}_Sports_CV.pdf`;
 
@@ -489,16 +535,28 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
     doc.moveTo(PAGE_W - 120, 0).lineTo(PAGE_W, 0).lineTo(PAGE_W, headerH).lineTo(PAGE_W - 200, headerH).fill(BRAND);
     doc.restore();
 
+    // Round profile photo on the right of the banner
+    const textW = avatarBuf ? PAGE_W - 190 : PAGE_W - 100;
+    if (avatarBuf) {
+      try {
+        doc.save();
+        doc.circle(PAGE_W - 85, headerH / 2, 38).clip();
+        doc.image(avatarBuf, PAGE_W - 123, headerH / 2 - 38, { cover: [76, 76], align: 'center', valign: 'center' });
+        doc.restore();
+        doc.circle(PAGE_W - 85, headerH / 2, 38).lineWidth(2).strokeColor(WHITE).stroke();
+      } catch { doc.restore(); /* unsupported image format: keep the banner without a photo */ }
+    }
+
     // Name
-    doc.fillColor(WHITE).fontSize(24).font('Helvetica-Bold').text(profile.fullName, LEFT, 22, { width: PAGE_W - 100 });
+    doc.fillColor(WHITE).fontSize(24).font('Helvetica-Bold').text(profile.fullName, LEFT, 22, { width: textW });
 
     // Sport · Position · Experience Level
     const subtitleParts: string[] = [];
     if (profile.primarySport) subtitleParts.push(profile.primarySport);
-    if (profile.position) subtitleParts.push(profile.position);
+    if (profile.position) subtitleParts.push(profile.secondaryPosition ? `${profile.position} / ${profile.secondaryPosition}` : profile.position);
     if (profile.experienceLevel) subtitleParts.push(profile.experienceLevel);
     if (subtitleParts.length > 0) {
-      doc.fontSize(12).font('Helvetica').text(subtitleParts.join('  |  '), LEFT, 50, { width: PAGE_W - 100 });
+      doc.fontSize(12).font('Helvetica').text(subtitleParts.join('  |  '), LEFT, 50, { width: textW });
     }
 
     // Location + Status
@@ -515,7 +573,7 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
     if (locStr) line3Parts.push(locStr);
     if (statusLabel) line3Parts.push(`Status: ${statusLabel}`);
     if (line3Parts.length > 0) {
-      doc.fontSize(9).font('Helvetica').text(line3Parts.join('   |   '), LEFT, 68, { width: PAGE_W - 100 });
+      doc.fontSize(9).font('Helvetica').text(line3Parts.join('   |   '), LEFT, 68, { width: textW });
     }
 
     // Contact info row
@@ -524,7 +582,7 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
     if (profile.phone) contactParts.push(`Phone: ${profile.phone}`);
     if (profile.socialLinks?.whatsapp) contactParts.push(`WhatsApp: ${profile.socialLinks.whatsapp}`);
     if (contactParts.length > 0) {
-      doc.fontSize(9).font('Helvetica').text(contactParts.join('   |   '), LEFT, 86, { width: PAGE_W - 100 });
+      doc.fontSize(9).font('Helvetica').text(contactParts.join('   |   '), LEFT, 86, { width: textW });
     }
 
     doc.fillColor(DARK);
@@ -567,6 +625,23 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
       }
       doc.fillColor(DARK).font('Helvetica');
       y += 54;
+    }
+
+    // ── CAREER STATS ──
+    if (profile.careerStats?.length > 0) {
+      sectionTitle('Career Stats');
+      const cols = Math.min(profile.careerStats.length, 4);
+      const tileW = CONTENT_W / cols;
+      profile.careerStats.slice(0, 12).forEach((s, i) => {
+        const col = i % cols;
+        if (col === 0 && i > 0) y += 46;
+        const x = LEFT + col * tileW;
+        doc.rect(x, y, tileW - 4, 40).fill(i % 2 === 0 ? LIGHT_GRAY : '#E8EFFD');
+        doc.fillColor(DARK).fontSize(14).font('Helvetica-Bold').text(s.value, x + 8, y + 6, { width: tileW - 20 });
+        doc.fillColor(GRAY).fontSize(7).font('Helvetica-Bold').text(s.label.toUpperCase(), x + 8, y + 26, { width: tileW - 20 });
+      });
+      y += 52;
+      doc.fillColor(DARK).font('Helvetica');
     }
 
     // ── ABOUT ──
@@ -680,6 +755,14 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
       }
     }
 
+    if (profile.institutionName) {
+      addPageIfNeeded(24);
+      doc.fillColor(GRAY).fontSize(9).font('Helvetica-Bold').text('SCHOOL / COLLEGE   ', LEFT, y, { continued: true });
+      doc.fillColor(DARK).fontSize(10).font('Helvetica').text(profile.institutionName, { width: CONTENT_W - 120 });
+      y += 22;
+    }
+
+
     // ── TOURNAMENTS ──
     if (profile.tournaments?.length > 0) {
       sectionTitle('Tournaments');
@@ -758,6 +841,33 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
         y += 16;
       }
       y += 6;
+    }
+
+    // ── CUSTOM SECTIONS (fitness metrics, references, ...) ──
+    for (const section of profile.customSections || []) {
+      sectionTitle(section.title);
+      for (const item of section.items) {
+        addPageIfNeeded(18);
+        const line = item.label ? `${item.label}: ${item.value}` : item.value;
+        doc.fillColor(DARK).fontSize(10).font('Helvetica').text(line, LEFT + 10, y, { width: CONTENT_W - 10 });
+        y += doc.heightOfString(line, { width: CONTENT_W - 10 }) + 4;
+      }
+      y += 4;
+    }
+
+    // ── ACTION PHOTOS (2×2 grid) ──
+    const shots = galleryBufs.filter((b): b is Buffer => !!b);
+    if (shots.length > 0) {
+      sectionTitle('Action Photos');
+      const cellW = (CONTENT_W - 10) / 2;
+      const cellH = 150;
+      shots.forEach((buf, i) => {
+        const col = i % 2;
+        if (col === 0) addPageIfNeeded(cellH + 10);
+        const x = LEFT + col * (cellW + 10);
+        try { doc.image(buf, x, y, { cover: [cellW, cellH], align: 'center', valign: 'center' }); } catch { /* unsupported format */ }
+        if (col === 1 || i === shots.length - 1) y += cellH + 10;
+      });
     }
 
     // ── CONNECT / SOCIAL LINKS ──

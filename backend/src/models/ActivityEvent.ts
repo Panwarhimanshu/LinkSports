@@ -1,11 +1,15 @@
 import mongoose, { Schema, Types } from 'mongoose';
 
 export const EVENT_TYPES = [
+  'USER_SIGNUP',
   'USER_LOGIN',
   'SPORT_SELECTED',
-  'CV_SAVED',
+  'CV_UPDATED',
+  'CV_SAVED', // legacy name for CV_UPDATED, kept so old rows still validate
+  'PHOTOS_UPLOADED',
   'PDF_DOWNLOADED',
   'STORY_CARD_EXPORTED',
+  'PROFILE_SHARED',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 

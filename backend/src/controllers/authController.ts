@@ -380,6 +380,7 @@ export const googleCallback = async (req: AuthRequest, res: Response): Promise<v
 
     const user = req.user;
     void logEvent(user._id.toString(), 'USER_LOGIN', { meta: { device: deviceFromUserAgent(req.headers['user-agent']), provider: 'google' } });
+    if (user.needsRoleSelection === true) void logEvent(user._id.toString(), 'USER_SIGNUP', { meta: { provider: 'google' } });
     const needsRole = user.needsRoleSelection === true;
     const payload = { id: user._id.toString(), role: user.role, email: user.email };
     const accessToken = generateAccessToken(payload);

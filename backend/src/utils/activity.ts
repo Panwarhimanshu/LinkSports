@@ -19,14 +19,18 @@ export const logEvent = async (
   opts: { sport?: string; meta?: Record<string, unknown> } = {}
 ): Promise<void> => {
   try {
-    const profile = await AthleteProfile.findOne({ userId }).select('fullName primarySport');
+    const profile = await AthleteProfile.findOne({ userId }).select('fullName primarySport media profileCompletion');
     await ActivityEvent.create({
       eventId: `evt_${crypto.randomBytes(5).toString('hex')}`,
       userId,
       userName: profile?.fullName || '',
       sport: opts.sport || profile?.primarySport,
       eventType,
-      meta: opts.meta || {},
+      meta: {
+        photos_count: ((profile?.media as any[]) || []).filter((m) => m?.type === 'photo').length,
+        completion: `${profile?.profileCompletion ?? 0}%`,
+        ...(opts.meta || {}),
+      },
     });
   } catch (err) {
     console.error('logEvent failed:', (err as Error).message);

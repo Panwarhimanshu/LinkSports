@@ -5,7 +5,51 @@ export const CV_ONLY = process.env.NEXT_PUBLIC_CV_ONLY !== 'false';
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.linksports.in').replace(/\/$/, '');
 
-export const shareUrlFor = (profileUrl?: string) => (profileUrl ? `${SITE_URL}/athlete/${profileUrl}` : SITE_URL);
+/** Public CV link, e.g. https://www.linksports.in/cv/rahul-sharma-a1b2c3 */
+export const shareUrlFor = (profileUrl?: string) => (profileUrl ? `${SITE_URL}/cv/${profileUrl}` : SITE_URL);
+
+export const MAX_ACTION_PHOTOS = 4;
+export const MAX_PHOTO_BYTES = 800 * 1024;
+
+/** Phone sign-ups start with the placeholder name "Player"; treat it as not filled in. */
+export const realName = (name?: string) => (name && name !== 'Player' ? name : '');
+
+export const photosOf = (p?: Record<string, any> | null): { url: string }[] => ((p?.media as any[]) || []).filter((m) => m?.type === 'photo' && m.url);
+export const videosOf = (p?: Record<string, any> | null): { url: string; platform?: string }[] => ((p?.media as any[]) || []).filter((m) => m?.type === 'video' && m.url);
+
+/** A profile is "onboarded" once it has a sport and a real name; before that the app shows the setup steps. */
+export const isOnboarded = (p?: Record<string, any> | null) => !!p?.primarySport && !!realName(p?.fullName);
+
+/**
+ * Shrinks a photo in the browser before upload so it stays under `maxBytes` (default 800 KB):
+ * scales the longest side down to 1600px, then lowers JPEG quality until it fits.
+ */
+export async function compressImage(file: File, maxBytes = MAX_PHOTO_BYTES): Promise<File> {
+  if (!file.type.startsWith('image/')) throw new Error('Please choose an image file');
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) {
+    if (file.size <= maxBytes) return file; // can't decode (e.g. HEIC) but it's small enough already
+    throw new Error('This photo format is not supported. Please use a JPG or PNG.');
+  }
+  let side = Math.min(1600, Math.max(bitmap.width, bitmap.height));
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const ratio = side / Math.max(bitmap.width, bitmap.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * Math.min(1, ratio)));
+    canvas.height = Math.max(1, Math.round(bitmap.height * Math.min(1, ratio)));
+    canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    for (const quality of [0.85, 0.75, 0.65, 0.55]) {
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+      if (blob && blob.size <= maxBytes) {
+        bitmap.close?.();
+        return new File([blob], file.name.replace(/[.][^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+      }
+    }
+    side = Math.round(side * 0.8); // still too big: shrink the pixels and try again
+  }
+  bitmap.close?.();
+  throw new Error('Could not shrink this photo enough. Try a different one.');
+}
 
 export const MIN_COMPLETE = 60; // matches the admin "completed CV" threshold
 

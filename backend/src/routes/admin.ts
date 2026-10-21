@@ -6,7 +6,7 @@ import {
   getPendingOrganizations, verifyOrganization,
   getCoupons, createCoupon, toggleCoupon,
   getRevenueReport, createSystemAnnouncement,
-  getCvStats, getCvUsers, getActivityFeed,
+  getCvStats, getCvUsers, getActivityFeed, exportCvUsersCsv, updateCvUser,
 } from '../controllers/adminController';
 import {
   getUserDetail, updateProfile,
@@ -24,6 +24,8 @@ router.use(protect, authorize('admin'));
 router.get('/dashboard', getDashboard);
 router.get('/cv/stats', getCvStats);
 router.get('/cv/users', getCvUsers);
+router.get('/cv/users/export', exportCvUsersCsv);
+router.patch('/cv/users/:id', updateCvUser);
 router.get('/cv/activity', getActivityFeed);
 router.get('/users', getUsers);
 router.post('/users', createUser);

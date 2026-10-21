@@ -28,6 +28,7 @@ export const startSession = async (
   res.cookie('accessToken', accessToken, { ...COOKIE_OPTIONS, maxAge: 15 * 60 * 1000 });
   res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
 
+  if (isNew) void logEvent(user._id.toString(), 'USER_SIGNUP', { meta: { provider } });
   void logEvent(user._id.toString(), 'USER_LOGIN', {
     meta: { device: deviceFromUserAgent(req.headers['user-agent'], req.headers['x-app-platform'] as string | undefined), provider },
   });

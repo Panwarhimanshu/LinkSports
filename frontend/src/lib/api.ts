@@ -214,6 +214,8 @@ export const adminAPI = {
   sendAnnouncement: (data: Record<string, unknown>) => api.post('/admin/announcements', data),
   getCvStats: () => api.get('/admin/cv/stats'),
   getCvUsers: (params?: Record<string, unknown>) => api.get('/admin/cv/users', { params }),
+  exportCvUsers: (params?: Record<string, unknown>) => api.get('/admin/cv/users/export', { params, responseType: 'blob' }),
+  updateCvUser: (profileId: string, data: Record<string, unknown>) => api.patch(`/admin/cv/users/${profileId}`, data),
   getCvActivity: (params?: Record<string, unknown>) => api.get('/admin/cv/activity', { params }),
 
   // full management
@@ -245,7 +247,7 @@ export const settingsAPI = { get: () => api.get('/settings') };
 
 // ── Activity events (CV sprint) ───────────────────────────────────────────────
 export const eventAPI = {
-  log: (eventType: 'SPORT_SELECTED' | 'PDF_DOWNLOADED' | 'STORY_CARD_EXPORTED', data: { sport?: string; format?: string } = {}) =>
+  log: (eventType: 'SPORT_SELECTED' | 'PDF_DOWNLOADED' | 'STORY_CARD_EXPORTED' | 'PROFILE_SHARED', data: { sport?: string; format?: string } = {}) =>
     api.post('/events', { eventType, ...data }).catch(() => undefined), // analytics must never block the user
 };
 // ── Upload ──────────────────────────────────────────────────────────────────

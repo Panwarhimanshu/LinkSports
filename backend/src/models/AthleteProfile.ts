@@ -77,6 +77,9 @@ export interface IAthleteProfile extends Document {
     whatsapp?: string; // New field
   };
   tagline?: string; // New field (for short bio)
+  secondaryPosition?: string;
+  careerStats: { label: string; value: string }[]; // e.g. Matches 45, Goals 12
+  customSections: { title: string; items: { label?: string; value: string }[] }[]; // fitness metrics, certifications, references
   aboutBio?: string;
   careerHighlights?: string; // New field
   goalsAspirations?: string; // New field
@@ -175,6 +178,9 @@ const AthleteProfileSchema = new Schema<IAthleteProfile>(
       whatsapp: String
     },
     tagline: String,
+    secondaryPosition: String,
+    careerStats: [{ _id: false, label: String, value: String }],
+    customSections: [{ _id: false, title: String, items: [{ _id: false, label: String, value: String }] }],
     aboutBio: { type: String, maxlength: 5000 },
     careerHighlights: String,
     goalsAspirations: String,

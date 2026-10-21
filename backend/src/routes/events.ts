@@ -16,9 +16,9 @@ const eventLimiter = rateLimit({
   message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many events.' } },
 });
 
-// Client-reported activity (SPORT_SELECTED, PDF_DOWNLOADED, STORY_CARD_EXPORTED).
-// USER_LOGIN and CV_SAVED are logged server-side (auth + profile controllers) so they can't be forged or duplicated.
-const CLIENT_EVENTS = EVENT_TYPES.filter((t) => t !== 'USER_LOGIN' && t !== 'CV_SAVED');
+// Client-reported activity (SPORT_SELECTED, PDF_DOWNLOADED, STORY_CARD_EXPORTED, PROFILE_SHARED).
+// Signup, login, CV updates and photo uploads are logged server-side (auth + profile controllers) so they can't be forged or duplicated.
+const CLIENT_EVENTS = EVENT_TYPES.filter((t) => ['SPORT_SELECTED', 'PDF_DOWNLOADED', 'STORY_CARD_EXPORTED', 'PROFILE_SHARED'].includes(t));
 
 router.post('/', protect, eventLimiter, async (req: AuthRequest, res: Response) => {
   const { eventType, sport, format } = req.body || {};

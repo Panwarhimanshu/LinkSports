@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard', '/profile/edit', '/org/', '/admin/', '/settings', '/messages', '/notifications', '/auth/'],
+      disallow: ['/dashboard', '/edit', '/me', '/profile/edit', '/org/', '/admin/', '/settings', '/messages', '/notifications', '/auth/'],
     },
     sitemap: 'https://www.linksports.in/sitemap.xml',
   };
