@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const description =
     p.tagline ||
     `${p.fullName} is a ${p.primarySport || 'sports'} player${place ? ` from ${place}` : ''}. View the verified digital sports CV on LinkSports.in.`;
-  const url = `${SITE}/cv/${p.profileUrl || params.id}`;
+  const url = `${SITE}/cv/${p.username || p.profileUrl || params.id}`;
   const image = abs(p.photo);
 
   return {
@@ -48,7 +48,7 @@ export default async function AthleteLayout({ children, params }: { children: Re
     name: p.fullName,
     description: p.tagline,
     image: abs(p.photo),
-    url: `${SITE}/cv/${p.profileUrl || params.id}`,
+    url: `${SITE}/cv/${p.username || p.profileUrl || params.id}`,
     jobTitle: [p.primarySport, p.position].filter(Boolean).join(' '),
     address: p.location?.city ? { '@type': 'PostalAddress', addressLocality: p.location.city, addressRegion: p.location.state, addressCountry: 'IN' } : undefined,
     sameAs: [p.socialLinks?.instagram, p.socialLinks?.youtube].filter(Boolean),

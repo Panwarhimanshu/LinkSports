@@ -25,7 +25,7 @@ export function SportStep({ onPick }: { onPick: (sport: string) => Promise<void>
   };
 
   return (
-    <div className="flex-1 px-4 pb-10 pt-6">
+    <div className="mx-auto w-full max-w-3xl flex-1 px-4 pb-10 pt-6 md:px-8 md:pt-10">
       <p className="eyebrow">Setup · 1 of 2</p>
       <h1 className="mt-3 font-display text-4xl font-semibold text-ink"><AccentTitle>What do you play?</AccentTitle></h1>
       <p className="mt-2 text-ink-soft">Pick your main sport. You can change it later in Edit CV.</p>
@@ -35,7 +35,7 @@ export function SportStep({ onPick }: { onPick: (sport: string) => Promise<void>
         <input className={inputCls + ' pl-11'} placeholder="Search sport" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
         {list.map((name, i) => (
           <button
             key={name}
@@ -106,7 +106,7 @@ export function CoreStep({ profile, userId, save, onDone }: {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-1 flex-col px-4 pb-8 pt-6">
+    <form onSubmit={submit} className="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-8 pt-6 md:px-8 md:pt-10">
       <p className="eyebrow">Setup · 2 of 2</p>
       <h1 className="mt-3 font-display text-4xl font-semibold text-ink"><AccentTitle>Your core details</AccentTitle></h1>
       <p className="mt-2 text-ink-soft">Just the basics. Add medals, photos and stats later in Edit CV.</p>

@@ -58,10 +58,10 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
   const custom: any[] = profile.customSections || [];
 
   return (
-    <div className="pb-8">
+    <div className="mx-auto w-full max-w-3xl pb-10 md:px-6">
       {/* header card */}
       <div className="px-4 pt-5">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#0b2a5c] to-brand p-6 text-white shadow-[0_28px_60px_-30px_rgba(0,35,90,0.7)]">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#0b2a5c] to-brand p-6 text-white md:p-8 shadow-[0_28px_60px_-30px_rgba(0,35,90,0.7)]">
           <div className="flex items-center gap-4">
             {avatar
               ? <img src={avatar} alt={name} className="h-20 w-20 shrink-0 rounded-full object-cover ring-4 ring-white/25" />
@@ -82,7 +82,7 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
 
       {stats.length > 0 && (
         <Section title="Key stats">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 md:grid-cols-4">
             {stats.map((s, i) => (
               <div key={`${s.label}-${i}`} className="rounded-2xl border border-line bg-cream/60 px-3 py-3 text-center">
                 <p className="truncate font-display text-xl font-semibold text-ink">{s.value}</p>

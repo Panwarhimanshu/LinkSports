@@ -12,6 +12,7 @@ import { MAX_ACTION_PHOTOS, ageFromDob, compressImage, photosOf, realName, video
 import { getPhotoUrl } from '@/lib/utils';
 import { apiError } from '@/lib/useCvSession';
 import { useSports } from './useSports';
+import StoryPreview from './StoryPreview';
 import { AccentTitle, Field, btnGhost, btnPrimary, inputCls, textareaCls } from './ui';
 
 type Profile = Record<string, any>;
@@ -104,8 +105,9 @@ export default function EditCv({ profile, save }: { profile: Profile; save: Save
   const completion = Math.min(100, profile.profileCompletion || 0);
 
   return (
-    <div className="flex-1 pb-6">
-      <div className="px-4 pb-4 pt-6">
+    <div className="mx-auto w-full max-w-6xl flex-1 pb-6 md:grid md:grid-cols-[minmax(0,560px)_minmax(0,1fr)] md:items-start md:gap-14 md:px-8 md:pt-4">
+    <div>
+      <div className="px-4 pb-4 pt-6 md:px-0">
         <p className="eyebrow">Edit CV</p>
         <h1 className="mt-3 font-display text-4xl font-semibold text-ink"><AccentTitle>Build your CV</AccentTitle></h1>
         <div className="mt-4 flex items-center gap-3">
@@ -119,11 +121,22 @@ export default function EditCv({ profile, save }: { profile: Profile; save: Save
       <Group title="Core sections" items={CORE} profile={profile} onOpen={setOpen} />
       <Group title="Optional sections" items={OPTIONAL} profile={profile} onOpen={setOpen} />
 
-      <p className="px-4 pb-1 pt-5 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-ink-soft">View &amp; download CV</p>
-      <ul className="border-y border-line">
+      <p className="px-4 pb-1 pt-5 md:px-1 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-ink-soft">View &amp; download CV</p>
+      <ul className="border-y border-line md:overflow-hidden md:rounded-2xl md:border">
         <ListRow icon={Eye} label="Preview CV" sub="See it the way scouts see it" onClick={() => router.push('/me')} />
         <ListRow icon={FileDown} label="Download PDF" sub="A4 resume with all your sections" busy={pdfBusy} onClick={downloadPdf} last />
       </ul>
+
+    </div>
+
+    {/* desktop: live preview of the card that scouts and the Story export use */}
+    <aside className="hidden md:block">
+      <div className="sticky top-24 flex flex-col items-center rounded-3xl bg-cream px-8 py-8">
+        <p className="eyebrow">Live preview</p>
+        <p className="mb-5 mt-2 text-center text-sm text-ink-soft">Your Story card updates each time you save.</p>
+        <StoryPreview profile={profile} maxWidth={300} />
+      </div>
+    </aside>
 
       {open && (
         <SectionSheet id={open} profile={profile} save={save} onClose={() => setOpen(null)} />
@@ -137,8 +150,8 @@ function Group({ title, items, profile, onOpen }: {
 }) {
   return (
     <>
-      <p className="px-4 pb-1 pt-5 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-ink-soft">{title}</p>
-      <ul className="border-y border-line">
+      <p className="px-4 pb-1 pt-5 md:px-1 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-ink-soft">{title}</p>
+      <ul className="border-y border-line md:overflow-hidden md:rounded-2xl md:border">
         {items.map(({ id, label, icon }, i) => {
           const s = summarize(id, profile);
           return <ListRow key={id} icon={icon} label={label} sub={s.text} done={s.done} onClick={() => onOpen(id)} last={i === items.length - 1} />;
@@ -180,11 +193,11 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 md:items-center md:p-6"
       role="dialog" aria-modal="true" aria-label={title}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="flex max-h-[92vh] w-full max-w-[430px] flex-col rounded-t-3xl bg-white shadow-2xl">
+      <div className="flex max-h-[92vh] w-full max-w-[430px] flex-col rounded-t-3xl bg-white shadow-2xl md:max-h-[88vh] md:max-w-xl md:rounded-3xl">
         <div className="flex shrink-0 items-center justify-between border-b border-line px-5 py-3">
           <h2 className="font-display text-xl font-semibold text-ink">{title}</h2>
           <button onClick={onClose} aria-label="Close" className="-mr-2 grid h-11 w-11 place-items-center rounded-full hover:bg-cream"><X className="h-5 w-5" /></button>
@@ -299,7 +312,7 @@ function BasicForm({ profile, busy, commit }: FormProps) {
   const [f, setF] = useState({
     fullName: realName(profile.fullName), dob: profile.dob ? String(profile.dob).slice(0, 10) : '', gender: profile.gender || '',
     city: profile.location?.city || '', state: profile.location?.state || '', phone: profile.phone || '',
-    tagline: profile.tagline || '', aboutBio: profile.aboutBio || '',
+    tagline: profile.tagline || '', aboutBio: profile.aboutBio || '', username: profile.username || '',
   });
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
   const age = ageFromDob(f.dob);
@@ -307,13 +320,19 @@ function BasicForm({ profile, busy, commit }: FormProps) {
   return (
     <FormBody busy={busy} onSubmit={() => {
       if (f.fullName.trim().length < 2) return toast.error('Enter your full name');
+      if (f.username && !/^[a-z0-9][a-z0-9_-]{2,29}$/.test(f.username)) return toast.error('Username: 3–30 letters, numbers, - or _');
       return commit({
+        username: f.username || undefined,
         fullName: f.fullName.trim(), dob: f.dob || undefined, gender: f.gender || undefined, phone: f.phone.trim() || undefined,
         location: { ...(profile.location || {}), city: f.city.trim(), state: f.state.trim() },
         tagline: f.tagline.trim() || undefined, aboutBio: f.aboutBio.trim() || undefined,
       });
     }}>
       <Field label="Full name *"><input className={inputCls} autoComplete="name" value={f.fullName} onChange={(e) => set('fullName', e.target.value)} /></Field>
+      <Field label="Username" hint={`Your public CV link: linksports.in/cv/${f.username || 'your-name'}`}>
+        <input className={inputCls} autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={30} placeholder="e.g. rahul-sharma" value={f.username}
+          onChange={(e) => set('username', e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))} />
+      </Field>
       <Field label="Date of birth" hint={age !== null ? `Age ${age}` : undefined}>
         <input type="date" max={new Date().toISOString().slice(0, 10)} className={inputCls} value={f.dob} onChange={(e) => set('dob', e.target.value)} />
       </Field>

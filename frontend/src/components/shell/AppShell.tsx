@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { Home, PencilLine, Share2, UserRound } from 'lucide-react';
 import Logo from '@/components/shared/Logo';
 import { eventAPI } from '@/lib/api';
-import { realName, shareUrlFor } from '@/lib/cv';
+import { profileHandle, realName, shareUrlFor } from '@/lib/cv';
 
 export type Tab = 'home' | 'edit' | 'me';
 
@@ -17,7 +17,7 @@ const TABS: { id: Tab; href: string; label: string; icon: typeof Home }[] = [
 
 interface Props {
   children: React.ReactNode;
-  /** Highlights a tab and shows the bottom bar. Leave undefined on screens that have no tabs (login, setup). */
+  /** Highlights a tab and shows the navigation. Leave undefined on screens that have no tabs (setup, public CV). */
   tab?: Tab;
   /** Owner's profile. When it has a public link, the Share button appears in the top bar. */
   profile?: Record<string, any> | null;
@@ -26,11 +26,13 @@ interface Props {
 }
 
 /**
- * The app frame: a 430px column centred on desktop and full width on phones, with a persistent
- * top bar (logo + Share) and, once the player is set up, a three-tab bottom bar.
+ * The app frame. Responsive:
+ *  - phones: top bar (logo + Share) and a three-tab bar fixed to the bottom, like a native app;
+ *  - desktop (md+): one full-width header with the logo, the same three tabs inline, and Share.
+ * Screens decide their own content width inside it.
  */
 export default function AppShell({ children, tab, profile, bare }: Props) {
-  const url = profile?.profileUrl ? shareUrlFor(profile.profileUrl) : '';
+  const url = profileHandle(profile) ? shareUrlFor(profileHandle(profile)) : '';
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(url); toast.success('Profile link copied'); }
@@ -52,51 +54,75 @@ export default function AppShell({ children, tab, profile, bare }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-[#e9e6dc]">
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[430px] flex-col bg-white shadow-[0_0_60px_-24px_rgba(0,0,0,0.35)]">
-        {!bare && (
-          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-white/95 px-4 backdrop-blur">
-            <Link href="/" aria-label="LinkSports home" className="flex items-center"><Logo height={30} /></Link>
+    <div className="flex min-h-screen flex-col bg-white">
+      {!bare && (
+        <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
+          <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-4 md:h-16 md:px-8">
+            <Link href="/" aria-label="LinkSports home" className="flex shrink-0 items-center"><Logo height={30} /></Link>
+
+            {/* desktop navigation */}
+            {tab && (
+              <nav aria-label="Main" className="ml-4 hidden items-center gap-1 md:flex">
+                {TABS.map(({ id, href, label, icon: Icon }) => {
+                  const active = id === tab;
+                  return (
+                    <Link
+                      key={id}
+                      href={href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex h-10 items-center gap-2 rounded-full px-4 font-display text-[15px] font-semibold uppercase tracking-wider transition-colors ${
+                        active ? 'bg-brand/10 text-brand' : 'text-ink-soft hover:bg-cream hover:text-ink'
+                      }`}
+                    >
+                      <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.25 : 1.75} />{label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
+
             {url && (
               <button
                 onClick={share}
                 aria-label="Share my CV"
-                className="grid h-11 w-11 place-items-center rounded-full text-ink transition hover:bg-cream active:scale-95"
+                className="ml-auto flex h-11 items-center gap-2 rounded-full px-3 text-ink transition hover:bg-cream active:scale-95 md:border md:border-line md:px-4 md:hover:border-ink"
               >
                 <Share2 className="h-5 w-5" />
+                <span className="hidden font-display text-[15px] font-semibold uppercase tracking-wider md:inline">Share</span>
               </button>
             )}
-          </header>
-        )}
+          </div>
+        </header>
+      )}
 
-        <main className="flex flex-1 flex-col">{children}</main>
+      <main className="flex flex-1 flex-col">{children}</main>
 
-        {tab && !bare && (
-          <nav
-            aria-label="Main"
-            className="sticky bottom-0 z-30 border-t border-line bg-white/95 backdrop-blur"
-            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-          >
-            <ul className="grid h-16 grid-cols-3">
-              {TABS.map(({ id, href, label, icon: Icon }) => {
-                const active = id === tab;
-                return (
-                  <li key={id}>
-                    <Link
-                      href={href}
-                      aria-current={active ? 'page' : undefined}
-                      className={`flex h-full flex-col items-center justify-center gap-1 transition-colors ${active ? 'text-brand' : 'text-ink-soft hover:text-ink'}`}
-                    >
-                      <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.25 : 1.75} />
-                      <span className={`font-mono text-[10px] uppercase tracking-[0.14em] ${active ? 'font-bold' : 'font-semibold'}`}>{label}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        )}
-      </div>
+      {/* phone tab bar */}
+      {tab && !bare && (
+        <nav
+          aria-label="Main (mobile)"
+          className="sticky bottom-0 z-30 border-t border-line bg-white/95 backdrop-blur md:hidden"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <ul className="grid h-16 grid-cols-3">
+            {TABS.map(({ id, href, label, icon: Icon }) => {
+              const active = id === tab;
+              return (
+                <li key={id}>
+                  <Link
+                    href={href}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex h-full flex-col items-center justify-center gap-1 transition-colors ${active ? 'text-brand' : 'text-ink-soft hover:text-ink'}`}
+                  >
+                    <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.25 : 1.75} />
+                    <span className={`font-mono text-[10px] uppercase tracking-[0.14em] ${active ? 'font-bold' : 'font-semibold'}`}>{label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
     </div>
   );
 }

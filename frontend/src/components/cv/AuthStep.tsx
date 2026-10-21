@@ -64,15 +64,23 @@ export default function AuthStep({ onToken }: { onToken: (t: string) => void }) 
 
   return (
     <div className="flex min-h-screen flex-1 flex-col bg-cream bg-[radial-gradient(70%_32%_at_25%_0%,rgba(0,79,171,0.10),transparent)]">
-      <header className="px-5 pt-6">
+      <header className="mx-auto w-full max-w-6xl px-5 pt-6 lg:px-10 lg:pt-8">
         <Link href="/" aria-label="LinkSports"><Logo height={34} /></Link>
       </header>
 
-      <div className="flex flex-1 flex-col justify-center px-4 py-8">
+      <div className="flex flex-1 items-center justify-center px-4 py-8 lg:px-0">
+       <div className="w-full max-w-md lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center lg:gap-16 lg:px-10">
+        <div>
         <p className="eyebrow px-1">Player CV · Free forever</p>
-        <h2 className="mb-6 mt-3 px-1 font-display text-[46px] font-bold uppercase leading-[0.93] tracking-tight text-brand">
+        <h2 className="mb-6 mt-3 px-1 font-display text-[46px] font-bold uppercase leading-[0.93] tracking-tight text-brand lg:mb-0 lg:text-[88px] xl:text-[104px]">
           Your game.<br />Your CV.<br />One link.
         </h2>
+        <p className="mt-7 hidden max-w-md px-1 text-lg leading-relaxed text-ink-soft lg:block">
+          Build a professional sports CV in about three minutes. Download the PDF, post the Story card, and let scouts find you.
+        </p>
+        </div>
+
+        <div>
 
         <div className="rounded-3xl border border-line bg-white p-6 shadow-[0_28px_60px_-34px_rgba(0,35,90,0.4)]">
           <h1 className="font-display text-3xl font-semibold text-ink"><AccentTitle>{title}</AccentTitle></h1>
@@ -165,6 +173,8 @@ export default function AuthStep({ onToken }: { onToken: (t: string) => void }) 
         <p className="mt-6 text-center text-xs text-ink/50">
           By continuing you agree to our <Link href="/terms" className="underline underline-offset-2">Terms</Link> and <Link href="/privacy" className="underline underline-offset-2">Privacy Policy</Link>.
         </p>
+        </div>
+       </div>
       </div>
       <Ticker />
     </div>

@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { toJpeg, toPng } from 'html-to-image';
 import toast from 'react-hot-toast';
 import { FileText, ImageIcon, Loader2 } from 'lucide-react';
 import { eventAPI, profileAPI } from '@/lib/api';
 import { buildStoryData, toDataUrl, type StoryData } from '@/lib/cv';
 import StoryCard, { STORY_H, STORY_W } from './StoryCard';
-import { btnPrimary } from './ui';
+import { AccentTitle, btnPrimary } from './ui';
 
 // Home tab: the player's Story card plus the two export actions (PDF CV and Story image).
 export default function HomeTab({ profile }: { profile: Record<string, any> }) {
@@ -128,12 +129,14 @@ export default function HomeTab({ profile }: { profile: Record<string, any> }) {
     } finally { setBusy(null); }
   };
 
+  const completion = Math.min(100, profile.profileCompletion || 0);
+
   return (
-    <div className="flex flex-1 flex-col px-4 pb-8 pt-5">
+    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pb-8 pt-5 md:grid md:grid-cols-[minmax(0,360px)_minmax(0,1fr)] md:items-start md:gap-14 md:px-8 md:pt-10">
       {/* hero player card: the same 9:16 card that gets exported as the Story */}
       <div
         ref={wrapRef}
-        className="relative mx-auto w-full max-w-[320px] overflow-hidden rounded-3xl bg-slate-900 shadow-[0_32px_70px_-28px_rgba(0,35,90,0.6)] ring-1 ring-black/5"
+        className="relative mx-auto w-full max-w-[320px] overflow-hidden rounded-3xl bg-slate-900 shadow-[0_32px_70px_-28px_rgba(0,35,90,0.6)] ring-1 ring-black/5 md:max-w-[360px]"
         style={{ aspectRatio: '9 / 16' }}
       >
         {story ? (
@@ -150,27 +153,47 @@ export default function HomeTab({ profile }: { profile: Record<string, any> }) {
         </div>
       )}
 
-      <div className="mx-auto mt-5 grid w-full max-w-[320px] grid-cols-2 gap-3">
-        <button className={btnPrimary} onClick={downloadPdf} disabled={busy !== null}>
-          {busy === 'pdf' ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileText className="h-5 w-5" />}PDF CV
-        </button>
-        <button className={btnPrimary} onClick={downloadStory} disabled={busy !== null || !story}>
-          {busy === 'story' ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}Story
-        </button>
-      </div>
+      <div className="mx-auto mt-5 w-full max-w-[320px] md:mx-0 md:mt-2 md:max-w-lg">
+        {/* desktop intro (phones go straight from the card to the buttons) */}
+        <div className="hidden md:block">
+          <p className="eyebrow">Home</p>
+          <h1 className="mt-3 font-display text-5xl font-semibold leading-tight text-ink"><AccentTitle>Your CV is ready</AccentTitle></h1>
+          <p className="mt-3 text-lg leading-relaxed text-ink-soft">
+            Download the PDF resume, or post the Story card on Instagram and WhatsApp. The QR code on the card opens your public CV.
+          </p>
+          <div className="mt-6 flex items-center gap-3">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-cream" role="progressbar" aria-valuenow={completion} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${completion}%` }} />
+            </div>
+            <span className="font-mono text-xs font-bold text-ink-soft">{completion}% complete</span>
+          </div>
+          <p className="mt-2 text-sm text-ink-soft">
+            <Link href="/edit" className="font-semibold text-brand underline underline-offset-4">Add photos, stats and achievements</Link> to stand out to scouts.
+          </p>
+        </div>
 
-      <div className="mt-3 flex items-center justify-center gap-1.5">
-        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Story image</span>
-        {(['png', 'jpg'] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFormat(f)}
-            aria-pressed={format === f}
-            className={`h-9 rounded-full border px-4 font-mono text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${format === f ? 'border-ink bg-ink text-white' : 'border-line text-ink-soft hover:border-ink'}`}
-          >
-            {f}
+        <div className="grid grid-cols-2 gap-3 md:mt-8">
+          <button className={btnPrimary} onClick={downloadPdf} disabled={busy !== null}>
+            {busy === 'pdf' ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileText className="h-5 w-5" />}PDF CV
           </button>
-        ))}
+          <button className={btnPrimary} onClick={downloadStory} disabled={busy !== null || !story}>
+            {busy === 'story' ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}Story
+          </button>
+        </div>
+
+        <div className="mt-3 flex items-center justify-center gap-1.5 md:justify-start">
+          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Story image</span>
+          {(['png', 'jpg'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFormat(f)}
+              aria-pressed={format === f}
+              className={`h-9 rounded-full border px-4 font-mono text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${format === f ? 'border-ink bg-ink text-white' : 'border-line text-ink-soft hover:border-ink'}`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* fallback when the share sheet isn't available: long-press saves an <img> to the gallery */}

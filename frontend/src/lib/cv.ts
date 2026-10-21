@@ -5,8 +5,11 @@ export const CV_ONLY = process.env.NEXT_PUBLIC_CV_ONLY !== 'false';
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.linksports.in').replace(/\/$/, '');
 
-/** Public CV link, e.g. https://www.linksports.in/cv/rahul-sharma-a1b2c3 */
-export const shareUrlFor = (profileUrl?: string) => (profileUrl ? `${SITE_URL}/cv/${profileUrl}` : SITE_URL);
+/** The player's public handle: their username, or the older link slug if they have none yet. */
+export const profileHandle = (p?: Record<string, any> | null): string => String(p?.username || p?.profileUrl || '');
+
+/** Public CV link, e.g. https://www.linksports.in/cv/rahul-sharma */
+export const shareUrlFor = (handle?: string) => (handle ? `${SITE_URL}/cv/${handle}` : SITE_URL);
 
 export const MAX_ACTION_PHOTOS = 4;
 export const MAX_PHOTO_BYTES = 800 * 1024;
@@ -107,6 +110,6 @@ export function buildStoryData(p: Record<string, any>): Omit<StoryData, 'photo'>
     position: p.position,
     club,
     stats: [...ach, ...tour].slice(0, 3),
-    shareUrl: shareUrlFor(p.profileUrl),
+    shareUrl: shareUrlFor(profileHandle(p)),
   };
 }

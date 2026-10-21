@@ -11,6 +11,7 @@ import { generateSlug } from '../utils/jwt';
 import { Listing } from '../models/Listing';
 import { Job } from '../models/Job';
 import { deviceFromUserAgent, logEvent } from '../utils/activity';
+import { athleteLookup, isRealName, isValidUsername, normalizeUsername, uniqueUsername, usernameTaken } from '../utils/username';
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -81,9 +82,7 @@ const withContactPrivacy = (profile: any, canSeeContact: boolean) => {
 export const getAthleteProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const query = id.includes('-') || id.length !== 24
-      ? { profileUrl: id }
-      : { $or: [{ _id: id }, { profileUrl: id }, { userId: id }] };
+    const query = athleteLookup(id);
 
     const profile = await AthleteProfile.findOne(query)
       .populate('userId', 'email role isVerified')
@@ -162,6 +161,22 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
 
     const numericFields = new Set(['height', 'weight', 'yearsOfExperience']);
 
+    // The username is the public CV link, so it must be unique and URL-safe.
+    if (req.body.username !== undefined) {
+      const wanted = normalizeUsername(req.body.username);
+      if (!wanted) {
+        delete req.body.username; // blank means "leave it as it is"
+      } else if (!isValidUsername(wanted)) {
+        sendError(res, 'Username must be 3–30 characters: letters, numbers, - or _', 400, 'INVALID_USERNAME');
+        return;
+      } else if (wanted !== profile.username && await usernameTaken(wanted, profile._id)) {
+        sendError(res, 'That username is already taken. Try another.', 409, 'USERNAME_TAKEN');
+        return;
+      } else {
+        req.body.username = wanted;
+      }
+    }
+
     const photosBefore = photoCount(profile.media);
 
     allowedFields.forEach((field) => {
@@ -194,6 +209,10 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
       }
       (profile as any)[field] = value;
     });
+
+    if (!profile.username && isRealName(profile.fullName)) {
+      profile.username = await uniqueUsername(profile.fullName, profile._id);
+    }
 
     profile.profileCompletion = calculateAthleteCompletion(profile);
     await profile.save();
@@ -231,6 +250,13 @@ export const getMyAthleteProfile = async (req: AuthRequest, res: Response): Prom
   try {
     const profile = await AthleteProfile.findOne({ userId: req.user!._id });
     if (!profile) { sendError(res, 'Profile not found', 404); return; }
+    // Existing players have no username yet: give them a clean one (rahul-sharma) so their share link isn't a random slug.
+    // updateOne skips full-document validation, so older profiles with legacy data can't block this.
+    if (!profile.username && isRealName(profile.fullName)) {
+      const username = await uniqueUsername(profile.fullName, profile._id);
+      await AthleteProfile.updateOne({ _id: profile._id }, { $set: { username } });
+      profile.username = username;
+    }
     sendSuccess(res, profile);
   } catch { sendError(res, 'Failed to get profile', 500); }
 };
@@ -436,9 +462,7 @@ export const uploadVerificationDocuments = async (req: AuthRequest, res: Respons
 export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const query = id.includes('-') || id.length !== 24
-      ? { profileUrl: id }
-      : { $or: [{ _id: id }, { profileUrl: id }, { userId: id }] };
+    const query = athleteLookup(id);
 
     const profile = await AthleteProfile.findOne(query);
     if (!profile) { sendError(res, 'Profile not found', 404); return; }

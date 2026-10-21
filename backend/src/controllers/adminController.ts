@@ -406,11 +406,11 @@ const toCvRow = (p: any) => {
     completion: p.profileCompletion || 0,
     photos: ((p.media as any[]) || []).filter((m) => m?.type === 'photo').length,
     registeredAt: u?.createdAt || p.createdAt,
-    profileUrl: p.profileUrl,
+    profileUrl: p.username || p.profileUrl,
   };
 };
 
-const CV_ROW_FIELDS = 'fullName primarySport phone email profileCompletion profileUrl createdAt userId media';
+const CV_ROW_FIELDS = 'fullName primarySport phone email profileCompletion profileUrl username createdAt userId media';
 
 export const getCvUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
