@@ -11,6 +11,7 @@ import { generateSlug } from '../utils/jwt';
 import { Listing } from '../models/Listing';
 import { Job } from '../models/Job';
 import { deviceFromUserAgent, logEvent } from '../utils/activity';
+import { StoredImage } from '../models/StoredImage';
 import { athleteLookup, isRealName, isValidUsername, normalizeUsername, uniqueUsername, usernameTaken } from '../utils/username';
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
@@ -59,6 +60,21 @@ const sanitizeMedia = (arr: unknown[]) => {
     ...list.filter((m) => m.type === 'photo').slice(0, MAX_ACTION_PHOTOS),
     ...list.filter((m) => m.type === 'video').slice(0, 6),
   ];
+};
+
+/**
+ * Deletes this player's database-stored photos that their profile no longer uses (replaced or removed).
+ * Only photos older than 10 minutes are touched, so one that was just uploaded but not saved yet is safe.
+ */
+const pruneUnusedImages = async (userId: unknown, profile: any) => {
+  try {
+    const used = new Set<string>();
+    for (const u of [profile.photo, ...((profile.media as any[]) || []).map((m) => m?.url)]) {
+      const m = String(u || '').match(/images[/]([a-f0-9]{24})/i);
+      if (m) used.add(m[1]);
+    }
+    await StoredImage.deleteMany({ ownerId: userId, _id: { $nin: [...used] }, createdAt: { $lt: new Date(Date.now() - 10 * 60 * 1000) } });
+  } catch { /* housekeeping only: never fail the save */ }
 };
 
 const photoCount = (media: unknown) => ((media as any[]) || []).filter((m) => m?.type === 'photo').length;
@@ -216,6 +232,7 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
 
     profile.profileCompletion = calculateAthleteCompletion(profile);
     await profile.save();
+    void pruneUnusedImages(req.user!._id, profile);
     const device = deviceFromUserAgent(req.headers['user-agent'], req.headers['x-app-platform'] as string | undefined);
     void logEvent(req.user!._id.toString(), 'CV_UPDATED', { sport: profile.primarySport, meta: { device } });
     if (photoCount(profile.media) > photosBefore) {
@@ -495,7 +512,12 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
 
     // Images are fetched up front so the PDF stream never stalls half-way; any that fail are simply skipped.
     const fetchImage = async (url?: string): Promise<Buffer | null> => {
-      if (!url || !/^https?:\/\//.test(url)) return null;
+      if (!url) return null;
+      const stored = url.match(/images[/]([a-f0-9]{24})/i); // photo kept in the database
+      if (stored && !/^https?:[/][/]res[.]cloudinary[.]com/.test(url)) {
+        try { const img = await StoredImage.findById(stored[1]).select('data'); return img ? img.data : null; } catch { return null; }
+      }
+      if (!/^https?:[/][/]/.test(url)) return null;
       try {
         const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
         if (!r.ok) return null;

@@ -10,7 +10,7 @@ export default function SessionExpiredHandler() {
   useEffect(() => {
     const handle = () => {
       toast.error('Your session has expired. Please sign in again.');
-      router.push('/auth/login');
+      router.push('/');
     };
     window.addEventListener('auth:session-expired', handle);
     return () => window.removeEventListener('auth:session-expired', handle);

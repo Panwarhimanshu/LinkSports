@@ -26,7 +26,7 @@ const nextConfig = {
       ...[
         '/listings', '/jobs', '/search', '/dashboard', '/connections', '/my-connections', '/messages',
         '/notifications', '/settings', '/profile', '/about', '/contact', '/home', '/opportunities',
-        '/auth/register', '/auth/select-role', '/auth/google-select-role',
+        '/auth/register', '/auth/select-role', '/auth/google-select-role', '/auth/forgot-password', '/auth/verify-email',
       ].flatMap((path) => [
         { source: path, destination: '/', permanent: false },
         { source: `${path}/:rest*`, destination: '/', permanent: false },

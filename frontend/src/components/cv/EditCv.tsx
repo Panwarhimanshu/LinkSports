@@ -12,6 +12,7 @@ import { MAX_ACTION_PHOTOS, ageFromDob, compressImage, photosOf, realName, video
 import { getPhotoUrl } from '@/lib/utils';
 import { apiError } from '@/lib/useCvSession';
 import { useSports } from './useSports';
+import LocationFields from './LocationFields';
 import StoryPreview from './StoryPreview';
 import { AccentTitle, Field, btnGhost, btnPrimary, inputCls, textareaCls } from './ui';
 
@@ -341,10 +342,7 @@ function BasicForm({ profile, busy, commit }: FormProps) {
           <option value="">Prefer not to say</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option>
         </select>
       </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="City"><input className={inputCls} value={f.city} onChange={(e) => set('city', e.target.value)} /></Field>
-        <Field label="State"><input className={inputCls} value={f.state} onChange={(e) => set('state', e.target.value)} /></Field>
-      </div>
+      <LocationFields state={f.state} city={f.city} onChange={(v) => setF((s) => ({ ...s, ...v }))} />
       <Field label="Phone" hint="Only shared with people you allow."><input className={inputCls} type="tel" inputMode="tel" autoComplete="tel" value={f.phone} onChange={(e) => set('phone', e.target.value)} /></Field>
       <Field label="One-line tagline"><input className={inputCls} maxLength={120} placeholder="e.g. Left-wing striker, Mumbai U-21" value={f.tagline} onChange={(e) => set('tagline', e.target.value)} /></Field>
       <Field label="Bio"><textarea className={textareaCls} rows={4} maxLength={1000} placeholder="A few lines about your game and goals" value={f.aboutBio} onChange={(e) => set('aboutBio', e.target.value)} /></Field>

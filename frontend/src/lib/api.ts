@@ -86,9 +86,7 @@ export default api;
 export const authAPI = {
   login: (data: { email: string; password: string }) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
-  verifyEmail: (data: { email: string; otp: string }) => api.post('/auth/verify-email', data),
   resendOtp: (email: string) => api.post('/auth/resend-otp', { email }),
-  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
   resetPassword: (data: Record<string, string>) => api.post('/auth/reset-password', data),
   getMe: () => api.get('/auth/me'),
   refresh: () => api.post('/auth/refresh'),

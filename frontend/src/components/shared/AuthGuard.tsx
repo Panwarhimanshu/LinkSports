@@ -13,7 +13,7 @@ interface AuthGuardProps {
   redirectTo?: string;
 }
 
-export default function AuthGuard({ children, roles, allowedRoles, redirectTo = '/auth/login' }: AuthGuardProps) {
+export default function AuthGuard({ children, roles, allowedRoles, redirectTo = '/' }: AuthGuardProps) {
   const router = useRouter();
   const { isAuthenticated, user, isLoading, fetchMe, logout } = useAuthStore();
   const permittedRoles = roles || allowedRoles;

@@ -8,6 +8,7 @@ import { apiError } from '@/lib/useCvSession';
 import { realName } from '@/lib/cv';
 import SportIcon from './SportIcon';
 import { useSports } from './useSports';
+import LocationFields from './LocationFields';
 import { AccentTitle, Field, btnPrimary, inputCls } from './ui';
 
 type Save = (patch: Record<string, unknown>) => Promise<Record<string, any>>;
@@ -114,10 +115,7 @@ export function CoreStep({ profile, userId, save, onDone }: {
       <div className="mt-6 space-y-4">
         <Field label="Full name *"><input className={inputCls} autoComplete="name" value={form.fullName} onChange={(e) => set('fullName', e.target.value)} /></Field>
         <Field label="Date of birth"><input type="date" max={today} className={inputCls} value={form.dob} onChange={(e) => set('dob', e.target.value)} /></Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="City"><input className={inputCls} value={form.city} onChange={(e) => set('city', e.target.value)} /></Field>
-          <Field label="State"><input className={inputCls} value={form.state} onChange={(e) => set('state', e.target.value)} /></Field>
-        </div>
+        <LocationFields state={form.state} city={form.city} onChange={(v) => setForm((f) => ({ ...f, ...v }))} />
         <Field label="Playing position"><input className={inputCls} placeholder="e.g. Striker, Opening batter" value={form.position} onChange={(e) => set('position', e.target.value)} /></Field>
       </div>
 

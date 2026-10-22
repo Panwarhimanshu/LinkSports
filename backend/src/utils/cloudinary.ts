@@ -1,7 +1,5 @@
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
 import { v2 as cloudinary } from 'cloudinary';
+import { StoredImage } from '../models/StoredImage';
 
 // The Cloudinary SDK v2 auto-reads CLOUDINARY_URL from the environment — no manual parsing needed.
 // Only configure manually when individual vars are used instead of CLOUDINARY_URL.
@@ -40,22 +38,15 @@ export const cloudinaryConfigured = (): boolean => {
   return [name, key, secret].every((v) => !!v && !v.startsWith('your_'));
 };
 
-export class StorageNotConfigured extends Error {}
-
-const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
-
 /**
  * Stores an uploaded image and returns where to find it.
- * Production uses Cloudinary. Without Cloudinary credentials, local development falls back to the
- * backend's ./uploads folder (served at /uploads) so photo upload can still be tried; production
- * refuses instead of silently writing to a serverless disk that is wiped between requests.
+ * - With Cloudinary credentials: uploads there and returns the https URL.
+ * - Without them: keeps the photo in MongoDB and returns a path (api/v1/images/<id>) that the API serves,
+ *   so photo upload works on any deployment with no extra account. Cloudinary is the better choice at scale
+ *   because it serves photos from a CDN and does not use database space.
  */
-export const storeImage = async (buffer: Buffer, mimetype: string): Promise<string> => {
+export const storeImage = async (buffer: Buffer, mimetype: string, ownerId: unknown): Promise<string> => {
   if (cloudinaryConfigured()) return uploadToCloudinary(buffer);
-  if (process.env.NODE_ENV === 'production') throw new StorageNotConfigured('Image storage is not configured');
-  const dir = path.join(__dirname, '..', '..', 'uploads');
-  fs.mkdirSync(dir, { recursive: true });
-  const name = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${EXT[mimetype] || 'jpg'}`;
-  fs.writeFileSync(path.join(dir, name), buffer);
-  return `uploads/${name}`;
+  const doc = await StoredImage.create({ ownerId, contentType: mimetype, data: buffer, size: buffer.length });
+  return `api/v1/images/${doc._id}`;
 };

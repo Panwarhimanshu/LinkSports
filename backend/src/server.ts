@@ -28,6 +28,7 @@ import notificationRoutes from './routes/notifications';
 import paymentRoutes from './routes/payments';
 import adminRoutes from './routes/admin';
 import uploadRoutes from './routes/upload';
+import imageRoutes from './routes/images';
 import eventRoutes from './routes/events';
 import settingsRoutes from './routes/settings';
 import userReviewRoutes, { reviewRouter } from './routes/reviews';
@@ -138,6 +139,7 @@ if (process.env.VERCEL) {
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/api/v1/images', imageRoutes);
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
 const globalLimiter = rateLimit({

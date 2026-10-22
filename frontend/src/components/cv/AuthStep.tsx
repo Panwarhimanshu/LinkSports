@@ -142,9 +142,6 @@ export default function AuthStep({ onToken }: { onToken: (t: string) => void }) 
                 {joining ? 'Already on LinkSports? ' : 'New to LinkSports? '}
                 <button type="button" onClick={() => setJoining(!joining)} className="font-semibold text-brand hover:underline">{joining ? 'Sign in' : 'Join free'}</button>
               </p>
-              <p className="mt-2 text-center text-xs text-ink/50">
-                Have a password? <Link href="/auth/login?redirect=/" className="underline underline-offset-2">Sign in with password</Link>
-              </p>
             </>
           )}
         </div>

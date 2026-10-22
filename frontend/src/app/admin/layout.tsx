@@ -47,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="ml-auto flex items-center gap-2">
             <Link href="/" target="_blank" className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm text-gray-600 hover:bg-gray-100"><ExternalLink className="w-4 h-4" />View site</Link>
             <span className="hidden md:inline text-sm text-gray-500 max-w-[200px] truncate">{user?.email}</span>
-            <button onClick={async () => { await logout(); router.replace('/auth/login'); }} className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm text-red-600 hover:bg-red-50"><LogOut className="w-4 h-4" /><span className="hidden sm:inline">Log out</span></button>
+            <button onClick={async () => { await logout(); router.replace('/'); }} className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm text-red-600 hover:bg-red-50"><LogOut className="w-4 h-4" /><span className="hidden sm:inline">Log out</span></button>
           </div>
         </header>
 
