@@ -66,8 +66,12 @@ export const sendEmailOtp = async (req: Request, res: Response): Promise<void> =
     // Local testing only: hand the code back so it can be filled in without reading the terminal.
     const exposeForDev = !isProd && process.env.DEV_LOGIN === 'true';
     sendSuccess(res, exposeForDev ? { devOtp: otp } : null, 'OTP sent');
-  } catch {
-    sendError(res, 'Could not send the code', 500);
+  } catch (err) {
+    console.error('sendEmailOtp failed:', (err as Error).message);
+    // Don't leave a half-finished request behind: it would block the retry for 30 seconds.
+    const email = normalizeEmail(req.body?.email);
+    if (email) await EmailOtp.deleteOne({ email }).catch(() => undefined);
+    sendError(res, 'Could not send the code. Please try again.', 500);
   }
 };
 

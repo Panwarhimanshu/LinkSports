@@ -21,12 +21,32 @@ const otpLimiter = rateLimit({
   message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many OTP requests. Please wait 15 minutes before trying again.' } },
 });
 
+// Email sign-in codes: counted per inbox (not just per IP, which a whole school or mobile network can share), and
+// sending and checking a code no longer draw from the same small budget. Wrong guesses are capped per code anyway.
+const emailKey = (req: any) => `${req.ip}|${String(req.body?.email ?? '').trim().toLowerCase()}`;
+const emailSendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 8 : 100,
+  keyGenerator: emailKey,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many code requests. Please wait a few minutes and try again.' } },
+});
+const emailVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 30 : 200,
+  keyGenerator: emailKey,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many attempts. Please wait a few minutes and try again.' } },
+});
+
 router.post('/register', register);
 router.post('/verify-email', otpLimiter, verifyEmail);
 router.post('/resend-otp', otpLimiter, resendOtp);
 router.post('/login', login);
-router.post('/email/send-otp', otpLimiter, sendEmailOtp);
-router.post('/email/verify-otp', otpLimiter, verifyEmailOtp);
+router.post('/email/send-otp', emailSendLimiter, sendEmailOtp);
+router.post('/email/verify-otp', emailVerifyLimiter, verifyEmailOtp);
 router.post('/phone/send-otp', otpLimiter, sendPhoneOtp);
 router.post('/phone/verify-otp', otpLimiter, verifyPhoneOtp);
 router.post('/dev-login', devLogin); // 404 unless DEV_LOGIN=true and not production

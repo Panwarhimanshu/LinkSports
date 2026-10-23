@@ -6,13 +6,17 @@ interface EmailOptions {
   html: string;
 }
 
-const createTransporter = () => {
-  const port = Number(process.env.EMAIL_PORT) || 587;
-  return nodemailer.createTransport({
+// Serverless functions are killed after a few seconds, so a hung SMTP connection must fail fast (and be retried
+// on the other port) instead of leaving the player waiting for a code that never comes.
+const createTransporter = (port: number) =>
+  nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.hostinger.com',
     port,
     secure: port === 465,
     requireTLS: port === 587,
+    connectionTimeout: 6000,
+    greetingTimeout: 6000,
+    socketTimeout: 9000,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -21,7 +25,6 @@ const createTransporter = () => {
       rejectUnauthorized: false,
     },
   });
-};
 
 /** False while EMAIL_USER / EMAIL_PASS are missing or still the .env template placeholders. */
 export const isEmailConfigured = (): boolean => {
@@ -38,21 +41,24 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
     return false;
   }
 
-  const transporter = createTransporter();
-  try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'LinkSports <noreply@linksports.in>',
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-    });
-    console.log(`[Email] Sent to ${options.to}`);
-    return true;
-  } catch (err) {
-    console.error(`[Email] FAILED to send to ${options.to}:`, err);
-    // Don't rethrow — callers that care (login OTP) check the return value
-    return false;
+  const preferred = Number(process.env.EMAIL_PORT) || 587;
+  const ports = [preferred, preferred === 465 ? 587 : 465];
+  for (const port of ports) {
+    try {
+      await createTransporter(port).sendMail({
+        from: process.env.EMAIL_FROM || 'LinkSports <noreply@linksports.in>',
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+      console.log(`[Email] Sent to ${options.to} (port ${port})`);
+      return true;
+    } catch (err) {
+      console.error(`[Email] FAILED to send to ${options.to} on port ${port}:`, (err as Error).message);
+    }
   }
+  // Don't rethrow — callers that care (login OTP) check the return value
+  return false;
 };
 
 export const emailTemplates = {
