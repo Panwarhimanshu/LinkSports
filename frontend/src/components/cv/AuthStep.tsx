@@ -40,21 +40,24 @@ export default function AuthStep({ onToken }: { onToken: (t: string) => void }) 
       if (devOtp) { setOtp(devOtp); toast.success(`Dev mode: code ${devOtp} filled in`); }
       else toast.success(`Code sent to ${address}`);
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || 'Could not send the code');
+      if (err.response?.data?.error?.code === 'OTP_TOO_SOON') { setStage('otp'); setWait(30); } // a code is already on its way
+      toast.error(err.response?.data?.error?.message || 'Could not send the code. Check your connection and try again.');
     } finally {
       setBusy(false);
     }
   };
 
-  const verifyOtp = async (e?: React.FormEvent) => {
+  const verifyOtp = async (e?: React.FormEvent, code = otp) => {
     e?.preventDefault();
-    if (!/^\d{6}$/.test(otp)) return toast.error('Enter the 6-digit code');
+    if (busy) return;
+    if (!/^\d{6}$/.test(code)) return toast.error('Enter the 6-digit code');
     setBusy(true);
     try {
-      const res = await authAPI.verifyEmailOtp(address, otp);
+      const res = await authAPI.verifyEmailOtp(address, code);
       onToken(res.data.data.accessToken);
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || 'Could not verify the code');
+      setOtp('');
       setBusy(false);
     }
   };
@@ -120,7 +123,12 @@ export default function AuthStep({ onToken }: { onToken: (t: string) => void }) 
               <label className={labelCls} htmlFor="otp">6-digit code</label>
               <input
                 id="otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} autoFocus
-                value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                value={otp}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setOtp(v);
+                  if (v.length === 6) void verifyOtp(undefined, v); // sign in as soon as the last digit is typed or pasted
+                }}
                 className={inputCls + ' text-center font-mono text-2xl tracking-[0.5em]'}
               />
               <button disabled={busy || otp.length !== 6} className={primary}>
@@ -132,7 +140,7 @@ export default function AuthStep({ onToken }: { onToken: (t: string) => void }) 
                   {wait > 0 ? `Resend in ${wait}s` : 'Resend code'}
                 </button>
               </div>
-              <p className="mt-3 text-xs text-ink-soft">Can&apos;t find it? Check your spam or promotions folder.</p>
+              <p className="mt-3 text-xs text-ink-soft">The code can take up to a minute. Can&apos;t find it? Check spam or promotions, then tap Resend.</p>
             </form>
           )}
 

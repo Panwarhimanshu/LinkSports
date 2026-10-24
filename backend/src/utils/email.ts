@@ -14,9 +14,9 @@ const createTransporter = (port: number) =>
     port,
     secure: port === 465,
     requireTLS: port === 587,
-    connectionTimeout: 6000,
-    greetingTimeout: 6000,
-    socketTimeout: 9000,
+    connectionTimeout: 4000,
+    greetingTimeout: 4000,
+    socketTimeout: 8000,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,

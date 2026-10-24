@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { waitUntil } from '@vercel/functions';
 import { Request, Response } from 'express';
 import { User } from '../models/User';
 import { AthleteProfile } from '../models/AthleteProfile';
@@ -40,20 +41,26 @@ export const sendEmailOtp = async (req: Request, res: Response): Promise<void> =
     }
 
     const otp = generateOTP();
+    const sentAtStamp = new Date();
     await EmailOtp.findOneAndUpdate(
       { email },
-      { email, otpHash: hashOtp(otp, email), attempts: 0, sentAt: new Date(), expiresAt: new Date(Date.now() + OTP_TTL_MS) },
+      { email, otpHash: hashOtp(otp, email), attempts: 0, sentAt: sentAtStamp, expiresAt: new Date(Date.now() + OTP_TTL_MS) },
       { upsert: true },
     );
 
     const isProd = process.env.NODE_ENV === 'production';
     if (isEmailConfigured()) {
-      const sent = await sendEmail({ to: email, ...emailTemplates.loginOtp(otp, OTP_TTL_MS / 60_000) });
-      if (!sent) {
-        await EmailOtp.deleteOne({ email });
-        sendError(res, 'Could not send the email right now. Please try again in a minute.', 503, 'EMAIL_UNAVAILABLE');
-        return;
-      }
+      // Reply straight away and deliver in the background: SMTP from a serverless host can take 5-10s, which used
+      // to time the request out before the mail went. waitUntil keeps the function alive until it is sent.
+      const delivery = (async () => {
+        const started = Date.now();
+        const sent = await sendEmail({ to: email, ...emailTemplates.loginOtp(otp, OTP_TTL_MS / 60_000) });
+        console.log(`[Email OTP] ${email} ${sent ? 'sent' : 'FAILED'} in ${Date.now() - started}ms`);
+        // A failed send must not leave a code the player never received (it would also block "Resend" for 30s).
+        if (!sent) await EmailOtp.deleteOne({ email, sentAt: sentAtStamp }).catch(() => undefined);
+      })();
+      if (process.env.VERCEL) waitUntil(delivery);
+      else await delivery;
     } else if (isProd) {
       await EmailOtp.deleteOne({ email });
       sendError(res, 'Email sign-in is not available right now.', 503, 'EMAIL_UNAVAILABLE');
