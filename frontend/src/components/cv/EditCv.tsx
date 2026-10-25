@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import {
-  Activity, BarChart3, Camera, CheckCircle2, ChevronRight, Eye, FileDown, Images, Loader2, Medal, Phone,
-  Plus, PlusSquare, RefreshCw, Shield, Trash2, Trophy, Video, X,
+  Activity, BarChart3, Camera, CheckCircle2, ChevronRight, Eye, FileDown, FileText, Globe, GraduationCap, Images, Loader2, Lock, Medal, Phone,
+  Plus, PlusSquare, RefreshCw, Shield, Sparkles, Trash2, Trophy, Video, X,
 } from 'lucide-react';
 import { eventAPI, profileAPI, uploadAPI } from '@/lib/api';
 import { MAX_ACTION_PHOTOS, ageFromDob, compressImage, photosOf, realName, videosOf } from '@/lib/cv';
@@ -19,23 +19,29 @@ import { AccentTitle, Field, btnGhost, btnPrimary, inputCls, textareaCls } from 
 type Profile = Record<string, any>;
 type Save = (patch: Record<string, unknown>) => Promise<Profile>;
 type Row = Record<string, string>;
-type SectionId = 'basic' | 'sport' | 'teams' | 'achievements' | 'stats' | 'photos' | 'videos' | 'custom';
+type SectionId = 'basic' | 'sport' | 'teams' | 'education' | 'achievements' | 'about' | 'stats' | 'skills' | 'social' | 'photos' | 'videos' | 'custom' | 'privacy';
 
 const CORE: { id: SectionId; label: string; icon: typeof Phone }[] = [
   { id: 'basic', label: 'Basic & Contact Info', icon: Phone },
   { id: 'sport', label: 'Sport & Position', icon: Activity },
   { id: 'teams', label: 'Teams, Clubs & Academy', icon: Shield },
+  { id: 'education', label: 'Education & Certificates', icon: GraduationCap },
   { id: 'achievements', label: 'Tournaments & Achievements', icon: Trophy },
 ];
 const OPTIONAL: { id: SectionId; label: string; icon: typeof Phone }[] = [
+  { id: 'about', label: 'About, Strengths & Goals', icon: FileText },
   { id: 'stats', label: 'Career Stats & Performance', icon: BarChart3 },
+  { id: 'skills', label: 'Skills', icon: Sparkles },
+  { id: 'social', label: 'Social Links', icon: Globe },
   { id: 'photos', label: 'Add Action Photos', icon: Images },
   { id: 'videos', label: 'Highlight Video Links', icon: Video },
   { id: 'custom', label: 'Add Custom Section', icon: PlusSquare },
+  { id: 'privacy', label: 'Profile Visibility', icon: Lock },
 ];
 
 const SHEET_TITLE: Record<SectionId, string> = {
   basic: 'Basic & Contact Info', sport: 'Sport & Position', teams: 'Teams, Clubs & Academy',
+  education: 'Education & Certificates', about: 'About, Strengths & Goals', skills: 'Skills', social: 'Social Links', privacy: 'Profile Visibility',
   achievements: 'Tournaments & Achievements', stats: 'Career Stats', photos: 'Action Photos',
   videos: 'Highlight Videos', custom: 'Custom Sections',
 };
@@ -61,6 +67,24 @@ function summarize(id: SectionId, p: Profile): { text: string; done: boolean } {
       const t = n(p.tournaments); const a = n(p.achievements);
       return { text: t || a ? `${a} achievement${a === 1 ? '' : 's'} · ${t} tournament${t === 1 ? '' : 's'}` : 'Medals, titles, tournaments', done: !!(t || a) };
     }
+    case 'education': {
+      const e = n(p.education); const c = n(p.certifications);
+      return { text: e || c ? `${e} education · ${c} certificate${c === 1 ? '' : 's'}` : 'School, college, degrees, certificates', done: !!(e || c) };
+    }
+    case 'about': {
+      const parts = [p.careerHighlights, p.strengths, p.goalsAspirations].filter(Boolean).length;
+      return { text: parts ? `${parts} of 3 filled in` : 'Career highlights, strengths, goals', done: parts > 0 };
+    }
+    case 'skills': {
+      const c = n(p.skills);
+      return { text: c ? `${c} skill${c === 1 ? '' : 's'}` : 'Dribbling, leadership, speed…', done: c > 0 };
+    }
+    case 'social': {
+      const c = Object.values(p.socialLinks || {}).filter(Boolean).length;
+      return { text: c ? `${c} link${c === 1 ? '' : 's'}` : 'Instagram, YouTube, LinkedIn, X', done: c > 0 };
+    }
+    case 'privacy':
+      return { text: ({ public: 'Public: anyone with the link', connections: 'Connections only', private: 'Private: only you' } as Record<string, string>)[p.visibility as string] || 'Public: anyone with the link', done: true };
     case 'stats': {
       const c = n(p.careerStats);
       return { text: c ? `${c} stat${c === 1 ? '' : 's'}` : 'Matches played, goals, runs, points', done: c > 0 };
@@ -249,6 +273,11 @@ function SectionSheet({ id, profile, save, onClose }: { id: SectionId; profile: 
       {id === 'sport' && <SportForm {...props} />}
       {id === 'teams' && <TeamsForm {...props} />}
       {id === 'achievements' && <AchievementsForm {...props} />}
+      {id === 'education' && <EducationForm {...props} />}
+      {id === 'about' && <AboutForm {...props} />}
+      {id === 'skills' && <SkillsForm {...props} />}
+      {id === 'social' && <SocialForm {...props} />}
+      {id === 'privacy' && <PrivacyForm {...props} />}
       {id === 'stats' && <StatsForm {...props} />}
       {id === 'photos' && <PhotosForm profile={profile} save={save} onClose={onClose} />}
       {id === 'videos' && <VideosForm {...props} />}
@@ -314,6 +343,8 @@ function BasicForm({ profile, busy, commit }: FormProps) {
     fullName: realName(profile.fullName), dob: profile.dob ? String(profile.dob).slice(0, 10) : '', gender: profile.gender || '',
     city: profile.location?.city || '', state: profile.location?.state || '', phone: profile.phone || '',
     tagline: profile.tagline || '', aboutBio: profile.aboutBio || '', username: profile.username || '',
+    nationality: profile.nationality || '', address: profile.location?.address || '', pincode: profile.location?.pincode || '',
+    whatsapp: profile.socialLinks?.whatsapp || '',
   });
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
   const age = ageFromDob(f.dob);
@@ -325,7 +356,9 @@ function BasicForm({ profile, busy, commit }: FormProps) {
       return commit({
         username: f.username || undefined,
         fullName: f.fullName.trim(), dob: f.dob || undefined, gender: f.gender || undefined, phone: f.phone.trim() || undefined,
-        location: { ...(profile.location || {}), city: f.city.trim(), state: f.state.trim() },
+        nationality: f.nationality.trim() || undefined,
+        socialLinks: { ...(profile.socialLinks || {}), whatsapp: f.whatsapp.trim() },
+        location: { ...(profile.location || {}), city: f.city.trim(), state: f.state.trim(), address: f.address.trim(), pincode: f.pincode.trim() },
         tagline: f.tagline.trim() || undefined, aboutBio: f.aboutBio.trim() || undefined,
       });
     }}>
@@ -343,6 +376,10 @@ function BasicForm({ profile, busy, commit }: FormProps) {
         </select>
       </Field>
       <LocationFields state={f.state} city={f.city} onChange={(v) => setF((s) => ({ ...s, ...v }))} />
+      <Field label="Nationality"><input className={inputCls} placeholder="e.g. Indian" value={f.nationality} onChange={(e) => set('nationality', e.target.value)} /></Field>
+      <Field label="Address"><input className={inputCls} autoComplete="street-address" placeholder="Area / street" value={f.address} onChange={(e) => set('address', e.target.value)} /></Field>
+      <Field label="Pincode"><input className={inputCls} inputMode="numeric" maxLength={6} autoComplete="postal-code" value={f.pincode} onChange={(e) => set('pincode', e.target.value.replace(/[^0-9]/g, ''))} /></Field>
+      <Field label="WhatsApp number"><input className={inputCls} type="tel" inputMode="tel" value={f.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} /></Field>
       <Field label="Phone" hint="Only shared with people you allow."><input className={inputCls} type="tel" inputMode="tel" autoComplete="tel" value={f.phone} onChange={(e) => set('phone', e.target.value)} /></Field>
       <Field label="One-line tagline"><input className={inputCls} maxLength={120} placeholder="e.g. Left-wing striker, Mumbai U-21" value={f.tagline} onChange={(e) => set('tagline', e.target.value)} /></Field>
       <Field label="Bio"><textarea className={textareaCls} rows={4} maxLength={1000} placeholder="A few lines about your game and goals" value={f.aboutBio} onChange={(e) => set('aboutBio', e.target.value)} /></Field>
@@ -356,6 +393,9 @@ function SportForm({ profile, busy, commit }: FormProps) {
   const [f, setF] = useState({
     primarySport: profile.primarySport || '', position: profile.position || '',
     secondaryPosition: profile.secondaryPosition || '', dominantSide: profile.dominantSide || '',
+    secondarySports: (profile.secondarySports || []).join(', '), yearsOfExperience: profile.yearsOfExperience != null ? String(profile.yearsOfExperience) : '',
+    experienceLevel: profile.experienceLevel || '', height: profile.height != null ? String(profile.height) : '', heightUnit: profile.heightUnit || 'cm',
+    weight: profile.weight != null ? String(profile.weight) : '', availabilityStatus: profile.availabilityStatus || '',
   });
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
   const options = sports.includes(f.primarySport) || !f.primarySport ? sports : [f.primarySport, ...sports];
@@ -364,6 +404,9 @@ function SportForm({ profile, busy, commit }: FormProps) {
     <FormBody busy={busy} onSubmit={() => commit({
       primarySport: f.primarySport || undefined, position: f.position.trim() || undefined,
       secondaryPosition: f.secondaryPosition.trim() || undefined, dominantSide: f.dominantSide || undefined,
+      secondarySports: f.secondarySports.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 5),
+      yearsOfExperience: num(f.yearsOfExperience), experienceLevel: f.experienceLevel || undefined,
+      height: num(f.height), heightUnit: f.heightUnit, weight: num(f.weight), availabilityStatus: f.availabilityStatus || undefined,
     })}>
       <Field label="Sport">
         <select className={inputCls} value={f.primarySport} onChange={(e) => set('primarySport', e.target.value)}>
@@ -376,6 +419,28 @@ function SportForm({ profile, busy, commit }: FormProps) {
       <Field label="Strong foot / hand">
         <select className={inputCls} value={f.dominantSide} onChange={(e) => set('dominantSide', e.target.value)}>
           <option value="">Not set</option><option value="right">Right</option><option value="left">Left</option><option value="both">Both</option>
+        </select>
+      </Field>
+      <Field label="Other sports" hint="Separate with commas"><input className={inputCls} placeholder="e.g. Cricket, Kabaddi" value={f.secondarySports} onChange={(e) => set('secondarySports', e.target.value)} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Years of experience"><input className={inputCls} inputMode="numeric" value={f.yearsOfExperience} onChange={(e) => set('yearsOfExperience', e.target.value)} /></Field>
+        <Field label="Level">
+          <select className={inputCls} value={f.experienceLevel} onChange={(e) => set('experienceLevel', e.target.value)}>
+            <option value="">Not set</option><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option><option value="professional">Professional</option>
+          </select>
+        </Field>
+      </div>
+      <div className="grid grid-cols-[1fr_88px_1fr] gap-3">
+        <Field label="Height"><input className={inputCls} inputMode="decimal" value={f.height} onChange={(e) => set('height', e.target.value)} /></Field>
+        <Field label="Unit">
+          <select className={inputCls} value={f.heightUnit} onChange={(e) => set('heightUnit', e.target.value)}><option value="cm">cm</option><option value="m">m</option><option value="ft">ft</option></select>
+        </Field>
+        <Field label="Weight (kg)"><input className={inputCls} inputMode="decimal" value={f.weight} onChange={(e) => set('weight', e.target.value)} /></Field>
+      </div>
+      <Field label="Availability">
+        <select className={inputCls} value={f.availabilityStatus} onChange={(e) => set('availabilityStatus', e.target.value)}>
+          <option value="">Not set</option><option value="open_for_trials">Open for trials</option><option value="looking_for_academy">Looking for an academy</option>
+          <option value="available_for_selection">Available for selection</option><option value="not_available">Not available</option>
         </select>
       </Field>
     </FormBody>
@@ -391,6 +456,7 @@ function TeamsForm({ profile, busy, commit }: FormProps) {
     history.filter((h) => h && h !== currentEntry).map((h) => ({ organization: h.organization || '', role: h.role || '' })),
   );
   const [school, setSchool] = useState<string>(profile.institutionName || '');
+  const [course, setCourse] = useState<string>(profile.currentEducation || '');
 
   return (
     <FormBody busy={busy} onSubmit={() => {
@@ -398,7 +464,7 @@ function TeamsForm({ profile, busy, commit }: FormProps) {
         ...(current.trim() ? [{ organization: current.trim(), current: true }] : []),
         ...past.filter((r) => r.organization?.trim()).map((r) => ({ organization: r.organization.trim(), role: r.role?.trim() || undefined, current: false })),
       ];
-      return commit({ playingHistory: mergeRows(history, next, 'organization'), institutionName: school.trim() || undefined });
+      return commit({ playingHistory: mergeRows(history, next, 'organization'), institutionName: school.trim() || undefined, currentEducation: course.trim() || undefined });
     }}>
       <Field label="Current club / academy"><input className={inputCls} placeholder="Where you play now" value={current} onChange={(e) => setCurrent(e.target.value)} /></Field>
       <div>
@@ -407,6 +473,7 @@ function TeamsForm({ profile, busy, commit }: FormProps) {
           fields={[{ key: 'organization', placeholder: 'Club / academy name', full: true }, { key: 'role', placeholder: 'Your role (optional)', full: true }]} />
       </div>
       <Field label="School / college"><input className={inputCls} value={school} onChange={(e) => setSchool(e.target.value)} /></Field>
+      <Field label="Current class / course"><input className={inputCls} placeholder="e.g. Class 12, B.Com 2nd year" value={course} onChange={(e) => setCourse(e.target.value)} /></Field>
     </FormBody>
   );
 }
@@ -433,6 +500,127 @@ function AchievementsForm({ profile, busy, commit }: FormProps) {
         <RowEditor rows={tours} onChange={setTours} blank={{ name: '', year: '', result: '' }} addLabel="Add tournament"
           fields={[{ key: 'name', placeholder: 'Tournament name', full: true }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }, { key: 'result', placeholder: 'Result (e.g. Winner)', full: false }]} />
       </div>
+    </FormBody>
+  );
+}
+
+// ── Education & certificates ──────────────────────────────────────────────────
+function EducationForm({ profile, busy, commit }: FormProps) {
+  const [edu, setEdu] = useState<Row[]>((profile.education || []).map((e: any) => ({ institution: e.institution || '', degree: e.degree || '', endYear: e.endYear ? String(e.endYear) : e.year ? String(e.year) : '' })));
+  const [certs, setCerts] = useState<Row[]>((profile.certifications || []).map((c: any) => ({ name: c.name || '', issuer: c.issuer || '', year: c.year ? String(c.year) : '' })));
+  return (
+    <FormBody busy={busy} onSubmit={() => commit({
+      education: mergeRows(profile.education,
+        edu.filter((r) => r.institution?.trim()).map((r) => ({ institution: r.institution.trim(), degree: r.degree?.trim() || undefined, endYear: num(r.endYear) })), 'institution'),
+      certifications: mergeRows(profile.certifications,
+        certs.filter((r) => r.name?.trim()).map((r) => ({ name: r.name.trim(), issuer: r.issuer?.trim() || undefined, year: num(r.year) })), 'name'),
+    })}>
+      <div>
+        <span className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Schools &amp; colleges</span>
+        <RowEditor rows={edu} onChange={setEdu} blank={{ institution: '', degree: '', endYear: '' }} addLabel="Add education"
+          fields={[{ key: 'institution', placeholder: 'School / college', full: true }, { key: 'degree', placeholder: 'Class / degree', full: false }, { key: 'endYear', placeholder: 'Year', inputMode: 'numeric', full: false }]} />
+      </div>
+      <div>
+        <span className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Coaching &amp; sports certificates</span>
+        <RowEditor rows={certs} onChange={setCerts} blank={{ name: '', issuer: '', year: '' }} addLabel="Add certificate"
+          fields={[{ key: 'name', placeholder: 'Certificate name', full: true }, { key: 'issuer', placeholder: 'Issued by', full: false }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }]} />
+      </div>
+    </FormBody>
+  );
+}
+
+// ── About, strengths & goals ──────────────────────────────────────────────────
+function AboutForm({ profile, busy, commit }: FormProps) {
+  const [f, setF] = useState({ careerHighlights: profile.careerHighlights || '', strengths: profile.strengths || '', goalsAspirations: profile.goalsAspirations || '' });
+  const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
+  return (
+    <FormBody busy={busy} onSubmit={() => commit({
+      careerHighlights: f.careerHighlights.trim() || undefined, strengths: f.strengths.trim() || undefined, goalsAspirations: f.goalsAspirations.trim() || undefined,
+    })}>
+      <Field label="Career highlights"><textarea className={textareaCls} rows={4} maxLength={1500} placeholder="Your proudest moments, matches and results" value={f.careerHighlights} onChange={(e) => set('careerHighlights', e.target.value)} /></Field>
+      <Field label="Strengths"><textarea className={textareaCls} rows={3} maxLength={800} placeholder="What you do best on the field" value={f.strengths} onChange={(e) => set('strengths', e.target.value)} /></Field>
+      <Field label="Goals and aspirations"><textarea className={textareaCls} rows={3} maxLength={800} placeholder="Where you want to take your game" value={f.goalsAspirations} onChange={(e) => set('goalsAspirations', e.target.value)} /></Field>
+    </FormBody>
+  );
+}
+
+// ── Skills ────────────────────────────────────────────────────────────────────
+function SkillsForm({ profile, busy, commit }: FormProps) {
+  const [skills, setSkills] = useState<string[]>(profile.skills || []);
+  const [draft, setDraft] = useState('');
+  const add = () => {
+    const v = draft.trim();
+    if (v && !skills.some((s) => norm(s) === norm(v)) && skills.length < 20) setSkills([...skills, v]);
+    setDraft('');
+  };
+  return (
+    <FormBody busy={busy} onSubmit={() => commit({ skills: draft.trim() ? [...skills, draft.trim()].slice(0, 20) : skills })}>
+      <p className="text-sm text-ink-soft">Short tags scouts can scan: Dribbling, Leadership, Sprint speed.</p>
+      <div className="flex gap-2">
+        <input className={inputCls} placeholder="Type a skill" value={draft} maxLength={40}
+          onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} />
+        <button type="button" onClick={add} className={btnGhost + ' shrink-0'}>Add</button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {skills.map((s) => (
+          <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-cream px-3 py-1.5 text-sm font-semibold text-ink">
+            {s}
+            <button type="button" aria-label={`Remove ${s}`} onClick={() => setSkills(skills.filter((x) => x !== s))}><X className="h-3.5 w-3.5 text-ink/50" /></button>
+          </span>
+        ))}
+      </div>
+    </FormBody>
+  );
+}
+
+// ── Social links ──────────────────────────────────────────────────────────────
+const SOCIALS: { key: string; label: string; placeholder: string }[] = [
+  { key: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/yourname' },
+  { key: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/@yourchannel' },
+  { key: 'linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/in/yourname' },
+  { key: 'twitter', label: 'X (Twitter)', placeholder: 'https://x.com/yourname' },
+  { key: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/yourname' },
+];
+
+function SocialForm({ profile, busy, commit }: FormProps) {
+  const [links, setLinks] = useState<Record<string, string>>(Object.fromEntries(SOCIALS.map((s) => [s.key, profile.socialLinks?.[s.key] || ''])));
+  const [featured, setFeatured] = useState<string>(profile.featuredVideoUrl || '');
+  return (
+    <FormBody busy={busy} onSubmit={() => {
+      const all = [...Object.values(links), featured].map((v) => v.trim()).filter(Boolean);
+      if (all.some((u) => !/^https?:[/][/]/i.test(u))) return toast.error('Links must start with https://');
+      return commit({
+        socialLinks: { ...(profile.socialLinks || {}), ...Object.fromEntries(Object.entries(links).map(([k, v]) => [k, v.trim()])) },
+        featuredVideoUrl: featured.trim() || undefined,
+      });
+    }}>
+      {SOCIALS.map((s) => (
+        <Field key={s.key} label={s.label}>
+          <input className={inputCls} inputMode="url" autoCapitalize="none" placeholder={s.placeholder} value={links[s.key]} onChange={(e) => setLinks({ ...links, [s.key]: e.target.value })} />
+        </Field>
+      ))}
+      <Field label="Featured video" hint="Your best clip, shown first on your CV"><input className={inputCls} inputMode="url" placeholder="https://…" value={featured} onChange={(e) => setFeatured(e.target.value)} /></Field>
+    </FormBody>
+  );
+}
+
+// ── Visibility ────────────────────────────────────────────────────────────────
+function PrivacyForm({ profile, busy, commit }: FormProps) {
+  const [v, setV] = useState<string>(profile.visibility || 'public');
+  const opts = [
+    { id: 'public', t: 'Public', d: 'Anyone with your link can view your CV. Best for scouts.' },
+    { id: 'connections', t: 'Connections only', d: 'Only people you are connected with.' },
+    { id: 'private', t: 'Private', d: 'Only you. Your link will not open for others.' },
+  ];
+  return (
+    <FormBody busy={busy} onSubmit={() => commit({ visibility: v })}>
+      {opts.map((o) => (
+        <button key={o.id} type="button" onClick={() => setV(o.id)}
+          className={`w-full rounded-2xl border p-4 text-left transition ${v === o.id ? 'border-brand bg-brand/5' : 'border-line hover:border-ink/40'}`}>
+          <span className="block font-display text-lg font-semibold text-ink">{o.t}</span>
+          <span className="mt-0.5 block text-sm text-ink-soft">{o.d}</span>
+        </button>
+      ))}
     </FormBody>
   );
 }

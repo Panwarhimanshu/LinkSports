@@ -46,6 +46,7 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
     ...(profile.height ? [{ label: 'Height', value: `${profile.height} ${profile.heightUnit || 'cm'}` }] : []),
     ...(profile.weight ? [{ label: 'Weight', value: `${profile.weight} kg` }] : []),
     ...(profile.dominantSide ? [{ label: 'Strong side', value: String(profile.dominantSide).replace(/^./, (c: string) => c.toUpperCase()) }] : []),
+    ...(profile.nationality ? [{ label: 'Nationality', value: String(profile.nationality) }] : []),
     ...(profile.yearsOfExperience ? [{ label: 'Experience', value: `${profile.yearsOfExperience} yrs` }] : []),
     ...((profile.careerStats as { label: string; value: string }[]) || []),
   ];
@@ -56,6 +57,12 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
   const photos = photosOf(profile).slice(0, 4);
   const videos = videosOf(profile);
   const custom: any[] = profile.customSections || [];
+  const education: any[] = profile.education || [];
+  const certificates: any[] = profile.certifications || [];
+  const skills: string[] = profile.skills || [];
+  const others: string[] = profile.secondarySports || [];
+  const socials = Object.entries(profile.socialLinks || {}).filter(([k, v]) => v && k !== 'whatsapp') as [string, string][];
+  const prose: [string, string][] = ([['Career highlights', profile.careerHighlights], ['Strengths', profile.strengths], ['Goals', profile.goalsAspirations]] as [string, string][]).filter(([, v]) => !!v);
 
   return (
     <div className="mx-auto w-full max-w-3xl pb-10 md:px-6">
@@ -78,6 +85,19 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
 
       {profile.aboutBio && (
         <Section title="About"><p className="whitespace-pre-line text-[15px] leading-relaxed text-ink">{profile.aboutBio}</p></Section>
+      )}
+
+      {prose.map(([title, text]) => (
+        <Section key={title} title={title}><p className="whitespace-pre-line text-[15px] leading-relaxed text-ink">{text}</p></Section>
+      ))}
+
+      {(skills.length > 0 || others.length > 0) && (
+        <Section title="Skills">
+          <div className="flex flex-wrap gap-2">
+            {skills.map((k) => <span key={k} className="rounded-full border border-line bg-cream px-3 py-1.5 text-sm font-semibold text-ink">{k}</span>)}
+            {others.map((k) => <span key={k} className="rounded-full border border-dashed border-line px-3 py-1.5 text-sm text-ink-soft">Also plays {k}</span>)}
+          </div>
+        </Section>
       )}
 
       {stats.length > 0 && (
@@ -111,6 +131,28 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
                 <p className="font-display text-base font-semibold text-ink">{profile.institutionName}</p>
               </li>
             )}
+          </ul>
+        </Section>
+      )}
+
+      {(education.length > 0 || certificates.length > 0 || profile.currentEducation) && (
+        <Section title="Education">
+          <ul className="divide-y divide-line rounded-2xl border border-line">
+            {profile.currentEducation && (
+              <li className="px-4 py-3"><p className="font-display text-base font-semibold text-ink">{profile.currentEducation}</p><p className="text-sm text-ink-soft">Currently studying</p></li>
+            )}
+            {education.map((e, i) => (
+              <li key={`e${i}`} className="px-4 py-3">
+                <p className="font-display text-base font-semibold text-ink">{e.institution}</p>
+                {(e.degree || e.endYear || e.year) && <p className="text-sm text-ink-soft">{[e.degree, e.endYear || e.year].filter(Boolean).join(' · ')}</p>}
+              </li>
+            ))}
+            {certificates.map((c, i) => (
+              <li key={`c${i}`} className="px-4 py-3">
+                <p className="font-display text-base font-semibold text-ink">{c.name}</p>
+                {(c.issuer || c.year) && <p className="text-sm text-ink-soft">{[c.issuer, c.year].filter(Boolean).join(' · ')}</p>}
+              </li>
+            ))}
           </ul>
         </Section>
       )}
@@ -152,6 +194,15 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
         </Section>
       )}
 
+      {profile.featuredVideoUrl && (
+        <Section title="Featured video">
+          <a href={profile.featuredVideoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-line px-4 py-3 transition hover:border-brand">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/10 text-brand"><Play className="h-4 w-4 fill-current" /></span>
+            <span className="min-w-0 truncate text-sm font-semibold text-ink">{profile.featuredVideoUrl.replace(/^https?:[/][/](www[.])?/, '')}</span>
+          </a>
+        </Section>
+      )}
+
       {videos.length > 0 && (
         <Section title="Highlight videos">
           <ul className="space-y-2">
@@ -188,6 +239,18 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
           </ul>
         </Section>
       ))}
+
+      {socials.length > 0 && (
+        <Section title="Find me online">
+          <div className="flex flex-wrap gap-2">
+            {socials.map(([k, url]) => (
+              <a key={k} href={url} target="_blank" rel="noopener noreferrer nofollow" className="rounded-full border border-line px-4 py-2 text-sm font-semibold capitalize text-ink transition hover:border-brand hover:text-brand">
+                {k === 'twitter' ? 'X' : k}
+              </a>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {onLogout && (
         <div className="px-4 pt-8">

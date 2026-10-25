@@ -172,7 +172,7 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
       'media', 'socialLinks', 'tagline', 'aboutBio', 'careerHighlights', 'goalsAspirations',
       'yearsOfExperience', 'experienceLevel', 'strengths', 'featuredVideoUrl', 'institutionName', 'currentEducation',
       'availabilityStatus', 'visibility', 'coachReferences',
-      'secondaryPosition', 'careerStats', 'customSections',
+      'secondaryPosition', 'careerStats', 'customSections', 'nationality', 'skills',
     ];
 
     const numericFields = new Set(['height', 'weight', 'yearsOfExperience']);
@@ -216,6 +216,10 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
         value = sanitizeCertifications(value);
       } else if (field === 'careerStats' && Array.isArray(value)) {
         value = sanitizeCareerStats(value);
+      } else if (field === 'skills' && Array.isArray(value)) {
+        value = value.slice(0, 20).map((x) => clip(x, 40)).filter(Boolean);
+      } else if (field === 'socialLinks' && value && typeof value === 'object') {
+        value = Object.fromEntries(['instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'whatsapp'].map((k) => [k, clip((value as any)[k], 200)]));
       } else if (field === 'customSections' && Array.isArray(value)) {
         value = sanitizeCustomSections(value);
       } else if (field === 'media' && Array.isArray(value)) {

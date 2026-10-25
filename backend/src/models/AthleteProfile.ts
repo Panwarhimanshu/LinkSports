@@ -78,6 +78,8 @@ export interface IAthleteProfile extends Document {
   };
   tagline?: string; // New field (for short bio)
   secondaryPosition?: string;
+  nationality?: string;
+  skills: string[]; // short skill tags, e.g. Dribbling, Leadership
   careerStats: { label: string; value: string }[]; // e.g. Matches 45, Goals 12
   customSections: { title: string; items: { label?: string; value: string }[] }[]; // fitness metrics, certifications, references
   aboutBio?: string;
@@ -179,6 +181,8 @@ const AthleteProfileSchema = new Schema<IAthleteProfile>(
     },
     tagline: String,
     secondaryPosition: String,
+    nationality: String,
+    skills: [String],
     careerStats: [{ _id: false, label: String, value: String }],
     customSections: [{ _id: false, title: String, items: [{ _id: false, label: String, value: String }] }],
     aboutBio: { type: String, maxlength: 5000 },
