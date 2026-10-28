@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { AthleteProfile } from '../models/AthleteProfile';
+import { CoachProfile } from '../models/CoachProfile';
 
 // A player's username is their public CV link: linksports.in/cv/{username}.
 
@@ -26,11 +27,10 @@ export const isRealName = (name?: string): boolean => !!name && name.trim().leng
 /** True when another profile already uses this username (case-insensitive) or this value as its link slug. */
 export const usernameTaken = async (username: string, exceptProfileId?: unknown): Promise<boolean> => {
   const notMe = exceptProfileId ? { _id: { $ne: exceptProfileId } } : {};
-  const hit = await AthleteProfile.exists({
-    ...notMe,
-    $or: [{ username: new RegExp(`^${escapeRegex(username)}$`, 'i') }, { profileUrl: username }],
-  });
-  return !!hit;
+  const match = { $or: [{ username: new RegExp(`^${escapeRegex(username)}$`, 'i') }, { profileUrl: username }] };
+  // players and coaches share one namespace because both live at /cv/{username}
+  const [a, c] = await Promise.all([AthleteProfile.exists({ ...notMe, ...match }), CoachProfile.exists({ ...notMe, ...match })]);
+  return !!(a || c);
 };
 
 /** A free username built from the player's name: rahul-sharma, then rahul-sharma-2, -3, ... */
@@ -52,3 +52,6 @@ export const athleteLookup = (id: string): Record<string, unknown> => {
     ? { $or: [{ _id: id }, { profileUrl: id }, { userId: id }, byUsername] }
     : { $or: [{ profileUrl: id }, byUsername] };
 };
+
+/** Same filter, for coach profiles. */
+export const coachLookup = athleteLookup;

@@ -6,12 +6,14 @@ import { toJpeg, toPng } from 'html-to-image';
 import toast from 'react-hot-toast';
 import { FileText, ImageIcon, Loader2 } from 'lucide-react';
 import { eventAPI, profileAPI } from '@/lib/api';
-import { buildStoryData, toDataUrl, type StoryData } from '@/lib/cv';
+import { buildCoachStoryData, buildStoryData, toDataUrl, type StoryData } from '@/lib/cv';
 import StoryCard, { STORY_H, STORY_W } from './StoryCard';
 import { AccentTitle, btnPrimary } from './ui';
 
 // Home tab: the player's Story card plus the two export actions (PDF CV and Story image).
-export default function HomeTab({ profile }: { profile: Record<string, any> }) {
+export default function HomeTab({ profile, kind = 'player' }: { profile: Record<string, any>; kind?: 'player' | 'coach' }) {
+  const isCoach = kind === 'coach';
+  const sport = isCoach ? profile.sportsSpecialization?.[0] : profile.primarySport;
   const [story, setStory] = useState<StoryData | null>(null);
   const [logo, setLogo] = useState<string | null>(null);
   const [format, setFormat] = useState<'png' | 'jpg'>('png');
@@ -27,10 +29,10 @@ export default function HomeTab({ profile }: { profile: Record<string, any> }) {
       const [photo, logoUrl] = await Promise.all([toDataUrl(profile.photo), toDataUrl('/logo.png')]);
       if (!alive) return;
       setLogo(logoUrl);
-      setStory({ ...buildStoryData(profile), photo });
+      setStory({ ...(isCoach ? buildCoachStoryData(profile) : buildStoryData(profile)), photo });
     })();
     return () => { alive = false; };
-  }, [profile]);
+  }, [profile, isCoach]);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -40,7 +42,7 @@ export default function HomeTab({ profile }: { profile: Record<string, any> }) {
     return () => ro.disconnect();
   }, [story]);
 
-  const fileName = `${(profile.fullName || 'player').replace(/\s+/g, '_')}_LinkSports_Story.${format}`;
+  const fileName = `${(profile.fullName || kind).replace(/\s+/g, '_')}_LinkSports_Story.${format}`;
 
   const render = async (): Promise<Blob> => {
     if (!exportRef.current) throw new Error('Card not ready');
@@ -92,7 +94,7 @@ export default function HomeTab({ profile }: { profile: Record<string, any> }) {
           toast('Choose "Save Image" to add it to your gallery', { icon: '📲', duration: 5000 });
           try {
             await navigator.share({ files: [file] });
-            void eventAPI.log('STORY_CARD_EXPORTED', { sport: profile.primarySport, format });
+            void eventAPI.log('STORY_CARD_EXPORTED', { sport, format });
             return;
           } catch (e: any) {
             if (e?.name === 'AbortError') return; // closed the sheet
@@ -100,7 +102,7 @@ export default function HomeTab({ profile }: { profile: Record<string, any> }) {
           }
         }
         setSavePreview(URL.createObjectURL(blob));
-        void eventAPI.log('STORY_CARD_EXPORTED', { sport: profile.primarySport, format });
+        void eventAPI.log('STORY_CARD_EXPORTED', { sport, format });
         return;
       }
 
@@ -108,7 +110,7 @@ export default function HomeTab({ profile }: { profile: Record<string, any> }) {
       const a = document.createElement('a');
       a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
-      void eventAPI.log('STORY_CARD_EXPORTED', { sport: profile.primarySport, format });
+      void eventAPI.log('STORY_CARD_EXPORTED', { sport, format });
       toast.success('Story card saved');
     } catch {
       toast.error('Could not create the image. Please try again.');
@@ -118,12 +120,12 @@ export default function HomeTab({ profile }: { profile: Record<string, any> }) {
   const downloadPdf = async () => {
     setBusy('pdf');
     try {
-      const res = await profileAPI.downloadAthleteCV(profile._id);
+      const res = await (isCoach ? profileAPI.downloadCoachCV(profile._id) : profileAPI.downloadAthleteCV(profile._id));
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
-      a.href = url; a.download = `${(profile.fullName || 'player').replace(/\s+/g, '_')}_Sports_CV.pdf`; document.body.appendChild(a); a.click(); a.remove();
+      a.href = url; a.download = `${(profile.fullName || kind).replace(/\s+/g, '_')}_${isCoach ? 'Coach' : 'Sports'}_CV.pdf`; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
-      void eventAPI.log('PDF_DOWNLOADED', { sport: profile.primarySport });
+      void eventAPI.log('PDF_DOWNLOADED', { sport });
     } catch {
       toast.error('Could not download the PDF.');
     } finally { setBusy(null); }
@@ -168,7 +170,7 @@ export default function HomeTab({ profile }: { profile: Record<string, any> }) {
             <span className="font-mono text-xs font-bold text-ink-soft">{completion}% complete</span>
           </div>
           <p className="mt-2 text-sm text-ink-soft">
-            <Link href="/edit" className="font-semibold text-brand underline underline-offset-4">Add photos, stats and achievements</Link> to stand out to scouts.
+            <Link href="/edit" className="font-semibold text-brand underline underline-offset-4">{isCoach ? 'Add certifications, experience and the players you have trained' : 'Add photos, stats and achievements'}</Link> to stand out to {isCoach ? 'academies and parents' : 'scouts'}.
           </p>
         </div>
 

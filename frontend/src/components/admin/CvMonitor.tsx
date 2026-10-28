@@ -9,7 +9,7 @@ import { formatDate } from '@/lib/utils';
 import { useSports } from '@/components/cv/useSports';
 
 interface Stats {
-  totalPlayers: number; completedCvs: number; downloads24h: number; downloadsAllTime: number;
+  totalPlayers: number; totalCoaches?: number; completedCvs: number; downloads24h: number; downloadsAllTime: number;
   topSports: { sport: string; players: number }[]; completedThreshold: number;
 }
 interface PlayerRow {
@@ -112,8 +112,9 @@ export default function CvMonitor() {
   return (
     <div className="space-y-6">
       {/* A. KPI ribbon */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <Kpi icon={Users} label="Registered players" value={stats?.totalPlayers} />
+        <Kpi icon={Users} label="Registered coaches" value={stats?.totalCoaches} />
         <Kpi icon={FileCheck2} label={`Completed CVs (≥${stats?.completedThreshold ?? 60}%)`} value={stats?.completedCvs} />
         <Kpi icon={Download} label="PDF & Story downloads" value={stats ? `${stats.downloads24h} / ${stats.downloadsAllTime}` : undefined} note="24h / all-time" />
         <div className="rounded-xl border border-gray-200 bg-white p-4">

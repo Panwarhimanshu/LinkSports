@@ -6,9 +6,12 @@ const SITE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.linksports.in').r
 async function getProfile(id: string): Promise<Record<string, any> | null> {
   try {
     const res = await fetch(`${API}/profiles/athlete/${encodeURIComponent(id)}`, { next: { revalidate: 300 } });
-    if (!res.ok) return null; // private / missing profiles get generic metadata
-    const json = await res.json();
-    return json?.data?.profile || null;
+    if (res.ok) return (await res.json())?.data?.profile || null;
+    // not a player: the same link style is used by coaches
+    const coach = await fetch(`${API}/profiles/coach/${encodeURIComponent(id)}`, { next: { revalidate: 300 } });
+    if (!coach.ok) return null; // private / missing profiles get generic metadata
+    const p = (await coach.json())?.data?.profile;
+    return p ? { ...p, isCoach: true, primarySport: (p.sportsSpecialization || [])[0], position: p.coachingLevel || 'Coach' } : null;
   } catch {
     return null;
   }
@@ -24,14 +27,14 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const title = `${p.fullName} — ${[p.primarySport, p.position].filter(Boolean).join(' · ') || 'Athlete'} | Sports CV`;
   const description =
     p.tagline ||
-    `${p.fullName} is a ${p.primarySport || 'sports'} player${place ? ` from ${place}` : ''}. View the verified digital sports CV on LinkSports.in.`;
+    `${p.fullName} is a ${p.primarySport || 'sports'} ${p.isCoach ? 'coach' : 'player'}${place ? ` from ${place}` : ''}. View the digital sports CV on LinkSports.in.`;
   const url = `${SITE}/cv/${p.username || p.profileUrl || params.id}`;
   const image = abs(p.photo);
 
   return {
     title,
     description,
-    keywords: ['Sports CV', 'Free Sports CV', 'Digital Sports Resume India', `${p.primarySport || 'Athlete'} Player CV`, 'LinkSports Player Profile', 'Athlete Portfolio PDF', p.fullName],
+    keywords: ['Sports CV', 'Free Sports CV', 'Digital Sports Resume India', `${p.primarySport || 'Athlete'} ${p.isCoach ? 'Coach' : 'Player'} CV`, 'LinkSports Profile', 'Athlete Portfolio PDF', p.fullName],
     alternates: { canonical: url },
     openGraph: { title, description, url, type: 'profile', siteName: 'LinkSports', locale: 'en_IN', images: image ? [{ url: image, alt: p.fullName }] : undefined },
     twitter: { card: image ? 'summary_large_image' : 'summary', title, description, images: image ? [image] : undefined },

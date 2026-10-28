@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { buildStoryData, toDataUrl } from '@/lib/cv';
+import { buildCoachStoryData, buildStoryData, toDataUrl } from '@/lib/cv';
 import StoryCard, { STORY_H, STORY_W } from './StoryCard';
 
 /**
  * A small live copy of the player's Story card (always built from the saved profile, so it updates
  * right after each save). Used beside the Edit CV list on desktop.
  */
-export default function StoryPreview({ profile, maxWidth = 300 }: { profile: Record<string, any>; maxWidth?: number }) {
+export default function StoryPreview({ profile, maxWidth = 300, kind = 'player' }: { profile: Record<string, any>; maxWidth?: number; kind?: 'player' | 'coach' }) {
   const [logo, setLogo] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
   const [scale, setScale] = useState(maxWidth / STORY_W);
@@ -29,7 +29,7 @@ export default function StoryPreview({ profile, maxWidth = 300 }: { profile: Rec
     return () => ro.disconnect();
   }, []);
 
-  const data = useMemo(() => ({ ...buildStoryData(profile), photo }), [profile, photo]);
+  const data = useMemo(() => ({ ...(kind === 'coach' ? buildCoachStoryData(profile) : buildStoryData(profile)), photo }), [profile, photo, kind]);
 
   return (
     <div

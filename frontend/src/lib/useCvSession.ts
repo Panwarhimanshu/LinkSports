@@ -16,34 +16,42 @@ export function useCvSession() {
   const [ready, setReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        if (localStorage.getItem('accessToken')) {
-          await fetchMe();
-          const me = useAuthStore.getState();
-          if (me.user?.role === 'athlete') {
-            const res = await profileAPI.getMyAthleteProfile();
-            setProfile(res.data.data?.profile || res.data.data);
-          }
+  /** Loads the account and the CV profile that matches its type (player or coach). */
+  const load = useCallback(async () => {
+    try {
+      if (localStorage.getItem('accessToken')) {
+        await fetchMe();
+        const me = useAuthStore.getState();
+        // a brand-new account has no CV yet: it first picks player or coach
+        if (me.user?.needsRoleSelection) {
+          setProfile(null);
+        } else if (me.user?.role === 'athlete') {
+          const res = await profileAPI.getMyAthleteProfile();
+          setProfile(res.data.data?.profile || res.data.data);
+        } else if (me.user?.role === 'coach') {
+          const res = await profileAPI.getMyCoachProfile();
+          setProfile(res.data.data?.profile || res.data.data);
         }
-      } catch {
-        // signed out or the session expired: the screen shows the login
-      } finally {
-        setReady(true);
       }
-    })();
+    } catch {
+      // signed out or the session expired: the screen shows the login
+    } finally {
+      setReady(true);
+    }
   }, [fetchMe]);
 
+  useEffect(() => { void load(); }, [load]);
+
   const save = useCallback(async (patch: Record<string, unknown>): Promise<Profile> => {
-    const res = await profileAPI.updateAthleteProfile(patch);
+    const isCoach = useAuthStore.getState().user?.role === 'coach';
+    const res = await (isCoach ? profileAPI.updateCoachProfile(patch) : profileAPI.updateAthleteProfile(patch));
     const next = res.data.data as Profile;
     setProfile(next);
     useAuthStore.getState().setProfile(next);
     return next;
   }, []);
 
-  return { ready, isAuthenticated, user, profile, setProfile, save, setAccessToken, logout };
+  return { ready, isAuthenticated, user, profile, setProfile, save, setAccessToken, logout, reload: load };
 }
 
 /** Pulls the server's message out of an axios error. */

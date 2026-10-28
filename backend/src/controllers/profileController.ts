@@ -12,7 +12,7 @@ import { Listing } from '../models/Listing';
 import { Job } from '../models/Job';
 import { deviceFromUserAgent, logEvent } from '../utils/activity';
 import { StoredImage } from '../models/StoredImage';
-import { athleteLookup, isRealName, isValidUsername, normalizeUsername, uniqueUsername, usernameTaken } from '../utils/username';
+import { athleteLookup, coachLookup, isRealName, isValidUsername, normalizeUsername, uniqueUsername, usernameTaken } from '../utils/username';
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -286,8 +286,15 @@ export const getMyAthleteProfile = async (req: AuthRequest, res: Response): Prom
 
 export const getMyCoachProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const profile = await CoachProfile.findOne({ userId: req.user!._id });
-    if (!profile) { sendError(res, 'Profile not found', 404); return; }
+    let profile = await CoachProfile.findOne({ userId: req.user!._id });
+    if (!profile) {
+      profile = await CoachProfile.create({ userId: req.user!._id, fullName: 'Coach', profileUrl: generateSlug(req.user!._id.toString()) });
+    }
+    // every coach gets their public link (username) the first time they open their CV
+    if (!profile.username && isRealName(profile.fullName) && profile.fullName !== 'Coach') {
+      profile.username = await uniqueUsername(profile.fullName, profile._id);
+      await profile.save();
+    }
     sendSuccess(res, profile);
   } catch { sendError(res, 'Failed to get profile', 500); }
 };
@@ -295,15 +302,16 @@ export const getMyCoachProfile = async (req: AuthRequest, res: Response): Promis
 export const getCoachProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const query = id.includes('-') || id.length !== 24
-      ? { profileUrl: id }
-      : { $or: [{ _id: id }, { profileUrl: id }, { userId: id }] };
-
-    const profile = await CoachProfile.findOne(query)
+    const profile = await CoachProfile.findOne(coachLookup(id))
       .populate('userId', 'email role isVerified')
       .populate('athletesDeveloped', 'fullName photo profileUrl primarySport');
 
     if (!profile) { sendError(res, 'Profile not found', 404); return; }
+
+    const ownerOfProfile = ((profile.userId as any)?._id || profile.userId)?.toString();
+    if (profile.visibility === 'private' && ownerOfProfile !== req.user?._id.toString()) {
+      sendError(res, 'This profile is private', 403); return;
+    }
 
     let connectionStatus = null;
     let connectionId = null;
@@ -334,8 +342,51 @@ export const getCoachProfile = async (req: AuthRequest, res: Response): Promise<
   }
 };
 
+const sanitizeCoachEducation = (arr: unknown[]) =>
+  arr.slice(0, 12).map((e: any) => ({
+    institution: clip(e?.institution, 120), degree: clip(e?.degree, 80), fieldOfStudy: clip(e?.fieldOfStudy, 80),
+    startYear: toNum(e?.startYear), endYear: e?.isCurrent ? undefined : toNum(e?.endYear), isCurrent: !!e?.isCurrent, description: clip(e?.description, 400),
+  })).filter((e) => e.institution);
+
+const sanitizeCoachExperience = (arr: unknown[]) =>
+  arr.slice(0, 20).map((e: any) => ({
+    organization: clip(e?.organization, 120), role: clip(e?.role, 80), startDate: toDate(e?.startDate),
+    endDate: e?.current ? undefined : toDate(e?.endDate), current: !!e?.current,
+  })).filter((e) => e.organization);
+
+const sanitizeQualifications = (arr: unknown[]) =>
+  arr.slice(0, 20).map((q: any) => ({ name: clip(q?.name, 120), issuer: clip(q?.issuer, 120), year: toNum(q?.year), document: q?.document ? clip(q.document, 300) : undefined })).filter((q) => q.name);
+
+const sanitizePlayersTrained = (arr: unknown[]) =>
+  arr.slice(0, 20).map((t: any) => ({ name: clip(t?.name, 120), result: clip(t?.result, 120), year: toNum(t?.year), description: clip(t?.description, 400) })).filter((t) => t.name);
+
+const sanitizeCoachAchievements = (arr: unknown[]) =>
+  arr.slice(0, 20).map((a: any) => ({ title: clip(a?.title, 140), year: toNum(a?.year), level: clip(a?.level, 40), category: clip(a?.category, 40), description: clip(a?.description, 400) })).filter((a) => a.title);
+
+const calculateCoachCompletion = (p: InstanceType<typeof CoachProfile>): number => {
+  let score = 0;
+  if (p.photo) score += 10;
+  if (isRealName(p.fullName) && p.fullName !== 'Coach') score += 10;
+  if (p.dob) score += 5;
+  if (p.gender) score += 5;
+  if (p.location?.city) score += 5;
+  if (p.sportsSpecialization?.length) score += 15;
+  if (p.tagline || p.aboutBio) score += 10;
+  if (p.qualifications?.length) score += 15;
+  if (p.experience?.length) score += 15;
+  if (p.playersTrained?.length || p.achievements?.length) score += 5;
+  if (p.email) score += 5;
+  if (p.phone) score += 5;
+  return Math.min(score, 100);
+};
+
 export const updateCoachProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    if (req.body.fullName && isPhoneOrEmail(req.body.fullName)) {
+      sendError(res, 'Display name cannot be a phone number or email address', 400);
+      return;
+    }
+
     let profile = await CoachProfile.findOne({ userId: req.user!._id });
     if (!profile) {
       profile = await CoachProfile.create({
@@ -346,18 +397,55 @@ export const updateCoachProfile = async (req: AuthRequest, res: Response): Promi
     }
 
     const allowedFields = [
-      'fullName', 'photo', 'dob', 'gender', 'location', 'email', 'phone', 'qualifications', 'sportsSpecialization',
-      'ageGroupsCoached', 'experience', 'athletesDeveloped', 'tournamentResults', 'coachingPhilosophy',
-      'availability', 'aboutBio', 'socialLinks', 'visibility',
+      'fullName', 'username', 'photo', 'dob', 'gender', 'location', 'email', 'phone', 'countryCode', 'nationality', 'tagline',
+      'qualifications', 'sportsSpecialization', 'ageGroupsCoached', 'experience', 'education', 'playersTrained', 'achievements',
+      'skills', 'coachingPhilosophy', 'availability', 'aboutBio', 'socialLinks', 'visibility', 'yearsOfExperience', 'coachingLevel',
+      'featuredVideoUrl',
     ];
 
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        (profile as any)[field] = req.body[field];
+    if (req.body.username !== undefined) {
+      const wanted = normalizeUsername(req.body.username);
+      if (!wanted) {
+        delete req.body.username;
+      } else if (!isValidUsername(wanted)) {
+        sendError(res, 'Username must be 3–30 characters: letters, numbers, - or _', 400, 'INVALID_USERNAME');
+        return;
+      } else if (wanted !== profile.username && await usernameTaken(wanted, profile._id)) {
+        sendError(res, 'That username is already taken. Try another.', 409, 'USERNAME_TAKEN');
+        return;
+      } else {
+        req.body.username = wanted;
       }
+    }
+
+    allowedFields.forEach((field) => {
+      let value = req.body[field];
+      if (value === undefined) return;
+      if (value === '') value = undefined;
+
+      if (field === 'yearsOfExperience') value = toNum(value);
+      else if (field === 'dob') value = toDate(value);
+      else if (field === 'qualifications' && Array.isArray(value)) value = sanitizeQualifications(value);
+      else if (field === 'experience' && Array.isArray(value)) value = sanitizeCoachExperience(value);
+      else if (field === 'education' && Array.isArray(value)) value = sanitizeCoachEducation(value);
+      else if (field === 'playersTrained' && Array.isArray(value)) value = sanitizePlayersTrained(value);
+      else if (field === 'achievements' && Array.isArray(value)) value = sanitizeCoachAchievements(value);
+      else if ((field === 'skills' || field === 'sportsSpecialization' || field === 'ageGroupsCoached') && Array.isArray(value)) {
+        value = value.slice(0, field === 'skills' ? 20 : 12).map((x: unknown) => clip(x, 40)).filter(Boolean);
+      } else if (field === 'socialLinks' && value && typeof value === 'object') {
+        value = Object.fromEntries(['instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'whatsapp'].map((k) => [k, clip((value as any)[k], 200)]));
+      }
+      (profile as any)[field] = value;
     });
 
+    if (!profile.username && isRealName(profile.fullName) && profile.fullName !== 'Coach') {
+      profile.username = await uniqueUsername(profile.fullName, profile._id);
+    }
+
+    profile.profileCompletion = calculateCoachCompletion(profile);
     await profile.save();
+    const device = deviceFromUserAgent(req.headers['user-agent'], req.headers['x-app-platform'] as string | undefined);
+    void logEvent(req.user!._id.toString(), 'CV_UPDATED', { sport: profile.sportsSpecialization?.[0], meta: { device } });
     sendSuccess(res, profile, 'Coach profile updated');
   } catch (err) {
     console.error('updateCoachProfile error:', err);
@@ -959,11 +1047,7 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
 export const downloadCoachCV = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const query = id.includes('-') || id.length !== 24
-      ? { profileUrl: id }
-      : { $or: [{ _id: id }, { profileUrl: id }, { userId: id }] };
-
-    const profile = await CoachProfile.findOne(query);
+    const profile = await CoachProfile.findOne(coachLookup(id));
     if (!profile) { sendError(res, 'Profile not found', 404); return; }
 
     // ── Permission check ──

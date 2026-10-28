@@ -120,7 +120,7 @@ export const verifyEmailOtp = async (req: Request, res: Response): Promise<void>
     if (!user) {
       if (!(await signupsAllowed())) { sendError(res, SIGNUPS_CLOSED_MSG, 403, 'SIGNUPS_CLOSED'); return; }
       isNew = true;
-      user = await User.create({ email, role: 'athlete', isVerified: true, isApproved: true });
+      user = await User.create({ email, role: 'athlete', isVerified: true, isApproved: true, needsRoleSelection: true });
       const name = email.split('@')[0];
       await AthleteProfile.create({ userId: user._id, fullName: 'Player', profileUrl: generateSlug(name) });
     } else if (!user.isVerified) {

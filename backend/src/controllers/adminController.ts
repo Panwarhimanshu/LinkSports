@@ -351,8 +351,9 @@ const STREAM_EVENTS = ['USER_SIGNUP', 'SPORT_SELECTED', 'CV_UPDATED', 'CV_SAVED'
 export const getCvStats = async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const [totalPlayers, completedCvs, downloads24h, downloadsAllTime, topSports] = await Promise.all([
+    const [totalPlayers, totalCoaches, completedCvs, downloads24h, downloadsAllTime, topSports] = await Promise.all([
       User.countDocuments({ role: 'athlete' }),
+      User.countDocuments({ role: 'coach' }),
       AthleteProfile.countDocuments({ profileCompletion: { $gte: COMPLETED_CV_THRESHOLD } }),
       ActivityEvent.countDocuments({ eventType: { $in: DOWNLOAD_EVENTS }, createdAt: { $gte: since } }),
       ActivityEvent.countDocuments({ eventType: { $in: DOWNLOAD_EVENTS } }),
@@ -365,6 +366,7 @@ export const getCvStats = async (_req: AuthRequest, res: Response): Promise<void
     ]);
     sendSuccess(res, {
       totalPlayers,
+      totalCoaches,
       completedCvs,
       downloads24h,
       downloadsAllTime,

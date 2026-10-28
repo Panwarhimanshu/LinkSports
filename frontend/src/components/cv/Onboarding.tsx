@@ -14,7 +14,9 @@ import { AccentTitle, Field, btnPrimary, inputCls } from './ui';
 type Save = (patch: Record<string, unknown>) => Promise<Record<string, any>>;
 
 // ── Step 1 of 2: pick a sport ─────────────────────────────────────────────────
-export function SportStep({ onPick }: { onPick: (sport: string) => Promise<void> }) {
+export function SportStep({ onPick, title = 'What do you play?', subtitle = 'Pick your main sport. You can change it later in Edit CV.' }: {
+  onPick: (sport: string) => Promise<void>; title?: string; subtitle?: string;
+}) {
   const sports = useSports();
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -28,8 +30,8 @@ export function SportStep({ onPick }: { onPick: (sport: string) => Promise<void>
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 pb-10 pt-6 md:px-8 md:pt-10">
       <p className="eyebrow">Setup · 1 of 2</p>
-      <h1 className="mt-3 font-display text-4xl font-semibold text-ink"><AccentTitle>What do you play?</AccentTitle></h1>
-      <p className="mt-2 text-ink-soft">Pick your main sport. You can change it later in Edit CV.</p>
+      <h1 className="mt-3 font-display text-4xl font-semibold text-ink"><AccentTitle>{title}</AccentTitle></h1>
+      <p className="mt-2 text-ink-soft">{subtitle}</p>
 
       <div className="relative mt-6">
         <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" />

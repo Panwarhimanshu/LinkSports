@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { isOnboarded } from '@/lib/cv';
+import { isOnboardedFor } from '@/lib/cv';
 import { useCvSession } from '@/lib/useCvSession';
 import AppShell, { type Tab } from './AppShell';
 
@@ -17,7 +17,7 @@ export default function TabPage({ tab, children }: { tab: Tab; children: (ctx: C
   const router = useRouter();
   const session = useCvSession();
   const { ready, isAuthenticated, user, profile } = session;
-  const allowed = ready && isAuthenticated && user?.role === 'athlete' && isOnboarded(profile);
+  const allowed = ready && isAuthenticated && (user?.role === 'athlete' || user?.role === 'coach') && !user?.needsRoleSelection && isOnboardedFor(user?.role, profile);
 
   useEffect(() => {
     if (ready && !allowed) router.replace('/');

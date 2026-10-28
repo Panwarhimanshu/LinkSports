@@ -98,6 +98,7 @@ export const authAPI = {
   verifyPhoneOtp: (phone: string, otp: string) => api.post('/auth/phone/verify-otp', { phone, otp }),
   changePassword: (data: { currentPassword: string; newPassword: string }) => api.post('/auth/change-password', data),
   deleteAccount: () => api.delete('/auth/account'),
+  chooseRole: (role: 'athlete' | 'coach') => api.post('/auth/role', { role }),
 };
 
 // ── Profiles ──────────────────────────────────────────────────────────────────
@@ -106,6 +107,10 @@ export const profileAPI = {
   getMyAthleteProfile: () => api.get('/profiles/athlete/me'),
   updateAthleteProfile: (data: Record<string, unknown>) => api.patch('/profiles/athlete', data),
   downloadAthleteCV: (id: string) => api.get(`/profiles/athlete/${id}/cv`, { responseType: 'blob' }),
+  getCoachProfile: (id: string) => api.get(`/profiles/coach/${id}`),
+  getMyCoachProfile: () => api.get('/profiles/coach/me'),
+  updateCoachProfile: (data: Record<string, unknown>) => api.patch('/profiles/coach', data),
+  downloadCoachCV: (id: string) => api.get(`/profiles/coach/${id}/cv`, { responseType: 'blob' }),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────

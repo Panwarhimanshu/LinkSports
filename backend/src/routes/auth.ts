@@ -9,6 +9,7 @@ import {
 import { protect } from '../middleware/auth';
 import { sendPhoneOtp, verifyPhoneOtp } from '../controllers/phoneAuthController';
 import { sendEmailOtp, verifyEmailOtp } from '../controllers/emailAuthController';
+import { chooseRole } from '../controllers/roleController';
 
 const router = Router();
 
@@ -49,6 +50,7 @@ router.post('/email/send-otp', emailSendLimiter, sendEmailOtp);
 router.post('/email/verify-otp', emailVerifyLimiter, verifyEmailOtp);
 router.post('/phone/send-otp', otpLimiter, sendPhoneOtp);
 router.post('/phone/verify-otp', otpLimiter, verifyPhoneOtp);
+router.post('/role', protect, chooseRole);
 router.post('/dev-login', devLogin); // 404 unless DEV_LOGIN=true and not production
 router.post('/refresh', refreshToken);
 router.post('/logout', protect, logout);

@@ -18,9 +18,9 @@ import { POSITIONS_BY_SPORT } from '@/lib/positions';
 import StoryPreview from './StoryPreview';
 import { AccentTitle, Field, btnGhost, btnPrimary, inputCls, textareaCls } from './ui';
 
-type Profile = Record<string, any>;
-type Save = (patch: Record<string, unknown>) => Promise<Profile>;
-type Row = Record<string, string>;
+export type Profile = Record<string, any>;
+export type Save = (patch: Record<string, unknown>) => Promise<Profile>;
+export type Row = Record<string, string>;
 type SectionId = 'basic' | 'sport' | 'teams' | 'education' | 'certificates' | 'achievements' | 'tournaments' | 'about' | 'stats' | 'skills' | 'social' | 'photos' | 'videos' | 'custom' | 'privacy';
 
 const CORE: { id: SectionId; label: string; icon: typeof Phone }[] = [
@@ -198,7 +198,7 @@ function Group({ title, items, profile, onOpen }: {
   );
 }
 
-function ListRow({ icon: Icon, label, sub, done, busy, onClick, last }: {
+export function ListRow({ icon: Icon, label, sub, done, busy, onClick, last }: {
   icon: typeof Phone; label: string; sub?: string; done?: boolean; busy?: boolean; onClick: () => void; last?: boolean;
 }) {
   return (
@@ -219,7 +219,7 @@ function ListRow({ icon: Icon, label, sub, done, busy, onClick, last }: {
 }
 
 // ── Bottom sheet that holds each section's form ───────────────────────────────
-function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   useEffect(() => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -246,7 +246,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
 }
 
 /** Form wrapper: scrolling body + a sticky Save button. */
-function FormBody({ children, busy, onSubmit, submitLabel = 'Save' }: {
+export function FormBody({ children, busy, onSubmit, submitLabel = 'Save' }: {
   children: React.ReactNode; busy: boolean; onSubmit: () => void; submitLabel?: string;
 }) {
   return (
@@ -300,22 +300,22 @@ function SectionSheet({ id, profile, save, onClose }: { id: SectionId; profile: 
   );
 }
 
-interface FormProps { profile: Profile; busy: boolean; commit: (patch: Record<string, unknown>) => Promise<void> }
+export interface FormProps { profile: Profile; busy: boolean; commit: (patch: Record<string, unknown>) => Promise<void> }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-const norm = (v: unknown) => String(v ?? '').trim().toLowerCase();
-const num = (v: string) => (v?.trim() && !isNaN(Number(v)) ? Number(v) : undefined);
+export const norm = (v: unknown) => String(v ?? '').trim().toLowerCase();
+export const num = (v: string) => (v?.trim() && !isNaN(Number(v)) ? Number(v) : undefined);
 
 /**
  * Rebuilds a list from the form rows but keeps fields the simple form doesn't show (descriptions, dates,
  * levels added in the full profile editor), matching old and new entries by `key`.
  */
-function mergeRows<T extends Record<string, any>>(existing: T[] | undefined, next: T[], key: keyof T): T[] {
+export function mergeRows<T extends Record<string, any>>(existing: T[] | undefined, next: T[], key: keyof T): T[] {
   const byKey = new Map((existing || []).map((e) => [norm(e[key]), e]));
   return next.map((n) => ({ ...(byKey.get(norm(n[key])) || {}), ...n }));
 }
 
-const THIS_YEAR = new Date().getFullYear();
+export const THIS_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: THIS_YEAR - 1949 }, (_, i) => String(THIS_YEAR - i));
 const YEARS_AHEAD = Array.from({ length: THIS_YEAR + 7 - 1949 }, (_, i) => String(THIS_YEAR + 6 - i));
 
@@ -327,7 +327,7 @@ interface FieldSpec {
   hideWhen?: string;
 }
 
-function RowEditor({ rows, onChange, blank, addLabel, fields, max = 12 }: {
+export function RowEditor({ rows, onChange, blank, addLabel, fields, max = 12 }: {
   rows: Row[]; onChange: (r: Row[]) => void; blank: Row; addLabel: string; fields: FieldSpec[]; max?: number;
 }) {
   return (
@@ -390,7 +390,7 @@ function RowEditor({ rows, onChange, blank, addLabel, fields, max = 12 }: {
   );
 }
 
-const dateStr = (v: unknown) => (v ? String(v).slice(0, 10) : '');
+export const dateStr = (v: unknown) => (v ? String(v).slice(0, 10) : '');
 
 // ── 1. Basic & contact ────────────────────────────────────────────────────────
 function BasicForm({ profile, busy, commit }: FormProps) {
@@ -461,7 +461,7 @@ function BasicForm({ profile, busy, commit }: FormProps) {
 }
 
 /** Position picker: a list for sports we know, free text for the rest (and for a saved value not in the list). */
-function PositionInput({ sport, value, onChange, placeholder }: { sport: string; value: string; onChange: (v: string) => void; placeholder: string }) {
+export function PositionInput({ sport, value, onChange, placeholder }: { sport: string; value: string; onChange: (v: string) => void; placeholder: string }) {
   const options = POSITIONS_BY_SPORT[sport];
   if (!options) return <input className={inputCls} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />;
   const list = value && !options.includes(value) ? [value, ...options] : options;
@@ -596,10 +596,10 @@ function TeamsForm({ profile, busy, commit }: FormProps) {
 }
 
 // ── 4. Achievements ───────────────────────────────────────────────────────────
-const LEVELS = ['School', 'District', 'State', 'Zonal', 'National', 'International'];
+export const LEVELS = ['School', 'District', 'State', 'Zonal', 'National', 'International'];
 const AWARD_CATEGORIES = ['Medal', 'Trophy', 'Player of the match', 'Player of the series', 'Scholarship', 'Selection', 'Certificate', 'Other'];
 
-function AchievementsForm({ profile, busy, commit }: FormProps) {
+export function AchievementsForm({ profile, busy, commit }: FormProps) {
   const [achs, setAchs] = useState<Row[]>((profile.achievements || []).map((a: any) => ({
     title: a.title || '', year: a.year ? String(a.year) : '', level: a.level || '', category: a.category || '', description: a.description || '',
   })));
@@ -651,7 +651,7 @@ function TournamentsForm({ profile, busy, commit }: FormProps) {
 }
 
 // ── Education ─────────────────────────────────────────────────────────────────
-function EducationForm({ profile, busy, commit }: FormProps) {
+export function EducationForm({ profile, busy, commit }: FormProps) {
   const [edu, setEdu] = useState<Row[]>((profile.education || []).map((e: any) => ({
     institution: e.institution || '', degree: e.degree || '', fieldOfStudy: e.fieldOfStudy || '',
     startYear: e.startYear ? String(e.startYear) : '', endYear: e.endYear ? String(e.endYear) : e.year ? String(e.year) : '',
@@ -710,7 +710,7 @@ function AboutForm({ profile, busy, commit }: FormProps) {
 }
 
 // ── Skills ────────────────────────────────────────────────────────────────────
-function SkillsForm({ profile, busy, commit }: FormProps) {
+export function SkillsForm({ profile, busy, commit }: FormProps) {
   const [skills, setSkills] = useState<string[]>(profile.skills || []);
   const [draft, setDraft] = useState('');
   const add = () => {
@@ -747,7 +747,7 @@ const SOCIALS: { key: string; label: string; placeholder: string }[] = [
   { key: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/yourname' },
 ];
 
-function SocialForm({ profile, busy, commit }: FormProps) {
+export function SocialForm({ profile, busy, commit }: FormProps) {
   const [links, setLinks] = useState<Record<string, string>>(Object.fromEntries(SOCIALS.map((s) => [s.key, profile.socialLinks?.[s.key] || ''])));
   const [featured, setFeatured] = useState<string>(profile.featuredVideoUrl || '');
   return (
@@ -770,7 +770,7 @@ function SocialForm({ profile, busy, commit }: FormProps) {
 }
 
 // ── Visibility ────────────────────────────────────────────────────────────────
-function PrivacyForm({ profile, busy, commit }: FormProps) {
+export function PrivacyForm({ profile, busy, commit }: FormProps) {
   const [v, setV] = useState<string>(profile.visibility || 'public');
   const opts = [
     { id: 'public', t: 'Public', d: 'Anyone with your link can view your CV. Best for scouts.' },

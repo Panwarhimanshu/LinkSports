@@ -56,7 +56,7 @@ const StoryCard = forwardRef<HTMLDivElement, Props>(({ data, logoSrc }, ref) => 
           <span style={{ fontSize: 44, fontWeight: 800, letterSpacing: -0.5 }}>LinkSports.in</span>
         )}
         <div style={{ border: '3px solid #60a5fa', color: '#93c5fd', borderRadius: 999, padding: '14px 32px', fontSize: 30, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
-          Player Profile
+          {data.label || 'Player Profile'}
         </div>
       </div>
 

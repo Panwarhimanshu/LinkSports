@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { ActivityEvent, EventType } from '../models/ActivityEvent';
+import { CoachProfile } from '../models/CoachProfile';
 import { AthleteProfile } from '../models/AthleteProfile';
 
 /** "Android Chrome", "iOS Safari", "LinkSports App (iOS)"… — coarse label for the admin feed. */
@@ -19,7 +20,12 @@ export const logEvent = async (
   opts: { sport?: string; meta?: Record<string, unknown> } = {}
 ): Promise<void> => {
   try {
-    const profile = await AthleteProfile.findOne({ userId }).select('fullName primarySport media profileCompletion');
+    let profile: any = await AthleteProfile.findOne({ userId }).select('fullName primarySport media profileCompletion');
+    let role = 'player';
+    if (!profile || profile.fullName === 'Player') {
+      const coach: any = await CoachProfile.findOne({ userId }).select('fullName sportsSpecialization profileCompletion');
+      if (coach) { profile = { ...coach.toObject(), primarySport: coach.sportsSpecialization?.[0] }; role = 'coach'; }
+    }
     await ActivityEvent.create({
       eventId: `evt_${crypto.randomBytes(5).toString('hex')}`,
       userId,
@@ -27,6 +33,7 @@ export const logEvent = async (
       sport: opts.sport || profile?.primarySport,
       eventType,
       meta: {
+        role,
         photos_count: ((profile?.media as any[]) || []).filter((m) => m?.type === 'photo').length,
         completion: `${profile?.profileCompletion ?? 0}%`,
         ...(opts.meta || {}),

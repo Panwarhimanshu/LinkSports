@@ -11,14 +11,20 @@ export const shareUrlFor = (handle?: string) => (handle ? `${SITE_URL}/cv/${hand
 export const MAX_ACTION_PHOTOS = 4;
 export const MAX_PHOTO_BYTES = 800 * 1024;
 
-/** Phone sign-ups start with the placeholder name "Player"; treat it as not filled in. */
-export const realName = (name?: string) => (name && name !== 'Player' ? name : '');
+/** New accounts start with the placeholder name "Player" (or "Coach"); treat it as not filled in. */
+export const realName = (name?: string) => (name && name !== 'Player' && name !== 'Coach' ? name : '');
 
 export const photosOf = (p?: Record<string, any> | null): { url: string }[] => ((p?.media as any[]) || []).filter((m) => m?.type === 'photo' && m.url);
 export const videosOf = (p?: Record<string, any> | null): { url: string; platform?: string }[] => ((p?.media as any[]) || []).filter((m) => m?.type === 'video' && m.url);
 
 /** A profile is "onboarded" once it has a sport and a real name; before that the app shows the setup steps. */
 export const isOnboarded = (p?: Record<string, any> | null) => !!p?.primarySport && !!realName(p?.fullName);
+
+/** Same check for a coach, whose sports are a list. */
+export const isCoachOnboarded = (p?: Record<string, any> | null) => !!p?.sportsSpecialization?.length && !!realName(p?.fullName);
+
+/** Onboarding check for whichever account type is signed in. */
+export const isOnboardedFor = (role?: string, p?: Record<string, any> | null) => (role === 'coach' ? isCoachOnboarded(p) : isOnboarded(p));
 
 /**
  * Shrinks a photo in the browser before upload so it stays under `maxBytes` (default 800 KB):
@@ -92,6 +98,8 @@ export interface StoryData {
   club?: string;
   stats: string[]; // up to 3 headline items
   shareUrl: string;
+  /** Badge in the card's header; "Player Profile" when empty. */
+  label?: string;
 }
 
 /** Top-3 career stats/medals: achievements first, then tournament results. */
@@ -108,5 +116,22 @@ export function buildStoryData(p: Record<string, any>): Omit<StoryData, 'photo'>
     club,
     stats: [...ach, ...tour].slice(0, 3),
     shareUrl: shareUrlFor(profileHandle(p)),
+  };
+}
+
+/** Story card data for a coach: certifications, awards and results play the part of a player's medals. */
+export function buildCoachStoryData(p: Record<string, any>): Omit<StoryData, 'photo'> {
+  const quals: string[] = (p.qualifications || []).filter((q: any) => q?.name).map((q: any) => q.name);
+  const awards: string[] = (p.achievements || []).filter((a: any) => a?.title).map((a: any) => `${a.title}${a.year ? ` (${a.year})` : ''}`);
+  const results: string[] = (p.playersTrained || []).filter((t: any) => t?.name && t?.result).map((t: any) => `${t.result} — ${t.name}`);
+  const current = (p.experience || []).find((e: any) => e?.current) || (p.experience || [])[0];
+  return {
+    fullName: p.fullName || 'Coach',
+    sport: (p.sportsSpecialization || []).slice(0, 2).join(' · '),
+    position: p.coachingLevel || 'Coach',
+    club: current?.organization,
+    stats: [...awards, ...quals, ...results].slice(0, 3),
+    shareUrl: shareUrlFor(profileHandle(p)),
+    label: 'Coach Profile',
   };
 }

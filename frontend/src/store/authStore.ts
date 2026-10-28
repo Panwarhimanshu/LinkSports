@@ -7,6 +7,8 @@ interface User {
   email: string;
   role: 'athlete' | 'coach' | 'professional' | 'organization' | 'admin';
   isVerified: boolean;
+  /** New accounts must still answer "player or coach?" */
+  needsRoleSelection?: boolean;
 }
 
 interface AuthState {
