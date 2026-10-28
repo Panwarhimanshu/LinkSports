@@ -54,6 +54,7 @@ export interface IAthleteProfile extends Document {
     institution: string; 
     degree?: string; 
     fieldOfStudy?: string; // New field
+    isCurrent?: boolean;
     startYear?: number;    // New field
     endYear?: number;      // New field
     year?: number; 
@@ -79,6 +80,7 @@ export interface IAthleteProfile extends Document {
   tagline?: string; // New field (for short bio)
   secondaryPosition?: string;
   nationality?: string;
+  countryCode?: string;
   skills: string[]; // short skill tags, e.g. Dribbling, Leadership
   careerStats: { label: string; value: string }[]; // e.g. Matches 45, Goals 12
   customSections: { title: string; items: { label?: string; value: string }[] }[]; // fitness metrics, certifications, references
@@ -157,6 +159,7 @@ const AthleteProfileSchema = new Schema<IAthleteProfile>(
       institution: String, 
       degree: String, 
       fieldOfStudy: String,
+      isCurrent: Boolean,
       startYear: Number,
       endYear: Number,
       year: Number, 
@@ -182,6 +185,7 @@ const AthleteProfileSchema = new Schema<IAthleteProfile>(
     tagline: String,
     secondaryPosition: String,
     nationality: String,
+    countryCode: String,
     skills: [String],
     careerStats: [{ _id: false, label: String, value: String }],
     customSections: [{ _id: false, title: String, items: [{ _id: false, label: String, value: String }] }],

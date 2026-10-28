@@ -13,6 +13,8 @@ import { getPhotoUrl } from '@/lib/utils';
 import { apiError } from '@/lib/useCvSession';
 import { useSports } from './useSports';
 import LocationFields from './LocationFields';
+import { canonicalState } from '@/lib/india';
+import { POSITIONS_BY_SPORT } from '@/lib/positions';
 import StoryPreview from './StoryPreview';
 import { AccentTitle, Field, btnGhost, btnPrimary, inputCls, textareaCls } from './ui';
 
@@ -313,41 +315,82 @@ function mergeRows<T extends Record<string, any>>(existing: T[] | undefined, nex
   return next.map((n) => ({ ...(byKey.get(norm(n[key])) || {}), ...n }));
 }
 
-interface FieldSpec { key: string; placeholder: string; inputMode?: 'numeric' | 'text' | 'url'; full?: boolean }
+const THIS_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: THIS_YEAR - 1949 }, (_, i) => String(THIS_YEAR - i));
+const YEARS_AHEAD = Array.from({ length: THIS_YEAR + 7 - 1949 }, (_, i) => String(THIS_YEAR + 6 - i));
+
+interface FieldSpec {
+  key: string; placeholder: string; inputMode?: 'numeric' | 'text' | 'url'; full?: boolean;
+  kind?: 'text' | 'select' | 'year' | 'yearAhead' | 'date' | 'textarea' | 'check';
+  options?: string[];
+  /** Hides the field while this other key of the same row is "yes". */
+  hideWhen?: string;
+}
 
 function RowEditor({ rows, onChange, blank, addLabel, fields, max = 12 }: {
   rows: Row[]; onChange: (r: Row[]) => void; blank: Row; addLabel: string; fields: FieldSpec[]; max?: number;
 }) {
   return (
     <div className="space-y-3">
-      {rows.map((row, i) => (
-        <div key={i} className="relative grid grid-cols-2 gap-2 rounded-2xl border border-line bg-cream/70 p-3">
-          {fields.map((f) => (
-            <input
-              key={f.key}
-              className={`${inputCls} ${f.full === false ? '' : fields.length === 1 || f.full ? 'col-span-2' : ''}`}
-              placeholder={f.placeholder}
-              inputMode={f.inputMode}
-              value={row[f.key] || ''}
-              onChange={(e) => onChange(rows.map((r, j) => (j === i ? { ...r, [f.key]: e.target.value } : r)))}
-            />
-          ))}
-          <button
-            type="button"
-            aria-label="Remove"
-            className="absolute -right-2 -top-2 grid h-8 w-8 place-items-center rounded-full border border-line bg-white hover:border-red-500"
-            onClick={() => onChange(rows.filter((_, j) => j !== i))}
-          >
-            <Trash2 className="h-4 w-4 text-red-500" />
-          </button>
-        </div>
-      ))}
+      {rows.map((row, i) => {
+        const setVal = (k: string, v: string) => onChange(rows.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+        return (
+          <div key={i} className="relative grid grid-cols-2 gap-2 rounded-2xl border border-line bg-cream/70 p-3">
+            {fields.filter((f) => !(f.hideWhen && row[f.hideWhen] === 'yes')).map((f) => {
+              const span = f.full === false ? '' : fields.length === 1 || f.full || f.kind === 'textarea' || f.kind === 'check' ? 'col-span-2' : '';
+              const value = row[f.key] || '';
+              if (f.kind === 'check') {
+                return (
+                  <label key={f.key} className={`${span} flex min-h-[44px] cursor-pointer items-center gap-2.5 text-sm font-medium text-ink`}>
+                    <input type="checkbox" className="h-5 w-5 accent-[#004fab]" checked={value === 'yes'} onChange={(e) => setVal(f.key, e.target.checked ? 'yes' : '')} />
+                    {f.placeholder}
+                  </label>
+                );
+              }
+              if (f.kind === 'textarea') {
+                return <textarea key={f.key} rows={2} className={`${textareaCls} ${span}`} placeholder={f.placeholder} value={value} onChange={(e) => setVal(f.key, e.target.value)} />;
+              }
+              if (f.kind === 'select' || f.kind === 'year' || f.kind === 'yearAhead') {
+                const opts = f.kind === 'year' ? YEARS : f.kind === 'yearAhead' ? YEARS_AHEAD : f.options || [];
+                const list = value && !opts.includes(value) ? [value, ...opts] : opts;
+                return (
+                  <select key={f.key} className={`${inputCls} ${span}`} aria-label={f.placeholder} value={value} onChange={(e) => setVal(f.key, e.target.value)}>
+                    <option value="">{f.placeholder}</option>
+                    {list.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                );
+              }
+              if (f.kind === 'date') {
+                return (
+                  <label key={f.key} className={`${span} block`}>
+                    <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-ink-soft">{f.placeholder}</span>
+                    <input type="date" className={inputCls} value={value} onChange={(e) => setVal(f.key, e.target.value)} />
+                  </label>
+                );
+              }
+              return (
+                <input key={f.key} className={`${inputCls} ${span}`} placeholder={f.placeholder} inputMode={f.inputMode} value={value} onChange={(e) => setVal(f.key, e.target.value)} />
+              );
+            })}
+            <button
+              type="button"
+              aria-label="Remove"
+              className="absolute -right-2 -top-2 grid h-8 w-8 place-items-center rounded-full border border-line bg-white hover:border-red-500"
+              onClick={() => onChange(rows.filter((_, j) => j !== i))}
+            >
+              <Trash2 className="h-4 w-4 text-red-500" />
+            </button>
+          </div>
+        );
+      })}
       <button type="button" disabled={rows.length >= max} className={btnGhost + ' w-full'} onClick={() => onChange([...rows, { ...blank }])}>
         <Plus className="h-4 w-4" />{addLabel}
       </button>
     </div>
   );
 }
+
+const dateStr = (v: unknown) => (v ? String(v).slice(0, 10) : '');
 
 // ── 1. Basic & contact ────────────────────────────────────────────────────────
 function BasicForm({ profile, busy, commit }: FormProps) {
@@ -356,10 +399,21 @@ function BasicForm({ profile, busy, commit }: FormProps) {
     city: profile.location?.city || '', state: profile.location?.state || '', phone: profile.phone || '',
     tagline: profile.tagline || '', aboutBio: profile.aboutBio || '', username: profile.username || '',
     nationality: profile.nationality || '', address: profile.location?.address || '', pincode: profile.location?.pincode || '',
-    whatsapp: profile.socialLinks?.whatsapp || '',
+    whatsapp: profile.socialLinks?.whatsapp || '', countryCode: profile.countryCode || '+91',
   });
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
   const age = ageFromDob(f.dob);
+
+  // A 6-digit pincode fills in the state and city (free India Post lookup); failures are ignored.
+  const lookupPincode = async (pin: string) => {
+    if (!/^[0-9]{6}$/.test(pin)) return;
+    try {
+      const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+      const data = await res.json();
+      const office = data?.[0]?.Status === 'Success' ? data[0].PostOffice?.[0] : null;
+      if (office) setF((s) => ({ ...s, pincode: pin, state: canonicalState(office.State) || office.State, city: office.District || s.city }));
+    } catch { /* offline or blocked: the pickers still work */ }
+  };
 
   return (
     <FormBody busy={busy} onSubmit={() => {
@@ -368,7 +422,7 @@ function BasicForm({ profile, busy, commit }: FormProps) {
       return commit({
         username: f.username || undefined,
         fullName: f.fullName.trim(), dob: f.dob || undefined, gender: f.gender || undefined, phone: f.phone.trim() || undefined,
-        nationality: f.nationality.trim() || undefined,
+        nationality: f.nationality.trim() || undefined, countryCode: f.countryCode,
         socialLinks: { ...(profile.socialLinks || {}), whatsapp: f.whatsapp.trim() },
         location: { ...(profile.location || {}), city: f.city.trim(), state: f.state.trim(), address: f.address.trim(), pincode: f.pincode.trim() },
         tagline: f.tagline.trim() || undefined, aboutBio: f.aboutBio.trim() || undefined,
@@ -390,12 +444,32 @@ function BasicForm({ profile, busy, commit }: FormProps) {
       <LocationFields state={f.state} city={f.city} onChange={(v) => setF((s) => ({ ...s, ...v }))} />
       <Field label="Nationality"><input className={inputCls} placeholder="e.g. Indian" value={f.nationality} onChange={(e) => set('nationality', e.target.value)} /></Field>
       <Field label="Address"><input className={inputCls} autoComplete="street-address" placeholder="Area / street" value={f.address} onChange={(e) => set('address', e.target.value)} /></Field>
-      <Field label="Pincode"><input className={inputCls} inputMode="numeric" maxLength={6} autoComplete="postal-code" value={f.pincode} onChange={(e) => set('pincode', e.target.value.replace(/[^0-9]/g, ''))} /></Field>
-      <Field label="WhatsApp number"><input className={inputCls} type="tel" inputMode="tel" value={f.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} /></Field>
-      <Field label="Phone" hint="Only shared with people you allow."><input className={inputCls} type="tel" inputMode="tel" autoComplete="tel" value={f.phone} onChange={(e) => set('phone', e.target.value)} /></Field>
+      <Field label="Pincode" hint="Fills in your state and city"><input className={inputCls} inputMode="numeric" maxLength={6} autoComplete="postal-code" value={f.pincode} onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); set('pincode', v); void lookupPincode(v); }} /></Field>
+      <Field label="WhatsApp number" hint="Include the country code"><input className={inputCls} type="tel" inputMode="tel" value={f.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} /></Field>
+      <Field label="Phone" hint="Only shared with people you allow.">
+        <div className="flex gap-2">
+          <select className={inputCls + ' !w-28 shrink-0'} aria-label="Country code" value={f.countryCode} onChange={(e) => set('countryCode', e.target.value)}>
+            {['+91', '+1', '+44', '+61', '+971', '+65', '+60', '+49', '+33', '+81', '+86', '+92', '+880', '+94', '+977', '+27'].map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <input className={inputCls} type="tel" inputMode="tel" autoComplete="tel-national" value={f.phone} onChange={(e) => set('phone', e.target.value)} />
+        </div>
+      </Field>
       <Field label="One-line tagline"><input className={inputCls} maxLength={120} placeholder="e.g. Left-wing striker, Mumbai U-21" value={f.tagline} onChange={(e) => set('tagline', e.target.value)} /></Field>
       <Field label="Bio"><textarea className={textareaCls} rows={4} maxLength={1000} placeholder="A few lines about your game and goals" value={f.aboutBio} onChange={(e) => set('aboutBio', e.target.value)} /></Field>
     </FormBody>
+  );
+}
+
+/** Position picker: a list for sports we know, free text for the rest (and for a saved value not in the list). */
+function PositionInput({ sport, value, onChange, placeholder }: { sport: string; value: string; onChange: (v: string) => void; placeholder: string }) {
+  const options = POSITIONS_BY_SPORT[sport];
+  if (!options) return <input className={inputCls} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />;
+  const list = value && !options.includes(value) ? [value, ...options] : options;
+  return (
+    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">Select position</option>
+      {list.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
   );
 }
 
@@ -408,6 +482,7 @@ function SportForm({ profile, busy, commit }: FormProps) {
     secondarySports: (profile.secondarySports || []).join(', '), yearsOfExperience: profile.yearsOfExperience != null ? String(profile.yearsOfExperience) : '',
     experienceLevel: profile.experienceLevel || '', height: profile.height != null ? String(profile.height) : '', heightUnit: profile.heightUnit || 'cm',
     weight: profile.weight != null ? String(profile.weight) : '', availabilityStatus: profile.availabilityStatus || '',
+    para: profile.isParaAthlete ? 'yes' : '', paraClassification: profile.paraClassification || '',
   });
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
   const options = sports.includes(f.primarySport) || !f.primarySport ? sports : [f.primarySport, ...sports];
@@ -419,6 +494,7 @@ function SportForm({ profile, busy, commit }: FormProps) {
       secondarySports: f.secondarySports.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 5),
       yearsOfExperience: num(f.yearsOfExperience), experienceLevel: f.experienceLevel || undefined,
       height: num(f.height), heightUnit: f.heightUnit, weight: num(f.weight), availabilityStatus: f.availabilityStatus || undefined,
+      isParaAthlete: f.para === 'yes', paraClassification: f.para === 'yes' ? f.paraClassification.trim() || undefined : undefined,
     })}>
       <Field label="Sport">
         <select className={inputCls} value={f.primarySport} onChange={(e) => set('primarySport', e.target.value)}>
@@ -426,8 +502,8 @@ function SportForm({ profile, busy, commit }: FormProps) {
           {options.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </Field>
-      <Field label="Primary position"><input className={inputCls} placeholder="e.g. Striker, Opening batter" value={f.position} onChange={(e) => set('position', e.target.value)} /></Field>
-      <Field label="Secondary position"><input className={inputCls} placeholder="Optional" value={f.secondaryPosition} onChange={(e) => set('secondaryPosition', e.target.value)} /></Field>
+      <Field label="Primary position"><PositionInput sport={f.primarySport} value={f.position} onChange={(v) => set('position', v)} placeholder="e.g. Striker, Opening batter" /></Field>
+      <Field label="Secondary position"><PositionInput sport={f.primarySport} value={f.secondaryPosition} onChange={(v) => set('secondaryPosition', v)} placeholder="Optional" /></Field>
       <Field label="Strong foot / hand">
         <select className={inputCls} value={f.dominantSide} onChange={(e) => set('dominantSide', e.target.value)}>
           <option value="">Not set</option><option value="right">Right</option><option value="left">Left</option><option value="both">Both</option>
@@ -449,6 +525,13 @@ function SportForm({ profile, busy, commit }: FormProps) {
         </Field>
         <Field label="Weight (kg)"><input className={inputCls} inputMode="decimal" value={f.weight} onChange={(e) => set('weight', e.target.value)} /></Field>
       </div>
+      <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-sm font-medium text-ink">
+        <input type="checkbox" className="h-5 w-5 accent-[#004fab]" checked={f.para === 'yes'} onChange={(e) => set('para', e.target.checked ? 'yes' : '')} />
+        I am a para-athlete
+      </label>
+      {f.para === 'yes' && (
+        <Field label="Para classification"><input className={inputCls} placeholder="e.g. T44, F56" value={f.paraClassification} onChange={(e) => set('paraClassification', e.target.value)} /></Field>
+      )}
       <Field label="Availability">
         <select className={inputCls} value={f.availabilityStatus} onChange={(e) => set('availabilityStatus', e.target.value)}>
           <option value="">Not set</option><option value="open_for_trials">Open for trials</option><option value="looking_for_academy">Looking for an academy</option>
@@ -463,26 +546,48 @@ function SportForm({ profile, busy, commit }: FormProps) {
 function TeamsForm({ profile, busy, commit }: FormProps) {
   const history: any[] = profile.playingHistory || [];
   const currentEntry = history.find((h) => h?.current);
-  const [current, setCurrent] = useState<string>(currentEntry?.organization || '');
+  const [current, setCurrent] = useState<Row>({
+    organization: currentEntry?.organization || '', role: currentEntry?.role || '', startDate: dateStr(currentEntry?.startDate),
+  });
   const [past, setPast] = useState<Row[]>(
-    history.filter((h) => h && h !== currentEntry).map((h) => ({ organization: h.organization || '', role: h.role || '' })),
+    history.filter((h) => h && h !== currentEntry).map((h) => ({
+      organization: h.organization || '', role: h.role || '', startDate: dateStr(h.startDate), endDate: dateStr(h.endDate), description: h.description || '',
+    })),
   );
   const [school, setSchool] = useState<string>(profile.institutionName || '');
   const [course, setCourse] = useState<string>(profile.currentEducation || '');
+  const upd = (k: string, v: string) => setCurrent((c) => ({ ...c, [k]: v }));
 
   return (
     <FormBody busy={busy} onSubmit={() => {
       const next = [
-        ...(current.trim() ? [{ organization: current.trim(), current: true }] : []),
-        ...past.filter((r) => r.organization?.trim()).map((r) => ({ organization: r.organization.trim(), role: r.role?.trim() || undefined, current: false })),
+        ...(current.organization.trim() ? [{ organization: current.organization.trim(), role: current.role?.trim() || undefined, startDate: current.startDate || undefined, current: true }] : []),
+        ...past.filter((r) => r.organization?.trim()).map((r) => ({
+          organization: r.organization.trim(), role: r.role?.trim() || undefined, startDate: r.startDate || undefined,
+          endDate: r.endDate || undefined, description: r.description?.trim() || undefined, current: false,
+        })),
       ];
       return commit({ playingHistory: mergeRows(history, next, 'organization'), institutionName: school.trim() || undefined, currentEducation: course.trim() || undefined });
     }}>
-      <Field label="Current club / academy"><input className={inputCls} placeholder="Where you play now" value={current} onChange={(e) => setCurrent(e.target.value)} /></Field>
+      <div className="space-y-2 rounded-2xl border border-line bg-cream/70 p-3">
+        <span className="block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Current club / academy</span>
+        <input className={inputCls} placeholder="Where you play now" value={current.organization} onChange={(e) => upd('organization', e.target.value)} />
+        <PositionInput sport={profile.primarySport || ''} value={current.role} onChange={(v) => upd('role', v)} placeholder="Your position / role" />
+        <label className="block">
+          <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-ink-soft">Joined</span>
+          <input type="date" className={inputCls} value={current.startDate} onChange={(e) => upd('startDate', e.target.value)} />
+        </label>
+      </div>
       <div>
         <span className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Past clubs &amp; academies</span>
-        <RowEditor rows={past} onChange={setPast} blank={{ organization: '', role: '' }} addLabel="Add past club"
-          fields={[{ key: 'organization', placeholder: 'Club / academy name', full: true }, { key: 'role', placeholder: 'Your role (optional)', full: true }]} />
+        <RowEditor rows={past} onChange={setPast} blank={{ organization: '', role: '', startDate: '', endDate: '', description: '' }} addLabel="Add past club"
+          fields={[
+            { key: 'organization', placeholder: 'Club / academy name', full: true },
+            { key: 'role', placeholder: 'Position / role', full: true, kind: profile.primarySport && POSITIONS_BY_SPORT[profile.primarySport] ? 'select' : 'text', options: POSITIONS_BY_SPORT[profile.primarySport] },
+            { key: 'startDate', placeholder: 'From', kind: 'date', full: false },
+            { key: 'endDate', placeholder: 'To', kind: 'date', full: false },
+            { key: 'description', placeholder: 'What you did there (optional)', kind: 'textarea' },
+          ]} />
       </div>
       <Field label="School / college"><input className={inputCls} value={school} onChange={(e) => setSchool(e.target.value)} /></Field>
       <Field label="Current class / course"><input className={inputCls} placeholder="e.g. Class 12, B.Com 2nd year" value={course} onChange={(e) => setCourse(e.target.value)} /></Field>
@@ -491,43 +596,86 @@ function TeamsForm({ profile, busy, commit }: FormProps) {
 }
 
 // ── 4. Achievements ───────────────────────────────────────────────────────────
+const LEVELS = ['School', 'District', 'State', 'Zonal', 'National', 'International'];
+const AWARD_CATEGORIES = ['Medal', 'Trophy', 'Player of the match', 'Player of the series', 'Scholarship', 'Selection', 'Certificate', 'Other'];
+
 function AchievementsForm({ profile, busy, commit }: FormProps) {
-  const [achs, setAchs] = useState<Row[]>((profile.achievements || []).map((a: any) => ({ title: a.title || '', year: a.year ? String(a.year) : '', level: a.level || '' })));
+  const [achs, setAchs] = useState<Row[]>((profile.achievements || []).map((a: any) => ({
+    title: a.title || '', year: a.year ? String(a.year) : '', level: a.level || '', category: a.category || '', description: a.description || '',
+  })));
   return (
     <FormBody busy={busy} onSubmit={() => commit({
       achievements: mergeRows(profile.achievements,
-        achs.filter((r) => r.title?.trim()).map((r) => ({ title: r.title.trim(), year: num(r.year), level: r.level?.trim() || undefined })), 'title'),
+        achs.filter((r) => r.title?.trim()).map((r) => ({
+          title: r.title.trim(), year: num(r.year), level: r.level || undefined, category: r.category || undefined, description: r.description?.trim() || undefined,
+        })), 'title'),
     })}>
-      <RowEditor rows={achs} onChange={setAchs} blank={{ title: '', year: '', level: '' }} addLabel="Add achievement"
-        fields={[{ key: 'title', placeholder: 'e.g. Gold medal, Player of the series', full: true }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }, { key: 'level', placeholder: 'District / State…', full: false }]} />
+      <RowEditor rows={achs} onChange={setAchs} blank={{ title: '', year: '', level: '', category: '', description: '' }} addLabel="Add achievement"
+        fields={[
+          { key: 'title', placeholder: 'e.g. Gold medal, Player of the series', full: true },
+          { key: 'category', placeholder: 'Type', kind: 'select', options: AWARD_CATEGORIES, full: false },
+          { key: 'level', placeholder: 'Level', kind: 'select', options: LEVELS, full: false },
+          { key: 'year', placeholder: 'Year', kind: 'year', full: true },
+          { key: 'description', placeholder: 'Details (optional)', kind: 'textarea' },
+        ]} />
     </FormBody>
   );
 }
 
 // ── Tournaments ───────────────────────────────────────────────────────────────
 function TournamentsForm({ profile, busy, commit }: FormProps) {
-  const [tours, setTours] = useState<Row[]>((profile.tournaments || []).map((t: any) => ({ name: t.name || '', year: t.year ? String(t.year) : '', result: t.result || '' })));
+  const [tours, setTours] = useState<Row[]>((profile.tournaments || []).map((t: any) => ({
+    name: t.name || '', startDate: dateStr(t.startDate), endDate: dateStr(t.endDate), year: t.year ? String(t.year) : '',
+    location: t.location || '', result: t.result || '', description: t.description || '',
+  })));
   return (
     <FormBody busy={busy} onSubmit={() => commit({
       tournaments: mergeRows(profile.tournaments,
-        tours.filter((r) => r.name?.trim()).map((r) => ({ name: r.name.trim(), year: num(r.year), result: r.result?.trim() || undefined })), 'name'),
+        tours.filter((r) => r.name?.trim()).map((r) => ({
+          name: r.name.trim(), startDate: r.startDate || undefined, endDate: r.endDate || undefined,
+          year: num(r.year) ?? (r.startDate ? Number(r.startDate.slice(0, 4)) : undefined),
+          location: r.location?.trim() || undefined, result: r.result?.trim() || undefined, description: r.description?.trim() || undefined,
+        })), 'name'),
     })}>
-      <RowEditor rows={tours} onChange={setTours} blank={{ name: '', year: '', result: '' }} addLabel="Add tournament"
-        fields={[{ key: 'name', placeholder: 'Tournament name', full: true }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }, { key: 'result', placeholder: 'Result (e.g. Winner)', full: false }]} />
+      <RowEditor rows={tours} onChange={setTours} blank={{ name: '', startDate: '', endDate: '', year: '', location: '', result: '', description: '' }} addLabel="Add tournament"
+        fields={[
+          { key: 'name', placeholder: 'Tournament name', full: true },
+          { key: 'startDate', placeholder: 'Start date', kind: 'date', full: false },
+          { key: 'endDate', placeholder: 'End date', kind: 'date', full: false },
+          { key: 'location', placeholder: 'Venue / city', full: false },
+          { key: 'result', placeholder: 'Result (e.g. Winner)', full: false },
+          { key: 'description', placeholder: 'Your performance (optional)', kind: 'textarea' },
+        ]} />
     </FormBody>
   );
 }
 
 // ── Education ─────────────────────────────────────────────────────────────────
 function EducationForm({ profile, busy, commit }: FormProps) {
-  const [edu, setEdu] = useState<Row[]>((profile.education || []).map((e: any) => ({ institution: e.institution || '', degree: e.degree || '', endYear: e.endYear ? String(e.endYear) : e.year ? String(e.year) : '' })));
+  const [edu, setEdu] = useState<Row[]>((profile.education || []).map((e: any) => ({
+    institution: e.institution || '', degree: e.degree || '', fieldOfStudy: e.fieldOfStudy || '',
+    startYear: e.startYear ? String(e.startYear) : '', endYear: e.endYear ? String(e.endYear) : e.year ? String(e.year) : '',
+    studying: e.isCurrent ? 'yes' : '', description: e.description || '',
+  })));
   return (
     <FormBody busy={busy} onSubmit={() => commit({
       education: mergeRows(profile.education,
-        edu.filter((r) => r.institution?.trim()).map((r) => ({ institution: r.institution.trim(), degree: r.degree?.trim() || undefined, endYear: num(r.endYear) })), 'institution'),
+        edu.filter((r) => r.institution?.trim()).map((r) => ({
+          institution: r.institution.trim(), degree: r.degree?.trim() || undefined, fieldOfStudy: r.fieldOfStudy?.trim() || undefined,
+          startYear: num(r.startYear), endYear: r.studying === 'yes' ? undefined : num(r.endYear), isCurrent: r.studying === 'yes',
+          description: r.description?.trim() || undefined,
+        })), 'institution'),
     })}>
-      <RowEditor rows={edu} onChange={setEdu} blank={{ institution: '', degree: '', endYear: '' }} addLabel="Add education"
-        fields={[{ key: 'institution', placeholder: 'School / college', full: true }, { key: 'degree', placeholder: 'Class / degree', full: false }, { key: 'endYear', placeholder: 'Year', inputMode: 'numeric', full: false }]} />
+      <RowEditor rows={edu} onChange={setEdu} blank={{ institution: '', degree: '', fieldOfStudy: '', startYear: '', endYear: '', studying: '', description: '' }} addLabel="Add education"
+        fields={[
+          { key: 'institution', placeholder: 'School / college / university', full: true },
+          { key: 'degree', placeholder: 'Class / degree', full: false },
+          { key: 'fieldOfStudy', placeholder: 'Field of study', full: false },
+          { key: 'startYear', placeholder: 'Start year', kind: 'year', full: false },
+          { key: 'endYear', placeholder: 'End year', kind: 'yearAhead', full: false, hideWhen: 'studying' },
+          { key: 'studying', placeholder: 'Currently studying here', kind: 'check' },
+          { key: 'description', placeholder: 'Academic or sports achievements (optional)', kind: 'textarea' },
+        ]} />
     </FormBody>
   );
 }

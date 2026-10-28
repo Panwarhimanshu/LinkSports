@@ -172,7 +172,7 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
       'media', 'socialLinks', 'tagline', 'aboutBio', 'careerHighlights', 'goalsAspirations',
       'yearsOfExperience', 'experienceLevel', 'strengths', 'featuredVideoUrl', 'institutionName', 'currentEducation',
       'availabilityStatus', 'visibility', 'coachReferences',
-      'secondaryPosition', 'careerStats', 'customSections', 'nationality', 'skills',
+      'secondaryPosition', 'careerStats', 'customSections', 'nationality', 'countryCode', 'skills',
     ];
 
     const numericFields = new Set(['height', 'weight', 'yearsOfExperience']);
