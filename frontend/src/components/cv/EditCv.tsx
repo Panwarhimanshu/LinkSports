@@ -19,14 +19,16 @@ import { AccentTitle, Field, btnGhost, btnPrimary, inputCls, textareaCls } from 
 type Profile = Record<string, any>;
 type Save = (patch: Record<string, unknown>) => Promise<Profile>;
 type Row = Record<string, string>;
-type SectionId = 'basic' | 'sport' | 'teams' | 'education' | 'achievements' | 'about' | 'stats' | 'skills' | 'social' | 'photos' | 'videos' | 'custom' | 'privacy';
+type SectionId = 'basic' | 'sport' | 'teams' | 'education' | 'certificates' | 'achievements' | 'tournaments' | 'about' | 'stats' | 'skills' | 'social' | 'photos' | 'videos' | 'custom' | 'privacy';
 
 const CORE: { id: SectionId; label: string; icon: typeof Phone }[] = [
   { id: 'basic', label: 'Basic & Contact Info', icon: Phone },
   { id: 'sport', label: 'Sport & Position', icon: Activity },
   { id: 'teams', label: 'Teams, Clubs & Academy', icon: Shield },
-  { id: 'education', label: 'Education & Certificates', icon: GraduationCap },
-  { id: 'achievements', label: 'Tournaments & Achievements', icon: Trophy },
+  { id: 'education', label: 'Education', icon: GraduationCap },
+  { id: 'certificates', label: 'Certificates', icon: Medal },
+  { id: 'achievements', label: 'Achievements', icon: Trophy },
+  { id: 'tournaments', label: 'Tournaments', icon: Activity },
 ];
 const OPTIONAL: { id: SectionId; label: string; icon: typeof Phone }[] = [
   { id: 'about', label: 'About, Strengths & Goals', icon: FileText },
@@ -41,8 +43,8 @@ const OPTIONAL: { id: SectionId; label: string; icon: typeof Phone }[] = [
 
 const SHEET_TITLE: Record<SectionId, string> = {
   basic: 'Basic & Contact Info', sport: 'Sport & Position', teams: 'Teams, Clubs & Academy',
-  education: 'Education & Certificates', about: 'About, Strengths & Goals', skills: 'Skills', social: 'Social Links', privacy: 'Profile Visibility',
-  achievements: 'Tournaments & Achievements', stats: 'Career Stats', photos: 'Action Photos',
+  education: 'Education', certificates: 'Certificates', tournaments: 'Tournaments', about: 'About, Strengths & Goals', skills: 'Skills', social: 'Social Links', privacy: 'Profile Visibility',
+  achievements: 'Achievements', stats: 'Career Stats', photos: 'Action Photos',
   videos: 'Highlight Videos', custom: 'Custom Sections',
 };
 
@@ -64,12 +66,20 @@ function summarize(id: SectionId, p: Profile): { text: string; done: boolean } {
       return { text: current || p.institutionName || 'Current club, past academies, school', done: !!(current || p.institutionName) };
     }
     case 'achievements': {
-      const t = n(p.tournaments); const a = n(p.achievements);
-      return { text: t || a ? `${a} achievement${a === 1 ? '' : 's'} · ${t} tournament${t === 1 ? '' : 's'}` : 'Medals, titles, tournaments', done: !!(t || a) };
+      const a = n(p.achievements);
+      return { text: a ? `${a} achievement${a === 1 ? '' : 's'}` : 'Medals, titles, milestones', done: a > 0 };
+    }
+    case 'tournaments': {
+      const t = n(p.tournaments);
+      return { text: t ? `${t} tournament${t === 1 ? '' : 's'}` : 'Tournaments you have played', done: t > 0 };
     }
     case 'education': {
-      const e = n(p.education); const c = n(p.certifications);
-      return { text: e || c ? `${e} education · ${c} certificate${c === 1 ? '' : 's'}` : 'School, college, degrees, certificates', done: !!(e || c) };
+      const e = n(p.education);
+      return { text: e ? `${e} entr${e === 1 ? 'y' : 'ies'}` : 'School, college, class or degree', done: e > 0 };
+    }
+    case 'certificates': {
+      const c = n(p.certifications);
+      return { text: c ? `${c} certificate${c === 1 ? '' : 's'}` : 'Coaching and sports certificates', done: c > 0 };
     }
     case 'about': {
       const parts = [p.careerHighlights, p.strengths, p.goalsAspirations].filter(Boolean).length;
@@ -274,6 +284,8 @@ function SectionSheet({ id, profile, save, onClose }: { id: SectionId; profile: 
       {id === 'teams' && <TeamsForm {...props} />}
       {id === 'achievements' && <AchievementsForm {...props} />}
       {id === 'education' && <EducationForm {...props} />}
+      {id === 'certificates' && <CertificatesForm {...props} />}
+      {id === 'tournaments' && <TournamentsForm {...props} />}
       {id === 'about' && <AboutForm {...props} />}
       {id === 'skills' && <SkillsForm {...props} />}
       {id === 'social' && <SocialForm {...props} />}
@@ -478,53 +490,58 @@ function TeamsForm({ profile, busy, commit }: FormProps) {
   );
 }
 
-// ── 4. Tournaments & achievements ─────────────────────────────────────────────
+// ── 4. Achievements ───────────────────────────────────────────────────────────
 function AchievementsForm({ profile, busy, commit }: FormProps) {
-  const [tours, setTours] = useState<Row[]>((profile.tournaments || []).map((t: any) => ({ name: t.name || '', year: t.year ? String(t.year) : '', result: t.result || '' })));
   const [achs, setAchs] = useState<Row[]>((profile.achievements || []).map((a: any) => ({ title: a.title || '', year: a.year ? String(a.year) : '', level: a.level || '' })));
-
   return (
     <FormBody busy={busy} onSubmit={() => commit({
-      tournaments: mergeRows(profile.tournaments,
-        tours.filter((r) => r.name?.trim()).map((r) => ({ name: r.name.trim(), year: num(r.year), result: r.result?.trim() || undefined })), 'name'),
       achievements: mergeRows(profile.achievements,
         achs.filter((r) => r.title?.trim()).map((r) => ({ title: r.title.trim(), year: num(r.year), level: r.level?.trim() || undefined })), 'title'),
     })}>
-      <div>
-        <span className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Medals, titles &amp; milestones</span>
-        <RowEditor rows={achs} onChange={setAchs} blank={{ title: '', year: '', level: '' }} addLabel="Add achievement"
-          fields={[{ key: 'title', placeholder: 'e.g. Gold medal, Player of the series', full: true }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }, { key: 'level', placeholder: 'District / State…', full: false }]} />
-      </div>
-      <div>
-        <span className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Tournaments played</span>
-        <RowEditor rows={tours} onChange={setTours} blank={{ name: '', year: '', result: '' }} addLabel="Add tournament"
-          fields={[{ key: 'name', placeholder: 'Tournament name', full: true }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }, { key: 'result', placeholder: 'Result (e.g. Winner)', full: false }]} />
-      </div>
+      <RowEditor rows={achs} onChange={setAchs} blank={{ title: '', year: '', level: '' }} addLabel="Add achievement"
+        fields={[{ key: 'title', placeholder: 'e.g. Gold medal, Player of the series', full: true }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }, { key: 'level', placeholder: 'District / State…', full: false }]} />
     </FormBody>
   );
 }
 
-// ── Education & certificates ──────────────────────────────────────────────────
+// ── Tournaments ───────────────────────────────────────────────────────────────
+function TournamentsForm({ profile, busy, commit }: FormProps) {
+  const [tours, setTours] = useState<Row[]>((profile.tournaments || []).map((t: any) => ({ name: t.name || '', year: t.year ? String(t.year) : '', result: t.result || '' })));
+  return (
+    <FormBody busy={busy} onSubmit={() => commit({
+      tournaments: mergeRows(profile.tournaments,
+        tours.filter((r) => r.name?.trim()).map((r) => ({ name: r.name.trim(), year: num(r.year), result: r.result?.trim() || undefined })), 'name'),
+    })}>
+      <RowEditor rows={tours} onChange={setTours} blank={{ name: '', year: '', result: '' }} addLabel="Add tournament"
+        fields={[{ key: 'name', placeholder: 'Tournament name', full: true }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }, { key: 'result', placeholder: 'Result (e.g. Winner)', full: false }]} />
+    </FormBody>
+  );
+}
+
+// ── Education ─────────────────────────────────────────────────────────────────
 function EducationForm({ profile, busy, commit }: FormProps) {
   const [edu, setEdu] = useState<Row[]>((profile.education || []).map((e: any) => ({ institution: e.institution || '', degree: e.degree || '', endYear: e.endYear ? String(e.endYear) : e.year ? String(e.year) : '' })));
-  const [certs, setCerts] = useState<Row[]>((profile.certifications || []).map((c: any) => ({ name: c.name || '', issuer: c.issuer || '', year: c.year ? String(c.year) : '' })));
   return (
     <FormBody busy={busy} onSubmit={() => commit({
       education: mergeRows(profile.education,
         edu.filter((r) => r.institution?.trim()).map((r) => ({ institution: r.institution.trim(), degree: r.degree?.trim() || undefined, endYear: num(r.endYear) })), 'institution'),
+    })}>
+      <RowEditor rows={edu} onChange={setEdu} blank={{ institution: '', degree: '', endYear: '' }} addLabel="Add education"
+        fields={[{ key: 'institution', placeholder: 'School / college', full: true }, { key: 'degree', placeholder: 'Class / degree', full: false }, { key: 'endYear', placeholder: 'Year', inputMode: 'numeric', full: false }]} />
+    </FormBody>
+  );
+}
+
+// ── Certificates ──────────────────────────────────────────────────────────────
+function CertificatesForm({ profile, busy, commit }: FormProps) {
+  const [certs, setCerts] = useState<Row[]>((profile.certifications || []).map((c: any) => ({ name: c.name || '', issuer: c.issuer || '', year: c.year ? String(c.year) : '' })));
+  return (
+    <FormBody busy={busy} onSubmit={() => commit({
       certifications: mergeRows(profile.certifications,
         certs.filter((r) => r.name?.trim()).map((r) => ({ name: r.name.trim(), issuer: r.issuer?.trim() || undefined, year: num(r.year) })), 'name'),
     })}>
-      <div>
-        <span className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Schools &amp; colleges</span>
-        <RowEditor rows={edu} onChange={setEdu} blank={{ institution: '', degree: '', endYear: '' }} addLabel="Add education"
-          fields={[{ key: 'institution', placeholder: 'School / college', full: true }, { key: 'degree', placeholder: 'Class / degree', full: false }, { key: 'endYear', placeholder: 'Year', inputMode: 'numeric', full: false }]} />
-      </div>
-      <div>
-        <span className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-ink-soft">Coaching &amp; sports certificates</span>
-        <RowEditor rows={certs} onChange={setCerts} blank={{ name: '', issuer: '', year: '' }} addLabel="Add certificate"
-          fields={[{ key: 'name', placeholder: 'Certificate name', full: true }, { key: 'issuer', placeholder: 'Issued by', full: false }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }]} />
-      </div>
+      <RowEditor rows={certs} onChange={setCerts} blank={{ name: '', issuer: '', year: '' }} addLabel="Add certificate"
+        fields={[{ key: 'name', placeholder: 'Certificate name', full: true }, { key: 'issuer', placeholder: 'Issued by', full: false }, { key: 'year', placeholder: 'Year', inputMode: 'numeric', full: false }]} />
     </FormBody>
   );
 }
