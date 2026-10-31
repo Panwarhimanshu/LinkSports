@@ -8,6 +8,15 @@ import { Notification } from '../models/Notification';
 import { User } from '../models/User';
 import { sendSuccess, sendError } from '../utils/response';
 import { getProfileName } from '../utils/profile';
+import { asString, escapeRegex } from '../utils/security';
+
+const LISTING_FIELDS = [
+  'type', 'title', 'description', 'sports', 'startDate', 'endDate', 'location', 'eligibility', 'physicalRequirements',
+  'participantLimit', 'registrationDeadline', 'participantFee', 'customQuestions', 'documentRequired', 'documentDescription',
+  'banner', 'contactInfo', 'allowWithdrawal',
+];
+const pick = (body: Record<string, unknown>, fields: string[]) =>
+  Object.fromEntries(fields.filter((f) => body[f] !== undefined).map((f) => [f, body[f]]));
 
 const notifyAllAthletes = async (listingId: unknown, orgName: string, listingTitle: string, listingType: string) => {
   try {
@@ -35,8 +44,9 @@ export const createListing = async (req: AuthRequest, res: Response): Promise<vo
     const org = await Organization.findOne({ userId: req.user!._id });
     if (!org) { sendError(res, 'Organization profile required', 403); return; }
 
+    // only the fields a listing owner may set; status, payment and counters are never taken from the request
     const listing = await Listing.create({
-      ...req.body,
+      ...pick(req.body, LISTING_FIELDS),
       organizationId: org._id,
       createdBy: req.user!._id,
       status: 'published',
@@ -64,13 +74,14 @@ export const submitListingForReview = async (req: AuthRequest, res: Response): P
 
 export const getListings = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const {
-      type, sport, state, city, page = 1, limit = 20,
-      dateFrom, dateTo, free, q, status = 'published',
-    } = req.query;
-
-    const skip = (Number(page) - 1) * Number(limit);
-    const query: Record<string, unknown> = { status };
+    const { dateFrom, dateTo, free } = req.query;
+    const type = asString(req.query.type); const sport = asString(req.query.sport);
+    const state = asString(req.query.state); const city = asString(req.query.city); const q = asString(req.query.q, 80);
+    const page = Math.max(1, parseInt(String(req.query.page)) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit)) || 20));
+    const skip = (page - 1) * limit;
+    // the public list only ever shows published listings; drafts and pending ones are never listed here
+    const query: Record<string, unknown> = { status: 'published' };
 
     if (type) query.type = type;
     if (sport) query.sports = sport;
@@ -78,7 +89,7 @@ export const getListings = async (req: AuthRequest, res: Response): Promise<void
     if (city) query['location.city'] = city;
     if (free === 'true') query.participantFee = 0;
     if (q) {
-      const regex = new RegExp(q as string, 'i');
+      const regex = new RegExp(escapeRegex(q), 'i');
       query.$or = [
         { title: regex },
         { description: regex },
@@ -96,16 +107,16 @@ export const getListings = async (req: AuthRequest, res: Response): Promise<void
         .populate('organizationId', 'name logo isVerified type')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(Number(limit))
-        .select('-customQuestions -cancellationReason'),
+        .limit(limit)
+        .select('-customQuestions -cancellationReason -paymentId'),
       Listing.countDocuments(query),
     ]);
 
     sendSuccess(res, listings, 'Listings fetched', 200, {
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
-      limit: Number(limit),
+      page,
+      pages: Math.ceil(total / limit),
+      limit,
     });
   } catch { sendError(res, 'Failed to fetch listings', 500); }
 };
@@ -115,9 +126,15 @@ export const getListing = async (req: AuthRequest, res: Response): Promise<void>
     // a malformed id (old link, typo) is "not found", not a server error
     if (!mongoose.isValidObjectId(req.params.id)) { sendError(res, 'Listing not found', 404); return; }
     const listing = await Listing.findById(req.params.id)
-      .populate('organizationId', 'name logo isVerified type contact');
+      // organization contact details are only shown to signed-in users
+      .populate('organizationId', req.user ? 'name logo isVerified type contact' : 'name logo isVerified type');
 
     if (!listing) { sendError(res, 'Listing not found', 404); return; }
+    // drafts and pending listings can only be seen by their owner (or an admin)
+    const isOwner = !!req.user && (listing.createdBy?.toString() === req.user._id.toString() || req.user.role === 'admin');
+    if (listing.status !== 'published' && !isOwner && !['closed', 'completed', 'cancelled'].includes(listing.status)) {
+      sendError(res, 'Listing not found', 404); return;
+    }
 
     let userApplication = null;
     if (req.user) {
@@ -196,14 +213,15 @@ export const applyToListing = async (req: AuthRequest, res: Response): Promise<v
     const existing = await Application.findOne({ listingId: listing._id, applicantId: req.user!._id });
     if (existing) { sendError(res, 'Already applied', 409); return; }
 
-    const { answers, documents } = req.body;
+    const answers = Array.isArray(req.body.answers) ? req.body.answers.slice(0, 30) : [];
+    const documents = Array.isArray(req.body.documents) ? req.body.documents.filter((d: unknown) => typeof d === 'string' && d.length < 500).slice(0, 10) : [];
 
     const application = await Application.create({
       listingId: listing._id,
       applicantId: req.user!._id,
       applicantProfileType: req.user!.role as 'athlete' | 'coach' | 'professional',
-      answers: answers || [],
-      documents: documents || [],
+      answers,
+      documents,
       status: 'applied',
     });
 
@@ -231,11 +249,14 @@ export const applyToListing = async (req: AuthRequest, res: Response): Promise<v
 
 export const getListingApplications = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const listing = await Listing.findById(req.params.id);
+    // only the organization that owns the listing can see who applied
+    const listing = await Listing.findOne({ _id: req.params.id, createdBy: req.user!._id });
     if (!listing) { sendError(res, 'Listing not found', 404); return; }
 
-    const { status, page = 1, limit = 50, q } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+    const status = asString(req.query.status);
+    const page = Math.max(1, parseInt(String(req.query.page)) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit)) || 50));
+    const skip = (page - 1) * limit;
     const query: Record<string, unknown> = { listingId: listing._id };
     if (status) query.status = status;
 
@@ -243,7 +264,7 @@ export const getListingApplications = async (req: AuthRequest, res: Response): P
       Application.find(query)
         .populate('applicantId', 'email role')
         .skip(skip)
-        .limit(Number(limit))
+        .limit(limit)
         .sort({ appliedAt: -1 }),
       Application.countDocuments(query),
     ]);
@@ -263,7 +284,7 @@ export const getListingApplications = async (req: AuthRequest, res: Response): P
     );
 
     sendSuccess(res, populatedApps, 'Applications fetched', 200, {
-      total, page: Number(page), pages: Math.ceil(total / Number(limit)), limit: Number(limit),
+      total, page, pages: Math.ceil(total / limit), limit,
     });
   } catch { sendError(res, 'Failed to get applications', 500); }
 };
@@ -271,7 +292,10 @@ export const getListingApplications = async (req: AuthRequest, res: Response): P
 export const updateApplicationStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { appId } = req.params;
-    const { status, reason } = req.body;
+    const { status } = req.body;
+    const reason = typeof req.body.reason === 'string' ? req.body.reason.slice(0, 500) : undefined;
+    if (!['applied', 'shortlisted', 'rejected'].includes(status)) { sendError(res, 'Invalid status', 400); return; }
+    if (!mongoose.isValidObjectId(appId)) { sendError(res, 'Application not found', 404); return; }
 
     const application = await Application.findById(appId);
     if (!application) { sendError(res, 'Application not found', 404); return; }

@@ -12,6 +12,7 @@ import { Listing } from '../models/Listing';
 import { Job } from '../models/Job';
 import { deviceFromUserAgent, logEvent } from '../utils/activity';
 import { StoredImage } from '../models/StoredImage';
+import { safeHttpUrl, safeImageRef, TRUSTED_IMAGE_HOST, asString, escapeRegex } from '../utils/security';
 import { athleteLookup, coachLookup, isRealName, isValidUsername, normalizeUsername, uniqueUsername, usernameTaken } from '../utils/username';
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
@@ -56,11 +57,15 @@ const sanitizeCustomSections = (arr: unknown[]) =>
 export const MAX_ACTION_PHOTOS = 4;
 const sanitizeMedia = (arr: unknown[]) => {
   const list = (arr as any[]).filter((m) => m && typeof m.url === 'string' && m.url);
-  return [
-    ...list.filter((m) => m.type === 'photo').slice(0, MAX_ACTION_PHOTOS),
-    ...list.filter((m) => m.type === 'video').slice(0, 6),
-  ];
+  // photos must live somewhere we control; videos are plain web links. Anything else is dropped.
+  const photos = list.filter((m) => m.type === 'photo').map((m) => ({ ...m, url: safeImageRef(m.url) })).filter((m) => m.url);
+  const videos = list.filter((m) => m.type === 'video').map((m) => ({ ...m, url: safeHttpUrl(m.url) })).filter((m) => m.url);
+  return [...photos.slice(0, MAX_ACTION_PHOTOS), ...videos.slice(0, 6)];
 };
+
+/** Social links must be web links (never javascript:); the WhatsApp field holds a phone number. */
+const sanitizeSocialLinks = (v: any) =>
+  Object.fromEntries(['instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'whatsapp'].map((k) => [k, k === 'whatsapp' ? clip(v?.[k], 30) : safeHttpUrl(v?.[k], 200)]));
 
 /**
  * Deletes this player's database-stored photos that their profile no longer uses (replaced or removed).
@@ -219,13 +224,17 @@ export const updateAthleteProfile = async (req: AuthRequest, res: Response): Pro
       } else if (field === 'skills' && Array.isArray(value)) {
         value = value.slice(0, 20).map((x) => clip(x, 40)).filter(Boolean);
       } else if (field === 'socialLinks' && value && typeof value === 'object') {
-        value = Object.fromEntries(['instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'whatsapp'].map((k) => [k, clip((value as any)[k], 200)]));
+        value = sanitizeSocialLinks(value);
       } else if (field === 'customSections' && Array.isArray(value)) {
         value = sanitizeCustomSections(value);
       } else if (field === 'media' && Array.isArray(value)) {
         value = sanitizeMedia(value);
       } else if (field === 'dob') {
         value = toDate(value);
+      } else if (field === 'photo') {
+        value = safeImageRef(value) || undefined;
+      } else if (field === 'featuredVideoUrl') {
+        value = safeHttpUrl(value) || undefined;
       }
       (profile as any)[field] = value;
     });
@@ -433,7 +442,11 @@ export const updateCoachProfile = async (req: AuthRequest, res: Response): Promi
       else if ((field === 'skills' || field === 'sportsSpecialization' || field === 'ageGroupsCoached') && Array.isArray(value)) {
         value = value.slice(0, field === 'skills' ? 20 : 12).map((x: unknown) => clip(x, 40)).filter(Boolean);
       } else if (field === 'socialLinks' && value && typeof value === 'object') {
-        value = Object.fromEntries(['instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'whatsapp'].map((k) => [k, clip((value as any)[k], 200)]));
+        value = sanitizeSocialLinks(value);
+      } else if (field === 'photo') {
+        value = safeImageRef(value) || undefined;
+      } else if (field === 'featuredVideoUrl') {
+        value = safeHttpUrl(value) || undefined;
       }
       (profile as any)[field] = value;
     });
@@ -508,7 +521,13 @@ export const getOrganizationProfile = async (req: AuthRequest, res: Response): P
 
     const orgOwnerId = ((org.userId as any)?._id || org.userId)?.toString();
     const isOwnProfile = req.user ? req.user._id.toString() === orgOwnerId : false;
-    sendSuccess(res, { profile: org, listings, jobs, connectionStatus, connectionId, isOwnProfile });
+    const out: any = org.toObject();
+    if (!isOwnProfile && req.user?.role !== 'admin') {
+      delete out.verificationDocuments; // KYC documents are for the owner and admins only
+      if (out.userId && typeof out.userId === 'object') delete out.userId.email;
+      if (!req.user) delete out.contact; // contact details only for signed-in users
+    }
+    sendSuccess(res, { profile: out, listings, jobs, connectionStatus, connectionId, isOwnProfile });
   } catch (err) {
     console.error('getOrganizationProfile error:', err);
     sendError(res, 'Failed to get organization', 500);
@@ -535,9 +554,10 @@ export const updateOrganizationProfile = async (req: AuthRequest, res: Response)
     ];
 
     allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        (org as any)[field] = req.body[field];
-      }
+      if (req.body[field] === undefined) return;
+      let value = req.body[field];
+      if (field === 'logo' || field === 'banner') value = safeImageRef(value) || undefined;
+      (org as any)[field] = value;
     });
 
     await org.save();
@@ -558,15 +578,23 @@ export const uploadVerificationDocuments = async (req: AuthRequest, res: Respons
       sendError(res, 'Documents required', 400); return;
     }
 
-    org.verificationDocuments = documents;
+    // KYC documents are stored images or https links, at most 5; verification itself is only ever set by an admin
+    const clean = documents.map((d: unknown) => safeImageRef(d) || safeHttpUrl(d)).filter(Boolean).slice(0, 5);
+    if (clean.length === 0) { sendError(res, 'Documents required', 400); return; }
+    org.verificationDocuments = clean;
     org.verificationStatus = 'pending';
     await org.save();
 
-    sendSuccess(res, org, 'Documents uploaded, pending verification');
+    sendSuccess(res, { verificationStatus: org.verificationStatus, documents: clean.length }, 'Documents uploaded, pending verification');
   } catch { sendError(res, 'Failed to upload documents', 500); }
 };
 
 // ── CV GENERATION ─────────────────────────────────────────────────────────────
+
+
+/** Organizations can download CVs only after an admin has verified them (anyone can sign up as an organization). */
+const isVerifiedOrganization = async (userId: unknown): Promise<boolean> =>
+  !!(await Organization.exists({ userId, verificationStatus: 'verified' }));
 
 export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -599,7 +627,12 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
         });
         if (!connected) { sendError(res, 'You must be connected with this athlete to download their CV', 403); return; }
       }
-      // organization role falls through — always allowed
+      if (viewerRole === 'organization' && !(await isVerifiedOrganization(req.user!._id))) {
+        sendError(res, 'Your organization must be verified to download CVs', 403); return;
+      }
+      if (viewerRole !== 'organization' && viewerRole !== 'coach' && viewerRole !== 'professional' && viewerRole !== 'admin') {
+        sendError(res, 'Not allowed', 403); return;
+      }
     }
 
     // Images are fetched up front so the PDF stream never stalls half-way; any that fail are simply skipped.
@@ -609,11 +642,14 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
       if (stored && !/^https?:[/][/]res[.]cloudinary[.]com/.test(url)) {
         try { const img = await StoredImage.findById(stored[1]).select('data'); return img ? img.data : null; } catch { return null; }
       }
-      if (!/^https?:[/][/]/.test(url)) return null;
+      // The server only ever fetches from hosts we trust (never an address a user typed in): that blocks
+      // requests to internal services or cloud metadata through a crafted photo link.
+      if (!TRUSTED_IMAGE_HOST.test(url) || !safeHttpUrl(url)) return null;
       try {
-        const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
-        if (!r.ok) return null;
-        return Buffer.from(await r.arrayBuffer());
+        const r = await fetch(url, { signal: AbortSignal.timeout(6000), redirect: 'error' });
+        if (!r.ok || Number(r.headers.get('content-length') || 0) > 4_000_000) return null;
+        const buf = Buffer.from(await r.arrayBuffer());
+        return buf.length <= 4_000_000 ? buf : null;
       } catch { return null; }
     };
     const galleryUrls = ((profile.media as any[]) || []).filter((m) => m?.type === 'photo').slice(0, 4).map((m) => m.url as string);
@@ -623,7 +659,7 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
     const filename = `${profile.fullName.replace(/\s+/g, '_')}_Sports_CV.pdf`;
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename.replace(/[^A-Za-z0-9_.-]/g, '_')}"`);
     doc.pipe(res);
 
     // ── Color Palette ──
@@ -1057,16 +1093,18 @@ export const downloadCoachCV = async (req: AuthRequest, res: Response): Promise<
 
     if (!isOwn) {
       if (!req.user) { sendError(res, 'Login required to download CV', 401); return; }
-      if (viewerRole !== 'organization') {
+      if (viewerRole !== 'organization' && viewerRole !== 'admin') {
         sendError(res, 'Only organizations can download coach CVs', 403); return;
       }
-      // organization role → always allowed
+      if (viewerRole === 'organization' && !(await isVerifiedOrganization(req.user!._id))) {
+        sendError(res, 'Your organization must be verified to download CVs', 403); return;
+      }
     }
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const filename = `${profile.fullName.replace(/\s+/g, '_')}_Coach_CV.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename.replace(/[^A-Za-z0-9_.-]/g, '_')}"`);
     doc.pipe(res);
 
     // ── Color Palette ──
@@ -1276,49 +1314,19 @@ export const downloadCoachCV = async (req: AuthRequest, res: Response): Promise<
 
 // ── SEARCH PROFILES ───────────────────────────────────────────────────────────
 
-// Detect query type and return a MongoDB $or condition for profile collections.
-// Also returns matching userIds found via the User collection for email/phone.
+// Name / username search. People can NOT be looked up by email or phone number: that would let anyone
+// check who is registered and pull out contact details.
 const buildSearchOr = async (
   rawQ: string,
-  profileEmailField: string,
-  profilePhoneField: string,
+  _profileEmailField: string,
+  _profilePhoneField: string,
   profileNameField: string,
   extraNameFields: string[] = [],
 ): Promise<Record<string, unknown>[] | null> => {
-  const q = rawQ.trim();
+  const q = rawQ.trim().slice(0, 80);
   if (!q) return null;
-
-  const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(safe, 'i');
-
-  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q);
-  const isPhone = /^\+?[\d\s\-().]{7,}$/.test(q) && /\d{6,}/.test(q.replace(/\D/g, ''));
-
-  if (isEmail) {
-    const users = await User.find({ email: re }).select('_id').lean();
-    const ids = users.map((u: any) => u._id);
-    return [
-      { [profileEmailField]: re },
-      ...(ids.length ? [{ userId: { $in: ids } }] : []),
-    ];
-  }
-
-  if (isPhone) {
-    const digits = q.replace(/\D/g, '');
-    const phoneRe = new RegExp(digits, 'i');
-    const users = await User.find({ phone: phoneRe }).select('_id').lean();
-    const ids = users.map((u: any) => u._id);
-    return [
-      { [profilePhoneField]: phoneRe },
-      ...(ids.length ? [{ userId: { $in: ids } }] : []),
-    ];
-  }
-
-  // @username or general name search
   const nameStr = q.startsWith('@') ? q.slice(1) : q;
-  const nameSafe = nameStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const nameRe = new RegExp(nameSafe, 'i');
-
+  const nameRe = new RegExp(escapeRegex(nameStr), 'i');
   return [
     { [profileNameField]: nameRe },
     { username: nameRe },
@@ -1326,19 +1334,24 @@ const buildSearchOr = async (
   ];
 };
 
+const PUBLIC_ATHLETE_FIELDS = 'fullName username photo primarySport secondarySports position location tagline profileUrl gender dob height heightUnit weight availabilityStatus isParaAthlete experienceLevel yearsOfExperience connectionCount followerCount profileCompletion';
+const PUBLIC_COACH_FIELDS = 'fullName username photo sportsSpecialization ageGroupsCoached location tagline profileUrl coachingLevel yearsOfExperience availability connectionCount followerCount';
+const PUBLIC_ORG_FIELDS = 'name logo banner description sports profileUrl type isVerified verificationStatus connectionCount followerCount city state';
+
 export const searchProfiles = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const {
-      type = 'athlete', q, sport, state, city, gender, ageMin, ageMax,
-      heightMin, heightMax, weightMin, weightMax, isParaAthlete, availability,
-      sort, page = 1, limit = 20,
-    } = req.query;
+    const { ageMin, ageMax, heightMin, heightMax, weightMin, weightMax, isParaAthlete, sort } = req.query;
+    const type = asString(req.query.type) || 'athlete';
+    const q = asString(req.query.q, 80); const sport = asString(req.query.sport); const state = asString(req.query.state);
+    const city = asString(req.query.city); const gender = asString(req.query.gender); const availability = asString(req.query.availability);
+    const page = Math.max(1, parseInt(String(req.query.page)) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit)) || 20));
 
     const sortQuery: Record<string, 1 | -1> = sort === 'popular'
       ? { connectionCount: -1, followerCount: -1 }
       : sort === 'recent' ? { createdAt: -1 } : {};
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const skip = (page - 1) * limit;
     const query: Record<string, unknown> = {};
 
     // Build search condition using regex (works without text indexes)
@@ -1376,13 +1389,13 @@ export const searchProfiles = async (req: AuthRequest, res: Response): Promise<v
         if (ageMin) query.dob = { ...((query.dob as object) || {}), $lte: new Date(now.getFullYear() - Number(ageMin), 12) };
       }
       [profiles, total] = await Promise.all([
-        AthleteProfile.find(query).sort(sortQuery).skip(skip).limit(Number(limit)).select('-media -achievements -tournaments'),
+        AthleteProfile.find(query).sort(sortQuery).skip(skip).limit(limit).select(PUBLIC_ATHLETE_FIELDS),
         AthleteProfile.countDocuments(query),
       ]);
     } else if (type === 'coach') {
       if (sport) { delete query.primarySport; query.sportsSpecialization = sport; }
       [profiles, total] = await Promise.all([
-        CoachProfile.find(query).sort(sortQuery).skip(skip).limit(Number(limit)),
+        CoachProfile.find(query).sort(sortQuery).skip(skip).limit(limit).select(PUBLIC_COACH_FIELDS),
         CoachProfile.countDocuments(query),
       ]);
     } else {
@@ -1393,19 +1406,19 @@ export const searchProfiles = async (req: AuthRequest, res: Response): Promise<v
         if (orClauses?.length) orgQuery.$or = orClauses;
       }
       if (sport) orgQuery.sports = sport;
-      if (state) orgQuery['contact.address'] = new RegExp((state as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      if (state) orgQuery['contact.address'] = new RegExp(escapeRegex(state), 'i');
       const orgSort: Record<string, 1 | -1> = sort === 'popular' ? { connectionCount: -1, followerCount: -1 } : sort === 'recent' ? { createdAt: -1 } : {};
       [profiles, total] = await Promise.all([
-        Organization.find(orgQuery).sort(orgSort).skip(skip).limit(Number(limit)),
+        Organization.find({ ...orgQuery, verificationStatus: 'verified' }).sort(orgSort).skip(skip).limit(limit).select(PUBLIC_ORG_FIELDS),
         Organization.countDocuments(orgQuery),
       ]);
     }
 
     sendSuccess(res, profiles, 'Profiles fetched', 200, {
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
-      limit: Number(limit),
+      page,
+      pages: Math.ceil(total / limit),
+      limit,
     });
   } catch (err) {
     console.error('searchProfiles error:', err);

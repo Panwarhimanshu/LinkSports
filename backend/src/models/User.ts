@@ -33,6 +33,9 @@ const UserSchema = new Schema<IUser>(
     phoneOtpExpiry: { type: Date, select: false },
     refreshTokens: [{ type: String, select: false }],
     lastLoginAt: { type: Date },
+    // access/refresh tokens issued before this moment are rejected (set on logout, password change/reset)
+    tokensValidAfter: { type: Date },
+    otpAttempts: { type: Number, default: 0, select: false },
     needsRoleSelection: { type: Boolean, default: false },
     failedLoginAttempts: { type: Number, default: 0, select: false },
     lockUntil: { type: Date, select: false },

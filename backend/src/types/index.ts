@@ -19,6 +19,8 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt?: Date;
+  tokensValidAfter?: Date;
+  otpAttempts?: number;
   needsRoleSelection?: boolean;
   failedLoginAttempts?: number;
   lockUntil?: Date;
@@ -39,6 +41,7 @@ export interface JwtPayload {
   id: string;
   role: string;
   email: string;
+  iat?: number;
 }
 
 export interface PaginationQuery {

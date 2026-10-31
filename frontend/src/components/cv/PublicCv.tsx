@@ -2,7 +2,7 @@
 
 import { LogOut, MapPin, Play } from 'lucide-react';
 import { ageFromDob, photosOf, realName, videosOf } from '@/lib/cv';
-import { getInitials, getPhotoUrl } from '@/lib/utils';
+import { getInitials, getPhotoUrl, safeHref } from '@/lib/utils';
 import { AccentTitle } from './ui';
 
 type Profile = Record<string, any>;
@@ -196,7 +196,7 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
 
       {profile.featuredVideoUrl && (
         <Section title="Featured video">
-          <a href={profile.featuredVideoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-line px-4 py-3 transition hover:border-brand">
+          <a href={safeHref(profile.featuredVideoUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-line px-4 py-3 transition hover:border-brand">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/10 text-brand"><Play className="h-4 w-4 fill-current" /></span>
             <span className="min-w-0 truncate text-sm font-semibold text-ink">{profile.featuredVideoUrl.replace(/^https?:[/][/](www[.])?/, '')}</span>
           </a>
@@ -210,7 +210,7 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
               const thumb = youtubeThumb(v.url);
               return (
                 <li key={i}>
-                  <a href={v.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 overflow-hidden rounded-2xl border border-line transition hover:border-brand">
+                  <a href={safeHref(v.url)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 overflow-hidden rounded-2xl border border-line transition hover:border-brand">
                     <span className="relative grid h-20 w-32 shrink-0 place-items-center bg-slate-900">
                       {thumb && <img src={thumb} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-80" />}
                       <span className="relative grid h-9 w-9 place-items-center rounded-full bg-white/90 text-brand"><Play className="h-4 w-4 fill-current" /></span>
@@ -244,7 +244,7 @@ export default function PublicCv({ profile, onLogout }: { profile: Profile; onLo
         <Section title="Find me online">
           <div className="flex flex-wrap gap-2">
             {socials.map(([k, url]) => (
-              <a key={k} href={url} target="_blank" rel="noopener noreferrer nofollow" className="rounded-full border border-line px-4 py-2 text-sm font-semibold capitalize text-ink transition hover:border-brand hover:text-brand">
+              <a key={k} href={safeHref(url)} target="_blank" rel="noopener noreferrer nofollow" className="rounded-full border border-line px-4 py-2 text-sm font-semibold capitalize text-ink transition hover:border-brand hover:text-brand">
                 {k === 'twitter' ? 'X' : k}
               </a>
             ))}

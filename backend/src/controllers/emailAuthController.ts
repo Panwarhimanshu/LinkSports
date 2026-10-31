@@ -26,6 +26,10 @@ const normalizeEmail = (raw: unknown): string | null => {
 const hashOtp = (otp: string, email: string) =>
   crypto.createHash('sha256').update(`${otp}:${email}:${process.env.JWT_SECRET}`).digest('hex');
 
+// Both sides are 64-char hex digests, so the lengths always match.
+const otpMatches = (storedHash: string, otp: string, email: string) =>
+  crypto.timingSafeEqual(Buffer.from(storedHash, 'hex'), Buffer.from(hashOtp(otp, email), 'hex'));
+
 export const sendEmailOtp = async (req: Request, res: Response): Promise<void> => {
   try {
     const email = normalizeEmail(req.body?.email);
@@ -101,7 +105,7 @@ export const verifyEmailOtp = async (req: Request, res: Response): Promise<void>
       sendError(res, 'Too many wrong attempts. Request a new code.', 429, 'OTP_LOCKED');
       return;
     }
-    if (record.otpHash !== hashOtp(otp, email)) {
+    if (!otpMatches(record.otpHash, otp, email)) {
       record.attempts += 1;
       await record.save();
       sendError(res, 'Incorrect code', 400, 'INVALID_OTP');
@@ -124,7 +128,12 @@ export const verifyEmailOtp = async (req: Request, res: Response): Promise<void>
       const name = email.split('@')[0];
       await AthleteProfile.create({ userId: user._id, fullName: 'Player', profileUrl: generateSlug(name) });
     } else if (!user.isVerified) {
-      user.isVerified = true; // they just proved they own this inbox
+      // They just proved they own this inbox. Anything set on the account before that (such as a password
+      // someone registered with this address) did not come from them, so it is removed.
+      user.isVerified = true;
+      (user as any).passwordHash = undefined;
+      user.refreshTokens = [];
+      user.tokensValidAfter = new Date(Date.now() - 1000);
     }
 
     await startSession(req, res, user, isNew, 'email_otp');

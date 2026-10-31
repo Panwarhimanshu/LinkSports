@@ -6,7 +6,7 @@ db = db.getSiblingDB('linksports');
 
 db.createUser({
   user: 'linksports',
-  pwd: 'linksports123',
+  pwd: process.env.MONGO_APP_PASSWORD, // set in docker-compose from your environment, never in code
   roles: [{ role: 'readWrite', db: 'linksports' }]
 });
 

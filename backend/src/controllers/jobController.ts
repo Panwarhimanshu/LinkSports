@@ -7,6 +7,14 @@ import { Organization } from '../models/Organization';
 import { Notification } from '../models/Notification';
 import { sendSuccess, sendError } from '../utils/response';
 import { getProfileName } from '../utils/profile';
+import { asString, escapeRegex } from '../utils/security';
+
+const JOB_FIELDS = [
+  'title', 'description', 'category', 'location', 'jobType', 'experienceLevel', 'salaryMin', 'salaryMax', 'requirements',
+  'skills', 'applicationDeadline', 'openings', 'benefits', 'sports',
+];
+const pick = (body: Record<string, unknown>, fields: string[]) =>
+  Object.fromEntries(fields.filter((f) => body[f] !== undefined).map((f) => [f, body[f]]));
 
 export const createJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -14,7 +22,7 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
     if (!org) { sendError(res, 'Organization profile required', 403); return; }
 
     const job = await Job.create({
-      ...req.body,
+      ...pick(req.body, JOB_FIELDS),
       organizationId: org._id,
       createdBy: req.user!._id,
       status: 'draft',
@@ -38,27 +46,30 @@ export const submitJobForReview = async (req: AuthRequest, res: Response): Promi
 
 export const getJobs = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { category, location, jobType, experience, q, page = 1, limit = 20 } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+    const category = asString(req.query.category); const jobType = asString(req.query.jobType);
+    const experience = asString(req.query.experience); const q = asString(req.query.q, 80); const location = asString(req.query.location, 80);
+    const page = Math.max(1, parseInt(String(req.query.page)) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit)) || 20));
+    const skip = (page - 1) * limit;
     const query: Record<string, unknown> = { status: 'published' };
 
     if (category) query.category = category;
     if (jobType) query.jobType = jobType;
     if (experience) query.experienceLevel = experience;
-    if (q) query.$text = { $search: q as string };
-    if (location) query.location = new RegExp(location as string, 'i');
+    if (q) query.$text = { $search: q };
+    if (location) query.location = new RegExp(escapeRegex(location), 'i');
 
     const [jobs, total] = await Promise.all([
       Job.find(query)
         .populate('organizationId', 'name logo isVerified')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(Number(limit)),
+        .limit(limit),
       Job.countDocuments(query),
     ]);
 
     sendSuccess(res, jobs, 'Jobs fetched', 200, {
-      total, page: Number(page), pages: Math.ceil(total / Number(limit)), limit: Number(limit),
+      total, page, pages: Math.ceil(total / limit), limit,
     });
   } catch { sendError(res, 'Failed to fetch jobs', 500); }
 };
@@ -67,8 +78,10 @@ export const getJob = async (req: AuthRequest, res: Response): Promise<void> => 
   try {
     // a malformed id (old link, typo) is "not found", not a server error
     if (!mongoose.isValidObjectId(req.params.id)) { sendError(res, 'Job not found', 404); return; }
-    const job = await Job.findById(req.params.id).populate('organizationId', 'name logo isVerified type contact');
+    const job = await Job.findById(req.params.id).populate('organizationId', req.user ? 'name logo isVerified type contact' : 'name logo isVerified type');
     if (!job) { sendError(res, 'Job not found', 404); return; }
+    const isOwner = !!req.user && (job.createdBy?.toString() === req.user._id.toString() || req.user.role === 'admin');
+    if (job.status !== 'published' && !isOwner) { sendError(res, 'Job not found', 404); return; }
 
     let userApplication = null;
     if (req.user) {
@@ -94,7 +107,7 @@ export const applyToJob = async (req: AuthRequest, res: Response): Promise<void>
     const application = await JobApplication.create({
       jobId: job._id,
       applicantId: req.user!._id,
-      coverLetter: req.body.coverLetter,
+      coverLetter: typeof req.body.coverLetter === 'string' ? req.body.coverLetter.slice(0, 5000) : undefined,
     });
 
     await Job.findByIdAndUpdate(job._id, { $inc: { applicantCount: 1 } });
@@ -120,7 +133,9 @@ export const getJobApplications = async (req: AuthRequest, res: Response): Promi
     const job = await Job.findOne({ _id: req.params.id, createdBy: req.user!._id });
     if (!job) { sendError(res, 'Job not found', 404); return; }
 
-    const { status, page = 1, limit = 50 } = req.query;
+    const status = asString(req.query.status);
+    const page = Math.max(1, parseInt(String(req.query.page)) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit)) || 50));
     const skip = (Number(page) - 1) * Number(limit);
     const query: Record<string, unknown> = { jobId: job._id };
     if (status) query.status = status;
@@ -148,8 +163,9 @@ export const updateJobApplicationStatus = async (req: AuthRequest, res: Response
     const job = await Job.findOne({ _id: app.jobId, createdBy: req.user!._id });
     if (!job) { sendError(res, 'Not authorized', 403); return; }
 
+    if (!['applied', 'shortlisted', 'rejected'].includes(req.body.status)) { sendError(res, 'Invalid status', 400); return; }
     app.status = req.body.status;
-    if (req.body.reason) app.rejectionReason = req.body.reason;
+    if (typeof req.body.reason === 'string') app.rejectionReason = req.body.reason.slice(0, 500);
     app.statusUpdatedAt = new Date();
     await app.save();
 
@@ -178,6 +194,7 @@ export const getMyJobApplications = async (req: AuthRequest, res: Response): Pro
 export const saveJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { jobId } = req.body;
+    if (!mongoose.isValidObjectId(jobId) || !(await Job.exists({ _id: jobId, status: 'published' }))) { sendError(res, 'Job not found', 404); return; }
     const existing = await JobApplication.findOne({ jobId, applicantId: req.user!._id });
     if (!existing) {
       await JobApplication.create({ jobId, applicantId: req.user!._id, status: 'applied', savedBy: [req.user!._id] });

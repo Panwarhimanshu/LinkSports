@@ -110,6 +110,9 @@ export const verifyPhoneOtp = async (req: Request, res: Response): Promise<void>
       await AthleteProfile.create({ userId: user._id, fullName: 'Player', phone: `+91${phone}`, profileUrl: generateSlug('player') });
     } else if (!user.isVerified) {
       user.isVerified = true; // they just proved they own this number
+      (user as any).passwordHash = undefined; // a password set by someone else before this proof is not trusted
+      user.refreshTokens = [];
+      user.tokensValidAfter = new Date(Date.now() - 1000);
     }
 
     await startSession(req, res, user, isNew, 'phone');

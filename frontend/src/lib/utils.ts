@@ -88,3 +88,14 @@ export const INDIAN_STATES = [
   'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
   'Delhi', 'Jammu & Kashmir', 'Ladakh',
 ];
+
+/** A link that is safe to put in href: http(s) only. Blocks javascript:, data: and similar, returns '' otherwise. */
+export function safeHref(url?: string | null): string {
+  if (!url) return '';
+  try {
+    const u = new URL(String(url).trim());
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : '';
+  } catch {
+    return '';
+  }
+}

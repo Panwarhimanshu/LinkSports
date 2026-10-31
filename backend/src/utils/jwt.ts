@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../types';
 
@@ -22,7 +23,7 @@ export const verifyRefreshToken = (token: string): JwtPayload => {
 };
 
 export const generateOTP = (): string => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 1000000).toString();
 };
 
 export const generateSlug = (name: string): string => {

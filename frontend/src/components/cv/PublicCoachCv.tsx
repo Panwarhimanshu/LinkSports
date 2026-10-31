@@ -2,7 +2,7 @@
 
 import { LogOut, MapPin, Play } from 'lucide-react';
 import { ageFromDob, realName } from '@/lib/cv';
-import { getInitials, getPhotoUrl } from '@/lib/utils';
+import { getInitials, getPhotoUrl, safeHref } from '@/lib/utils';
 
 type Profile = Record<string, any>;
 
@@ -175,7 +175,7 @@ export default function PublicCoachCv({ profile, onLogout }: { profile: Profile;
 
       {profile.featuredVideoUrl && (
         <Section title="Featured video">
-          <a href={profile.featuredVideoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-line px-4 py-3 transition hover:border-brand">
+          <a href={safeHref(profile.featuredVideoUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-line px-4 py-3 transition hover:border-brand">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/10 text-brand"><Play className="h-4 w-4 fill-current" /></span>
             <span className="min-w-0 truncate text-sm font-semibold text-ink">{profile.featuredVideoUrl.replace(/^https?:[/][/](www[.])?/, '')}</span>
           </a>
@@ -186,7 +186,7 @@ export default function PublicCoachCv({ profile, onLogout }: { profile: Profile;
         <Section title="Find me online">
           <div className="flex flex-wrap gap-2">
             {socials.map(([k, url]) => (
-              <a key={k} href={url} target="_blank" rel="noopener noreferrer nofollow" className="rounded-full border border-line px-4 py-2 text-sm font-semibold capitalize text-ink transition hover:border-brand hover:text-brand">
+              <a key={k} href={safeHref(url)} target="_blank" rel="noopener noreferrer nofollow" className="rounded-full border border-line px-4 py-2 text-sm font-semibold capitalize text-ink transition hover:border-brand hover:text-brand">
                 {k === 'twitter' ? 'X' : k}
               </a>
             ))}

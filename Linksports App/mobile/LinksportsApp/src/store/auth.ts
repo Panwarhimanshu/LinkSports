@@ -10,10 +10,10 @@ export interface SessionUser {
   isVerified: boolean;
 }
 
-// TEMPORARY: login is skipped while the UI is being built. The app runs as a guest athlete;
-// endpoints that need a real session will 401 and screens show a "log in later" state.
-// Set to false to bring back the login flow.
-export const AUTH_BYPASS = true;
+// Development only: while the UI is being built the app can run as a guest athlete (endpoints that need a real
+// session 401 and screens show a "log in later" state). It is tied to __DEV__, so a release build can never
+// ship with sign-in skipped.
+export const AUTH_BYPASS = __DEV__;
 
 const GUEST_USER: SessionUser = { _id: 'guest', email: 'guest@linksports.in', role: 'athlete', isVerified: true };
 const GUEST_PROFILE = { _id: 'guest', fullName: 'Guest Athlete' };

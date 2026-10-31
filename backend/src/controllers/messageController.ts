@@ -6,6 +6,8 @@ import { sendSuccess, sendError } from '../utils/response';
 import { AthleteProfile } from '../models/AthleteProfile';
 import { CoachProfile } from '../models/CoachProfile';
 import { Organization } from '../models/Organization';
+import mongoose from 'mongoose';
+import { safeHttpUrl, safeImageRef } from '../utils/security';
 
 async function getParticipantProfile(userId: string, role: string) {
   if (role === 'athlete') {
@@ -58,6 +60,7 @@ export const getOrCreateConversation = async (req: AuthRequest, res: Response): 
   try {
     const { userId } = req.params;
     const currentUserId = req.user!._id.toString();
+    if (!mongoose.isValidObjectId(userId)) { sendError(res, 'User not found', 404); return; }
 
     const connected = await Connection.findOne({
       $or: [
@@ -100,8 +103,10 @@ export const getOrCreateConversation = async (req: AuthRequest, res: Response): 
 export const getMessages = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { conversationId } = req.params;
-    const { page = 1, limit = 50 } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+    if (!mongoose.isValidObjectId(conversationId)) { sendError(res, 'Conversation not found', 404); return; }
+    const page = Math.max(1, parseInt(String(req.query.page)) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit)) || 50));
+    const skip = (page - 1) * limit;
 
     const conversation = await Conversation.findOne({
       _id: conversationId,
@@ -116,7 +121,7 @@ export const getMessages = async (req: AuthRequest, res: Response): Promise<void
     })
       .sort({ sentAt: -1 })
       .skip(skip)
-      .limit(Number(limit))
+      .limit(limit)
       .populate('senderId', 'email role');
 
     await Message.updateMany(
@@ -131,9 +136,16 @@ export const getMessages = async (req: AuthRequest, res: Response): Promise<void
 export const sendMessage = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { conversationId } = req.params;
-    const { content, messageType = 'text', attachmentUrl, attachmentName } = req.body;
+    if (!mongoose.isValidObjectId(conversationId)) { sendError(res, 'Conversation not found', 404); return; }
+    const { messageType: rawType = 'text', attachmentUrl: rawUrl, attachmentName: rawName } = req.body;
+    const content = typeof req.body.content === 'string' ? req.body.content.trim().slice(0, 4000) : '';
+    const messageType = ['text', 'image', 'file'].includes(rawType) ? rawType : 'text';
+    // an attachment link must be a normal web or stored-image address (never javascript: or data: pages)
+    const attachmentUrl = rawUrl ? (safeImageRef(rawUrl) || safeHttpUrl(rawUrl)) : undefined;
+    const attachmentName = typeof rawName === 'string' ? rawName.slice(0, 120) : undefined;
 
-    if (!content?.trim()) { sendError(res, 'Message content is required', 400); return; }
+    if (!content) { sendError(res, 'Message content is required', 400); return; }
+    if (rawUrl && !attachmentUrl) { sendError(res, 'Invalid attachment link', 400); return; }
 
     const conversation = await Conversation.findOne({
       _id: conversationId,
@@ -158,6 +170,12 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
     });
 
     await message.populate('senderId', 'email role');
+
+    // Live delivery comes from the server's stored copy, so the sender shown can never be faked by a client.
+    const io = req.app.get('io');
+    for (const p of conversation.participants) {
+      if (p.toString() !== req.user!._id.toString()) io?.to(`user_${p.toString()}`).emit('receive_message', message);
+    }
     sendSuccess(res, message, 'Message sent', 201);
   } catch { sendError(res, 'Failed to send message', 500); }
 };

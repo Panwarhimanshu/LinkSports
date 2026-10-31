@@ -99,6 +99,7 @@ export const authAPI = {
   changePassword: (data: { currentPassword: string; newPassword: string }) => api.post('/auth/change-password', data),
   deleteAccount: () => api.delete('/auth/account'),
   chooseRole: (role: 'athlete' | 'coach') => api.post('/auth/role', { role }),
+  exchangeOAuthCode: (code: string) => api.post('/auth/oauth/exchange', { code }),
 };
 
 // ── Profiles ──────────────────────────────────────────────────────────────────

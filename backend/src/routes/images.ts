@@ -12,7 +12,12 @@ router.get('/:id', async (req, res) => {
   try {
     const img = await StoredImage.findById(id).select('contentType data');
     if (!img) { res.status(404).end(); return; }
-    res.setHeader('Content-Type', img.contentType);
+    // only real image types are ever served, with sniffing and scripting switched off
+    const type = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(img.contentType) ? img.contentType : 'application/octet-stream';
+    res.setHeader('Content-Type', type);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+    res.setHeader('Content-Disposition', 'inline');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.send(img.data);
   } catch {

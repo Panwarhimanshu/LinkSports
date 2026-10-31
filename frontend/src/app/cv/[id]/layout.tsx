@@ -54,13 +54,13 @@ export default async function AthleteLayout({ children, params }: { children: Re
     url: `${SITE}/cv/${p.username || p.profileUrl || params.id}`,
     jobTitle: [p.primarySport, p.position].filter(Boolean).join(' '),
     address: p.location?.city ? { '@type': 'PostalAddress', addressLocality: p.location.city, addressRegion: p.location.state, addressCountry: 'IN' } : undefined,
-    sameAs: [p.socialLinks?.instagram, p.socialLinks?.youtube].filter(Boolean),
+    sameAs: [p.socialLinks?.instagram, p.socialLinks?.youtube].filter((u: unknown) => typeof u === 'string' && /^https?:\/\//.test(u)),
     award: (p.achievements || []).map((a: { title: string }) => a.title).filter(Boolean),
     affiliation: club ? { '@type': 'SportsOrganization', name: club, sport: p.primarySport } : undefined,
   };
   return (
     <>
-      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
+      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026') }} />}
       {children}
     </>
   );

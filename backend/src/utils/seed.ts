@@ -8,36 +8,15 @@ const seed = async () => {
     await connectDB();
     console.log('🌱 Seeding database...');
 
-    // Create a test admin
-    const adminEmail = 'admin@linksports.in';
-    const existingAdmin = await User.findOne({ email: adminEmail });
-
-    if (!existingAdmin) {
-      await User.create({
-        email: adminEmail,
-        passwordHash: 'admin123',
-        role: 'admin',
-        isVerified: true,
-      });
-      console.log(`✅ Admin created: ${adminEmail} / admin123`);
-    } else {
-      console.log(`ℹ️ Admin already exists: ${adminEmail}`);
-    }
-
-    // Create a test athlete
-    const athleteEmail = 'athlete@linksports.in';
-    const existingAthlete = await User.findOne({ email: athleteEmail });
-
-    if (!existingAthlete) {
-      await User.create({
-        email: athleteEmail,
-        passwordHash: 'athlete123',
-        role: 'athlete',
-        isVerified: true,
-      });
-      console.log(`✅ Athlete created: ${athleteEmail} / athlete123`);
-    } else {
-      console.log(`ℹ️ Athlete already exists: ${athleteEmail}`);
+    // Development data only. Never run against a real database, and never with built-in passwords:
+    // accounts are created with random passwords that are not printed (sign in with the emailed code).
+    if (process.env.NODE_ENV === 'production') throw new Error('Refusing to seed a production database');
+    const crypto = await import('crypto');
+    for (const [email, role] of [['athlete@linksports.local', 'athlete']] as const) {
+      if (!(await User.findOne({ email }))) {
+        await User.create({ email, passwordHash: crypto.randomBytes(24).toString('base64'), role, isVerified: true });
+        console.log(`Created ${role}: ${email}`);
+      }
     }
 
     console.log('✨ Seeding completed!');

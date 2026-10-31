@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { escapeHtml } from './security';
 
 interface EmailOptions {
   to: string;
@@ -21,9 +22,8 @@ const createTransporter = (port: number) =>
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    tls: {
-      rejectUnauthorized: false,
-    },
+    // The mail server's certificate is always checked (turning this off allows a man-in-the-middle to read the codes).
+    tls: { rejectUnauthorized: true, minVersion: 'TLSv1.2' },
   });
 
 /** False while EMAIL_USER / EMAIL_PASS are missing or still the .env template placeholders. */
@@ -88,7 +88,7 @@ export const emailTemplates = {
         <tr>
           <td style="background:linear-gradient(135deg,#f97316,#ea580c);padding:28px 40px;text-align:center;">
             <p style="margin:0;color:#fff3e0;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">Email Verification</p>
-            <h1 style="margin:8px 0 0;color:#ffffff;font-size:28px;font-weight:800;">Almost there, ${name}! 🎯</h1>
+            <h1 style="margin:8px 0 0;color:#ffffff;font-size:28px;font-weight:800;">Almost there, ${escapeHtml(name)}! 🎯</h1>
           </td>
         </tr>
 
@@ -104,7 +104,7 @@ export const emailTemplates = {
             <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;padding:32px 20px;text-align:center;margin:28px 0;">
               <p style="color:#94a3b8;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">Your Verification Code</p>
               <div style="display:inline-block;">
-                <span style="color:#f97316;font-size:48px;font-weight:900;letter-spacing:14px;font-family:'Courier New',monospace;">${otp}</span>
+                <span style="color:#f97316;font-size:48px;font-weight:900;letter-spacing:14px;font-family:'Courier New',monospace;">${escapeHtml(otp)}</span>
               </div>
               <p style="color:#64748b;font-size:12px;margin:16px 0 0;">⏱ Expires in <strong style="color:#f97316;">15 minutes</strong></p>
             </div>
@@ -167,7 +167,7 @@ export const emailTemplates = {
         <tr>
           <td style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:28px 40px;text-align:center;">
             <p style="margin:0;color:#fecaca;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">Password Reset</p>
-            <h1 style="margin:8px 0 0;color:#ffffff;font-size:26px;font-weight:800;">Reset your password, ${name}</h1>
+            <h1 style="margin:8px 0 0;color:#ffffff;font-size:26px;font-weight:800;">Reset your password, ${escapeHtml(name)}</h1>
           </td>
         </tr>
 
@@ -182,7 +182,7 @@ export const emailTemplates = {
             <!-- OTP Box -->
             <div style="background:linear-gradient(135deg,#7f1d1d,#991b1b);border-radius:12px;padding:32px 20px;text-align:center;margin:28px 0;">
               <p style="color:#fca5a5;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">Password Reset Code</p>
-              <span style="color:#ffffff;font-size:48px;font-weight:900;letter-spacing:14px;font-family:'Courier New',monospace;">${otp}</span>
+              <span style="color:#ffffff;font-size:48px;font-weight:900;letter-spacing:14px;font-family:'Courier New',monospace;">${escapeHtml(otp)}</span>
               <p style="color:#f87171;font-size:12px;margin:16px 0 0;">⏱ Expires in <strong style="color:#fca5a5;">15 minutes</strong></p>
             </div>
 
@@ -216,7 +216,7 @@ export const emailTemplates = {
   }),
 
   loginOtp: (otp: string, minutes = 10) => ({
-    subject: `${otp} is your LinkSports sign-in code`,
+    subject: `${escapeHtml(otp)} is your LinkSports sign-in code`,
     html: `
 <!DOCTYPE html>
 <html lang="en">
@@ -238,7 +238,7 @@ export const emailTemplates = {
               Enter this code on LinkSports to sign in. New here? The same code creates your free account.
             </p>
             <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;padding:28px 20px;text-align:center;margin:28px 0;">
-              <span style="color:#f97316;font-size:44px;font-weight:900;letter-spacing:14px;font-family:'Courier New',monospace;">${otp}</span>
+              <span style="color:#f97316;font-size:44px;font-weight:900;letter-spacing:14px;font-family:'Courier New',monospace;">${escapeHtml(otp)}</span>
               <p style="color:#64748b;font-size:12px;margin:14px 0 0;">Expires in <strong style="color:#f97316;">${minutes} minutes</strong> · works once</p>
             </div>
             <p style="color:#94a3b8;font-size:12px;margin:0;padding-top:20px;border-top:1px solid #f1f5f9;">
@@ -261,7 +261,7 @@ export const emailTemplates = {
   }),
 
   connectionRequest: (senderName: string) => ({
-    subject: `${senderName} wants to connect with you - LinkSports`,
+    subject: `${escapeHtml(senderName)} wants to connect with you - LinkSports`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: #1a56db; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
@@ -269,7 +269,7 @@ export const emailTemplates = {
         </div>
         <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
           <h2 style="color: #111827;">New Connection Request</h2>
-          <p style="color: #6b7280;"><strong>${senderName}</strong> wants to connect with you on LinkSports.</p>
+          <p style="color: #6b7280;"><strong>${escapeHtml(senderName)}</strong> wants to connect with you on LinkSports.</p>
           <a href="${process.env.CLIENT_URL}/connections" style="display: inline-block; background: #1a56db; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin-top: 20px;">View Request</a>
         </div>
       </div>

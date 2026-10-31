@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { authAPI } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 
 function CallbackHandler() {
@@ -11,16 +12,21 @@ function CallbackHandler() {
   const { setAccessToken, fetchMe } = useAuthStore();
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const code = searchParams.get('code');
     const error = searchParams.get('error');
 
-    if (error || !token) {
+    if (error || !code) {
       router.replace('/auth/login?error=oauth_failed');
       return;
     }
 
-    setAccessToken(token);
-    fetchMe()
+    // the redirect only carries a one-time code; the token itself never appears in the address bar
+    authAPI.exchangeOAuthCode(code)
+      .then((res) => {
+        setAccessToken(res.data.data.accessToken);
+        window.history.replaceState(null, '', '/auth/callback');
+        return fetchMe();
+      })
       .then(() => router.replace('/'))
       .catch(() => router.replace('/auth/login?error=oauth_failed'));
   // eslint-disable-next-line react-hooks/exhaustive-deps

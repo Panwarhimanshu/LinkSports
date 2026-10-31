@@ -19,7 +19,8 @@ export const configurePassport = () => {
       async (_accessToken, _refreshToken, profile, done) => {
         try {
           const email = profile.emails?.[0]?.value;
-          if (!email) return done(new Error('No email from Google'));
+          const emailVerified = (profile.emails?.[0] as any)?.verified;
+          if (!email || emailVerified === false || emailVerified === 'false') return done(new Error('Google email is not verified'));
 
           let user = await User.findOne({ email });
 
@@ -45,7 +46,10 @@ export const configurePassport = () => {
             // and flag for role selection if they never completed it.
             let changed = false;
             if (!user.isVerified) {
+              // they just proved they own this inbox: drop any password someone else set before they did
               user.isVerified = true;
+              (user as any).passwordHash = undefined;
+              user.tokensValidAfter = new Date();
               changed = true;
             }
             if (user.needsRoleSelection) {
