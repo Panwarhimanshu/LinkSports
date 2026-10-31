@@ -9,6 +9,8 @@ import { Connection } from '../models/Connection';
 import { sendSuccess, sendError } from '../utils/response';
 import { generateSlug } from '../utils/jwt';
 import { Listing } from '../models/Listing';
+import { Application } from '../models/Application';
+import { pageParams } from '../utils/query';
 import { Job } from '../models/Job';
 import { deviceFromUserAgent, logEvent } from '../utils/activity';
 import { StoredImage } from '../models/StoredImage';
@@ -91,6 +93,22 @@ const withContactPrivacy = (profile: any, canSeeContact: boolean) => {
     if (p.userId && typeof p.userId === 'object') delete p.userId.email;
   }
   return p;
+};
+
+/** A CV may be pulled by an organization only if it is verified and has a real tie to the owner (a connection or an application to its listing). */
+const orgMayViewCv = async (orgUserId: unknown, ownerUserId: unknown): Promise<boolean> => {
+  const org = await Organization.findOne({ userId: orgUserId }).select('_id verificationStatus');
+  if (!org || org.verificationStatus !== 'verified') return false;
+  const connected = await Connection.exists({
+    status: 'accepted',
+    $or: [
+      { requesterId: orgUserId, recipientId: ownerUserId },
+      { requesterId: ownerUserId, recipientId: orgUserId },
+    ],
+  });
+  if (connected) return true;
+  const listingIds = await Listing.find({ organizationId: org._id }).distinct('_id');
+  return Boolean(await Application.exists({ applicantId: ownerUserId, listingId: { $in: listingIds } }));
 };
 
 // ── ATHLETE ──────────────────────────────────────────────────────────────────
@@ -471,7 +489,8 @@ export const getOrganizationProfile = async (req: AuthRequest, res: Response): P
       : { $or: [{ _id: id }, { profileUrl: id }, { userId: id }] };
 
     const org = await Organization.findOne(query)
-      .populate('userId', 'email role')
+      .select('-verificationDocuments -rejectionReason -alternatePhone')
+      .populate('userId', 'role')
       .populate('coachingStaff', 'fullName photo profileUrl sportsSpecialization');
 
     if (!org) { sendError(res, 'Organization not found', 404); return; }
@@ -599,7 +618,9 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
         });
         if (!connected) { sendError(res, 'You must be connected with this athlete to download their CV', 403); return; }
       }
-      // organization role falls through — always allowed
+      if (viewerRole === 'organization' && !(await orgMayViewCv(req.user._id, profile.userId))) {
+        sendError(res, 'Only verified organizations connected with this athlete can download their CV', 403); return;
+      }
     }
 
     // Images are fetched up front so the PDF stream never stalls half-way; any that fail are simply skipped.
@@ -607,20 +628,23 @@ export const downloadAthleteCV = async (req: AuthRequest, res: Response): Promis
       if (!url) return null;
       const stored = url.match(/images[/]([a-f0-9]{24})/i); // photo kept in the database
       if (stored && !/^https?:[/][/]res[.]cloudinary[.]com/.test(url)) {
-        try { const img = await StoredImage.findById(stored[1]).select('data'); return img ? img.data : null; } catch { return null; }
+        // Only the profile owner's own stored photos may be embedded.
+        try { const img = await StoredImage.findOne({ _id: stored[1], ownerId: profile.userId }).select('data'); return img ? img.data : null; } catch { return null; }
       }
-      if (!/^https?:[/][/]/.test(url)) return null;
+      // Server-side fetch only from Cloudinary over https: no internal addresses, no redirects, bounded size.
+      if (!/^https:[/][/]res[.]cloudinary[.]com[/]/.test(url)) return null;
       try {
-        const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
-        if (!r.ok) return null;
-        return Buffer.from(await r.arrayBuffer());
+        const r = await fetch(url, { signal: AbortSignal.timeout(6000), redirect: 'error' });
+        if (!r.ok || Number(r.headers.get('content-length') || 0) > 5 * 1024 * 1024) return null;
+        const buf = Buffer.from(await r.arrayBuffer());
+        return buf.length <= 5 * 1024 * 1024 ? buf : null;
       } catch { return null; }
     };
     const galleryUrls = ((profile.media as any[]) || []).filter((m) => m?.type === 'photo').slice(0, 4).map((m) => m.url as string);
     const [avatarBuf, ...galleryBufs] = await Promise.all([fetchImage(profile.photo), ...galleryUrls.map((u) => fetchImage(u))]);
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    const filename = `${profile.fullName.replace(/\s+/g, '_')}_Sports_CV.pdf`;
+    const filename = `${profile.fullName.replace(/[^A-Za-z0-9_-]+/g, '_') || 'Sports'}_Sports_CV.pdf`;
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -1057,10 +1081,10 @@ export const downloadCoachCV = async (req: AuthRequest, res: Response): Promise<
 
     if (!isOwn) {
       if (!req.user) { sendError(res, 'Login required to download CV', 401); return; }
-      if (viewerRole !== 'organization') {
-        sendError(res, 'Only organizations can download coach CVs', 403); return;
+      if (viewerRole !== 'organization' || !(await orgMayViewCv(req.user._id, profile.userId))) {
+        sendError(res, 'Only verified organizations connected with this coach can download their CV', 403); return;
       }
-      // organization role → always allowed
+      if (profile.visibility === 'private') { sendError(res, 'Profile not found', 404); return; }
     }
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -1288,32 +1312,7 @@ const buildSearchOr = async (
   const q = rawQ.trim();
   if (!q) return null;
 
-  const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(safe, 'i');
-
-  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q);
-  const isPhone = /^\+?[\d\s\-().]{7,}$/.test(q) && /\d{6,}/.test(q.replace(/\D/g, ''));
-
-  if (isEmail) {
-    const users = await User.find({ email: re }).select('_id').lean();
-    const ids = users.map((u: any) => u._id);
-    return [
-      { [profileEmailField]: re },
-      ...(ids.length ? [{ userId: { $in: ids } }] : []),
-    ];
-  }
-
-  if (isPhone) {
-    const digits = q.replace(/\D/g, '');
-    const phoneRe = new RegExp(digits, 'i');
-    const users = await User.find({ phone: phoneRe }).select('_id').lean();
-    const ids = users.map((u: any) => u._id);
-    return [
-      { [profilePhoneField]: phoneRe },
-      ...(ids.length ? [{ userId: { $in: ids } }] : []),
-    ];
-  }
-
+  // Contact details are private, so search matches names/usernames only (never email or phone).
   // @username or general name search
   const nameStr = q.startsWith('@') ? q.slice(1) : q;
   const nameSafe = nameStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1331,14 +1330,14 @@ export const searchProfiles = async (req: AuthRequest, res: Response): Promise<v
     const {
       type = 'athlete', q, sport, state, city, gender, ageMin, ageMax,
       heightMin, heightMax, weightMin, weightMax, isParaAthlete, availability,
-      sort, page = 1, limit = 20,
+      sort,
     } = req.query;
+    const { page, limit, skip } = pageParams(req.query);
 
     const sortQuery: Record<string, 1 | -1> = sort === 'popular'
       ? { connectionCount: -1, followerCount: -1 }
       : sort === 'recent' ? { createdAt: -1 } : {};
 
-    const skip = (Number(page) - 1) * Number(limit);
     const query: Record<string, unknown> = {};
 
     // Build search condition using regex (works without text indexes)
@@ -1376,13 +1375,13 @@ export const searchProfiles = async (req: AuthRequest, res: Response): Promise<v
         if (ageMin) query.dob = { ...((query.dob as object) || {}), $lte: new Date(now.getFullYear() - Number(ageMin), 12) };
       }
       [profiles, total] = await Promise.all([
-        AthleteProfile.find(query).sort(sortQuery).skip(skip).limit(Number(limit)).select('-media -achievements -tournaments'),
+        AthleteProfile.find(query).sort(sortQuery).skip(skip).limit(limit).select('-media -achievements -tournaments -email -phone -dob -userId -coachReferences'),
         AthleteProfile.countDocuments(query),
       ]);
     } else if (type === 'coach') {
       if (sport) { delete query.primarySport; query.sportsSpecialization = sport; }
       [profiles, total] = await Promise.all([
-        CoachProfile.find(query).sort(sortQuery).skip(skip).limit(Number(limit)),
+        CoachProfile.find(query).sort(sortQuery).skip(skip).limit(limit).select('-email -phone -dob -userId'),
         CoachProfile.countDocuments(query),
       ]);
     } else {
@@ -1396,16 +1395,16 @@ export const searchProfiles = async (req: AuthRequest, res: Response): Promise<v
       if (state) orgQuery['contact.address'] = new RegExp((state as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       const orgSort: Record<string, 1 | -1> = sort === 'popular' ? { connectionCount: -1, followerCount: -1 } : sort === 'recent' ? { createdAt: -1 } : {};
       [profiles, total] = await Promise.all([
-        Organization.find(orgQuery).sort(orgSort).skip(skip).limit(Number(limit)),
+        Organization.find(orgQuery).sort(orgSort).skip(skip).limit(limit).select('-verificationDocuments -rejectionReason -alternatePhone -userId'),
         Organization.countDocuments(orgQuery),
       ]);
     }
 
     sendSuccess(res, profiles, 'Profiles fetched', 200, {
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
-      limit: Number(limit),
+      page,
+      pages: Math.ceil(total / limit),
+      limit,
     });
   } catch (err) {
     console.error('searchProfiles error:', err);

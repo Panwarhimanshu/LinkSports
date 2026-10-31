@@ -8,6 +8,7 @@ import { Notification } from '../models/Notification';
 import { User } from '../models/User';
 import { sendSuccess, sendError } from '../utils/response';
 import { getProfileName } from '../utils/profile';
+import { escapeRegex, pageParams, pick } from '../utils/query';
 
 const notifyAllAthletes = async (listingId: unknown, orgName: string, listingTitle: string, listingType: string) => {
   try {
@@ -30,22 +31,27 @@ const notifyAllAthletes = async (listingId: unknown, orgName: string, listingTit
   }
 };
 
+const LISTING_FIELDS = [
+  'type', 'title', 'description', 'sports', 'startDate', 'endDate', 'location',
+  'eligibility', 'physicalRequirements', 'participantLimit', 'registrationDeadline',
+  'participantFee', 'customQuestions', 'documentRequired', 'documentDescription',
+  'banner', 'contactInfo', 'allowWithdrawal',
+] as const;
+
 export const createListing = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const org = await Organization.findOne({ userId: req.user!._id });
     if (!org) { sendError(res, 'Organization profile required', 403); return; }
 
+    // Only whitelisted fields from the client; new listings start as drafts and go through payment + review.
     const listing = await Listing.create({
-      ...req.body,
+      ...pick(req.body, LISTING_FIELDS),
       organizationId: org._id,
       createdBy: req.user!._id,
-      status: 'published',
+      status: 'draft',
     });
 
-    // Fire-and-forget — don't block the response
-    notifyAllAthletes(listing._id, org.name, listing.title, listing.type);
-
-    sendSuccess(res, listing, 'Listing published successfully', 201);
+    sendSuccess(res, listing, 'Listing created', 201);
   } catch { sendError(res, 'Failed to create listing', 500); }
 };
 
@@ -65,12 +71,18 @@ export const submitListingForReview = async (req: AuthRequest, res: Response): P
 export const getListings = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const {
-      type, sport, state, city, page = 1, limit = 20,
+      type, sport, state, city,
       dateFrom, dateTo, free, q, status = 'published',
     } = req.query;
 
-    const skip = (Number(page) - 1) * Number(limit);
-    const query: Record<string, unknown> = { status };
+    const { page, limit, skip } = pageParams(req.query);
+    const query: Record<string, unknown> = { status: 'published' };
+    // Unpublished listings are visible only to their owner (or an admin).
+    if (status !== 'published') {
+      if (!req.user) { sendError(res, 'Not authorized', 401); return; }
+      query.status = String(status);
+      if (req.user.role !== 'admin') query.createdBy = req.user._id;
+    }
 
     if (type) query.type = type;
     if (sport) query.sports = sport;
@@ -78,7 +90,7 @@ export const getListings = async (req: AuthRequest, res: Response): Promise<void
     if (city) query['location.city'] = city;
     if (free === 'true') query.participantFee = 0;
     if (q) {
-      const regex = new RegExp(q as string, 'i');
+      const regex = new RegExp(escapeRegex(q), 'i');
       query.$or = [
         { title: regex },
         { description: regex },
@@ -96,16 +108,16 @@ export const getListings = async (req: AuthRequest, res: Response): Promise<void
         .populate('organizationId', 'name logo isVerified type')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(Number(limit))
+        .limit(limit)
         .select('-customQuestions -cancellationReason'),
       Listing.countDocuments(query),
     ]);
 
     sendSuccess(res, listings, 'Listings fetched', 200, {
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
-      limit: Number(limit),
+      page,
+      pages: Math.ceil(total / limit),
+      limit,
     });
   } catch { sendError(res, 'Failed to fetch listings', 500); }
 };
@@ -118,6 +130,9 @@ export const getListing = async (req: AuthRequest, res: Response): Promise<void>
       .populate('organizationId', 'name logo isVerified type contact');
 
     if (!listing) { sendError(res, 'Listing not found', 404); return; }
+    if (listing.status !== 'published' && String(listing.createdBy) !== String(req.user?._id) && req.user?.role !== 'admin') {
+      sendError(res, 'Listing not found', 404); return;
+    }
 
     let userApplication = null;
     if (req.user) {
@@ -231,11 +246,12 @@ export const applyToListing = async (req: AuthRequest, res: Response): Promise<v
 
 export const getListingApplications = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const listing = await Listing.findById(req.params.id);
+    if (!mongoose.isValidObjectId(req.params.id)) { sendError(res, 'Listing not found', 404); return; }
+    const listing = await Listing.findOne({ _id: req.params.id, createdBy: req.user!._id });
     if (!listing) { sendError(res, 'Listing not found', 404); return; }
 
-    const { status, page = 1, limit = 50, q } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+    const { status, q } = req.query;
+    const { skip, limit: pageLimit } = pageParams(req.query, 50, 100);
     const query: Record<string, unknown> = { listingId: listing._id };
     if (status) query.status = status;
 
@@ -243,7 +259,7 @@ export const getListingApplications = async (req: AuthRequest, res: Response): P
       Application.find(query)
         .populate('applicantId', 'email role')
         .skip(skip)
-        .limit(Number(limit))
+        .limit(pageLimit)
         .sort({ appliedAt: -1 }),
       Application.countDocuments(query),
     ]);
@@ -263,7 +279,7 @@ export const getListingApplications = async (req: AuthRequest, res: Response): P
     );
 
     sendSuccess(res, populatedApps, 'Applications fetched', 200, {
-      total, page: Number(page), pages: Math.ceil(total / Number(limit)), limit: Number(limit),
+      total, page: Math.floor(skip / pageLimit) + 1, pages: Math.ceil(total / pageLimit), limit: pageLimit,
     });
   } catch { sendError(res, 'Failed to get applications', 500); }
 };

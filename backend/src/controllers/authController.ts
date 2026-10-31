@@ -1,3 +1,4 @@
+import { hashCode, safeEqual, MAX_OTP_ATTEMPTS } from '../utils/otp';
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User';
@@ -24,8 +25,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const { password, role, fullName, organizationName, organizationType, phone, contactPerson, city } = req.body;
     const email = req.body.email?.toLowerCase()?.trim();
 
-    if (!email) {
-      sendError(res, 'Email is required', 400, 'VALIDATION_ERROR');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || typeof password !== 'string' || password.length < 8) {
+      sendError(res, 'A valid email and a password of at least 8 characters are required', 400, 'VALIDATION_ERROR');
+      return;
+    }
+    // 'admin' must never be self-assignable; admins are seeded out of band.
+    if (!['athlete', 'coach', 'professional', 'organization'].includes(role)) {
+      sendError(res, 'Invalid role', 400, 'INVALID_ROLE');
       return;
     }
 
@@ -45,8 +51,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       email,
       passwordHash,
       role,
-      phone,
-      emailOtp: otp,
+      emailOtp: hashCode('verify', otp, email),
       emailOtpExpiry: otpExpiry,
       isVerified: false,
       isApproved: role === 'professional' ? false : true,
@@ -72,8 +77,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       });
     }
 
-    // Always log OTP so it's visible in Render/server logs for debugging
-    console.log(`\n[OTP] ── ${email}: ${otp} ──\n`);
+    if (process.env.NODE_ENV !== 'production') console.log(`[OTP:dev] ${email}: ${otp}`);
     try {
       await sendEmail({ to: email, ...emailTemplates.verifyEmail(otp, fullName || 'User') });
       console.log(`[Email] OTP sent to ${email}`);
@@ -94,18 +98,26 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, otp } = req.body;
-    const normalizedEmail = email?.toLowerCase()?.trim();
-    const user = await User.findOne({ email: normalizedEmail }).select('+emailOtp +emailOtpExpiry');
+    const email = String(req.body?.email ?? '').toLowerCase().trim();
+    const otp = String(req.body?.otp ?? '').trim();
+    if (!email || !/^\d{6}$/.test(otp)) { sendError(res, 'Enter the 6-digit code', 400, 'VALIDATION_ERROR'); return; }
 
-    if (!user) { sendError(res, 'User not found', 404, 'NOT_FOUND'); return; }
-    if (user.isVerified) { sendError(res, 'Email already verified', 400, 'ALREADY_VERIFIED'); return; }
-    if (!user.emailOtp || user.emailOtp !== otp) { sendError(res, 'Invalid OTP', 400, 'INVALID_OTP'); return; }
-    if (user.emailOtpExpiry && user.emailOtpExpiry < new Date()) { sendError(res, 'OTP expired', 400, 'OTP_EXPIRED'); return; }
+    // Count the attempt atomically before comparing, so parallel guesses cannot beat the cap.
+    const user = await User.findOneAndUpdate(
+      { email, isVerified: false, emailOtpAttempts: { $not: { $gte: MAX_OTP_ATTEMPTS } } },
+      { $inc: { emailOtpAttempts: 1 } },
+      { new: true },
+    ).select('+emailOtp +emailOtpExpiry');
+
+    if (!user || !user.emailOtp || (user.emailOtpExpiry && user.emailOtpExpiry < new Date())) {
+      sendError(res, 'Invalid or expired code. Request a new one.', 400, 'INVALID_OTP'); return;
+    }
+    if (!safeEqual(user.emailOtp, hashCode('verify', otp, email))) { sendError(res, 'Invalid or expired code. Request a new one.', 400, 'INVALID_OTP'); return; }
 
     user.isVerified = true;
     user.emailOtp = undefined;
     user.emailOtpExpiry = undefined;
+    user.emailOtpAttempts = 0;
     await user.save();
 
     sendSuccess(res, null, 'Email verified successfully');
@@ -116,28 +128,28 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
 
 export const resendOtp = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email } = req.body;
-    const normalizedEmail = email?.toLowerCase()?.trim();
-    const user = await User.findOne({ email: normalizedEmail }).select('+emailOtp +emailOtpExpiry');
-    if (!user) { sendError(res, 'User not found', 404, 'NOT_FOUND'); return; }
-    if (user.isVerified) { sendError(res, 'Email already verified', 400, 'ALREADY_VERIFIED'); return; }
+    const normalizedEmail = String(req.body?.email ?? '').toLowerCase().trim();
+    const user = normalizedEmail ? await User.findOne({ email: normalizedEmail }).select('+emailOtp +emailOtpExpiry +emailOtpAttempts') : null;
 
-    const otp = generateOTP();
-    user.emailOtp = otp;
-    user.emailOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
-    await user.save();
+    // Same answer whether or not the account exists or is already verified (no account enumeration).
+    if (user && !user.isVerified) {
+      const otp = generateOTP();
+      user.emailOtp = hashCode('verify', otp, normalizedEmail);
+      user.emailOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+      user.emailOtpAttempts = 0;
+      await user.save();
 
-    console.log(`\n[OTP] ── Resend ${normalizedEmail}: ${otp} ──\n`);
-    try {
-      await sendEmail({ to: normalizedEmail, ...emailTemplates.verifyEmail(otp, normalizedEmail.split('@')[0]) });
-      console.log(`[Email] Resend OTP sent to ${normalizedEmail}`);
-    } catch (emailError) {
-      console.error('[Email] FAILED to resend OTP:', emailError);
+      if (process.env.NODE_ENV !== 'production') console.log(`[OTP:dev] resend ${normalizedEmail}: ${otp}`);
+      try {
+        await sendEmail({ to: normalizedEmail, ...emailTemplates.verifyEmail(otp, normalizedEmail.split('@')[0]) });
+      } catch (emailError) {
+        console.error('[Email] FAILED to resend OTP:', (emailError as Error).message);
+      }
     }
 
-    sendSuccess(res, null, 'OTP resent successfully');
+    sendSuccess(res, null, 'If that account is waiting for verification, a new code has been sent');
   } catch (err) {
-    console.error('resendOtp error:', err);
+    console.error('resendOtp error:', (err as Error).message);
     sendError(res, 'Failed to resend OTP', 500);
   }
 };
@@ -290,35 +302,38 @@ export const logout = async (req: AuthRequest, res: Response): Promise<void> => 
 };
 
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
-  const { email } = req.body;
-
-  // Normalize email — DB stores lowercase, query must match
-  const normalizedEmail = email?.toLowerCase()?.trim();
-  if (!normalizedEmail) { sendError(res, 'Email is required', 400); return; }
-
-  const user = await User.findOne({ email: normalizedEmail }).select('+emailOtp +emailOtpExpiry');
-
-  // Always respond the same way so we don't leak which emails exist
-  if (!user) { sendSuccess(res, null, 'If that email is registered, an OTP has been sent'); return; }
-
-  const otp = generateOTP();
-  user.emailOtp = otp;
-  user.emailOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
-  await user.save();
-
   try {
-    await sendEmail({ to: normalizedEmail, ...emailTemplates.resetPassword(otp, normalizedEmail.split('@')[0]) });
-    sendSuccess(res, null, 'OTP sent to your email');
-  } catch {
-    sendError(res, 'Failed to send OTP email. Please try again later.', 500);
+    const normalizedEmail = String(req.body?.email ?? '').toLowerCase().trim();
+    if (!normalizedEmail) { sendError(res, 'Email is required', 400); return; }
+
+    const user = await User.findOne({ email: normalizedEmail }).select('+emailOtp +emailOtpExpiry +emailOtpAttempts');
+
+    // Always respond the same way so we don't leak which emails exist
+    if (user && !user.isSuspended) {
+      const otp = generateOTP();
+      user.emailOtp = hashCode('reset', otp, normalizedEmail);
+      user.emailOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+      user.emailOtpAttempts = 0;
+      await user.save();
+      if (process.env.NODE_ENV !== 'production') console.log(`[OTP:dev] reset ${normalizedEmail}: ${otp}`);
+      try {
+        await sendEmail({ to: normalizedEmail, ...emailTemplates.resetPassword(otp, normalizedEmail.split('@')[0]) });
+      } catch (emailError) {
+        console.error('[Email] FAILED to send reset OTP:', (emailError as Error).message);
+      }
+    }
+    sendSuccess(res, null, 'If that email is registered, an OTP has been sent');
+  } catch (err) {
+    console.error('forgotPassword error:', (err as Error).message);
+    sendError(res, 'Could not process the request', 500);
   }
 };
 
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { email, otp, newPassword } = req.body ?? {};
 
-    if (!email || !otp || !newPassword) {
+    if (!email || !otp || typeof newPassword !== 'string') {
       sendError(res, 'Email, OTP and new password are required', 400); return;
     }
     if (newPassword.length < 8) {
@@ -328,28 +343,31 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       sendError(res, 'Password must contain uppercase, lowercase, and a number', 400); return;
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail }).select('+emailOtp +emailOtpExpiry +passwordHash');
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const code = String(otp).trim();
+    if (!/^\d{6}$/.test(code)) { sendError(res, 'Invalid or expired OTP. Please request a new one.', 400, 'INVALID_OTP'); return; }
 
-    if (!user || !user.emailOtp) {
+    const user = await User.findOneAndUpdate(
+      { email: normalizedEmail, emailOtpAttempts: { $not: { $gte: MAX_OTP_ATTEMPTS } } },
+      { $inc: { emailOtpAttempts: 1 } },
+      { new: true },
+    ).select('+emailOtp +emailOtpExpiry +passwordHash');
+
+    if (!user || !user.emailOtp || !user.emailOtpExpiry || user.emailOtpExpiry < new Date()
+      || !safeEqual(user.emailOtp, hashCode('reset', code, normalizedEmail))) {
       sendError(res, 'Invalid or expired OTP. Please request a new one.', 400, 'INVALID_OTP'); return;
-    }
-    if (user.emailOtp !== String(otp).trim()) {
-      sendError(res, 'Incorrect OTP. Please check and try again.', 400, 'INVALID_OTP'); return;
-    }
-    if (user.emailOtpExpiry && user.emailOtpExpiry < new Date()) {
-      sendError(res, 'OTP has expired. Please request a new one.', 400, 'OTP_EXPIRED'); return;
     }
 
     user.passwordHash = await bcrypt.hash(newPassword, 12);
     user.emailOtp = undefined;
     user.emailOtpExpiry = undefined;
+    user.emailOtpAttempts = 0;
     user.refreshTokens = [];
     await user.save();
 
     sendSuccess(res, null, 'Password reset successfully. You can now log in.');
   } catch (err) {
-    console.error('resetPassword error:', err);
+    console.error('resetPassword error:', (err as Error).message);
     sendError(res, 'Password reset failed', 500);
   }
 };
@@ -463,8 +481,13 @@ export const updateRole = async (req: AuthRequest, res: Response): Promise<void>
     const user = await User.findById(req.user!._id);
     if (!user) { sendError(res, 'User not found', 404); return; }
 
+    // Role switching is only for accounts that have not picked one yet (e.g. first Google sign-in);
+    // otherwise any user could make themselves an organization or professional on demand.
+    if (!user.needsRoleSelection) { sendError(res, 'Role cannot be changed', 403, 'FORBIDDEN'); return; }
+
     const oldRole = user.role;
     user.role = role;
+    if (role === 'professional') user.isApproved = false;
     user.needsRoleSelection = false;
     await user.save();
 

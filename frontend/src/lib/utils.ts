@@ -88,3 +88,14 @@ export const INDIAN_STATES = [
   'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
   'Delhi', 'Jammu & Kashmir', 'Ladakh',
 ];
+
+/** Only http(s) links from user profiles are rendered as hrefs; anything else (javascript:, data:, ...) becomes "#". */
+export function safeUrl(url?: string | null): string {
+  if (!url) return '#';
+  try {
+    const u = new URL(url, 'https://linksports.in');
+    return u.protocol === 'https:' || u.protocol === 'http:' ? url : '#';
+  } catch {
+    return '#';
+  }
+}

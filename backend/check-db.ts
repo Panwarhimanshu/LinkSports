@@ -4,7 +4,7 @@ import { User } from './src/models/User';
 
 const check = async () => {
   await mongoose.connect(process.env.MONGODB_URI as string);
-  const users = await User.find({}, 'email role isVerified passwordHash');
+  const users = await User.find({}, 'email role isVerified');
   console.log('Current Users in DB:');
   console.log(JSON.stringify(users, null, 2));
   await mongoose.disconnect();

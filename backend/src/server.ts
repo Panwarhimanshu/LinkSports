@@ -52,7 +52,7 @@ io.use((socket, next) => {
   const token = socket.handshake.auth?.token as string | undefined;
   if (!token) return next(new Error('Authentication required'));
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] }) as { id: string };
     (socket as any).userId = decoded.id;
     next();
   } catch {
@@ -66,18 +66,8 @@ io.on('connection', (socket) => {
   // Only allow joining own room
   socket.join(`user_${authenticatedUserId}`);
 
-  socket.on('send_message', (data) => {
-    const { recipientId, message } = data;
-    // Validate sender is authenticated user
-    if (!recipientId || !message) return;
-    io.to(`user_${recipientId}`).emit('receive_message', message);
-  });
-
-  socket.on('typing', (data) => {
-    const { recipientId } = data;
-    if (!recipientId) return;
-    io.to(`user_${recipientId}`).emit('user_typing', { senderId: authenticatedUserId });
-  });
+  // Realtime events are emitted by the REST controllers after the data is saved. Clients can no longer
+  // push arbitrary payloads to other users' rooms (that allowed sender spoofing).
 
   socket.on('disconnect', () => {
     // Intentionally silent
@@ -207,25 +197,11 @@ app.get('/api/v1/search', searchLimiter, async (req, res) => {
       const safe = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp(safe, 'i');
 
-      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw);
-      const isPhone = /^\+?[\d\s\-().]{7,}$/.test(raw) && /\d{6,}/.test(raw.replace(/\D/g, ''));
-
-      if (isEmail) {
-        const users = await User.find({ email: re }).select('_id').lean();
-        const ids = users.map((u: any) => u._id);
-        profileFilter.$or = [{ email: re }, ...(ids.length ? [{ userId: { $in: ids } }] : [])];
-      } else if (isPhone) {
-        const digits = raw.replace(/\D/g, '');
-        const phoneRe = new RegExp(digits, 'i');
-        const users = await User.find({ phone: phoneRe }).select('_id').lean();
-        const ids = users.map((u: any) => u._id);
-        profileFilter.$or = [{ phone: phoneRe }, ...(ids.length ? [{ userId: { $in: ids } }] : [])];
-      } else {
-        const nameStr = raw.startsWith('@') ? raw.slice(1) : raw;
-        const nameSafe = nameStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const nameRe = new RegExp(nameSafe, 'i');
-        profileFilter.$or = [{ fullName: nameRe }, { username: nameRe }, { name: nameRe }, { tagline: nameRe }];
-      }
+      // Contact details are private: search by name/username/tagline only (never email or phone).
+      const nameStr = raw.startsWith('@') ? raw.slice(1) : raw;
+      const nameSafe = nameStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const nameRe = new RegExp(nameSafe, 'i');
+      profileFilter.$or = [{ fullName: nameRe }, { username: nameRe }, { name: nameRe }, { tagline: nameRe }];
     }
 
     const [athletes, coaches, organizations, listings, jobs] = await Promise.all([
@@ -237,7 +213,7 @@ app.get('/api/v1/search', searchLimiter, async (req, res) => {
         .select('fullName photo sportsSpecialization location profileUrl'),
       Organization.find({ ...profileFilter, verificationStatus: 'verified' })
         .limit(safeLimit).skip(skip)
-        .select('name logo sports contact profileUrl'),
+        .select('name logo sports profileUrl'),
       Listing.find({ status: 'published' })
         .limit(5).select('title type sports startDate location')
         .populate('organizationId', 'name logo'),

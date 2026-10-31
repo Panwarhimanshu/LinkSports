@@ -21,9 +21,6 @@ const createTransporter = (port: number) =>
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    tls: {
-      rejectUnauthorized: false,
-    },
   });
 
 /** False while EMAIL_USER / EMAIL_PASS are missing or still the .env template placeholders. */
@@ -61,7 +58,7 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
   return false;
 };
 
-export const emailTemplates = {
+const rawTemplates = {
   verifyEmail: (otp: string, name: string) => ({
     subject: '🏅 Verify Your Email - LinkSports',
     html: `
@@ -275,4 +272,16 @@ export const emailTemplates = {
       </div>
     `,
   }),
+};
+
+/** User-supplied names go into HTML (and one subject line): escape them so nobody can inject markup or headers. */
+const esc = (v: unknown): string =>
+  String(v ?? '').replace(/[\r\n]+/g, ' ').slice(0, 80)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+export const emailTemplates = {
+  ...rawTemplates,
+  verifyEmail: (otp: string, name: string) => rawTemplates.verifyEmail(otp, esc(name)),
+  resetPassword: (otp: string, name: string) => rawTemplates.resetPassword(otp, esc(name)),
+  connectionRequest: (senderName: string) => rawTemplates.connectionRequest(esc(senderName)),
 };

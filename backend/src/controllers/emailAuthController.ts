@@ -8,6 +8,7 @@ import { generateOTP, generateSlug } from '../utils/jwt';
 import { emailTemplates, isEmailConfigured, sendEmail } from '../utils/email';
 import { sendSuccess, sendError } from '../utils/response';
 import { signupsAllowed, SIGNUPS_CLOSED_MSG } from '../models/SiteSettings';
+import { safeEqual } from '../utils/otp';
 import { startSession } from '../utils/session';
 
 // Passwordless sign-in: a 6-digit code is emailed with nodemailer (SMTP settings in the root .env)
@@ -91,19 +92,17 @@ export const verifyEmailOtp = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const record = await EmailOtp.findOne({ email });
-    if (!record || record.expiresAt < new Date()) {
-      sendError(res, 'This code has expired. Request a new one.', 400, 'OTP_EXPIRED');
+    // Count the attempt atomically before comparing so parallel guesses cannot exceed the cap.
+    const record = await EmailOtp.findOneAndUpdate(
+      { email, expiresAt: { $gt: new Date() }, attempts: { $lt: MAX_ATTEMPTS } },
+      { $inc: { attempts: 1 } },
+      { new: true },
+    );
+    if (!record) {
+      sendError(res, 'This code has expired or was tried too many times. Request a new one.', 400, 'OTP_EXPIRED');
       return;
     }
-    if (record.attempts >= MAX_ATTEMPTS) {
-      await EmailOtp.deleteOne({ email });
-      sendError(res, 'Too many wrong attempts. Request a new code.', 429, 'OTP_LOCKED');
-      return;
-    }
-    if (record.otpHash !== hashOtp(otp, email)) {
-      record.attempts += 1;
-      await record.save();
+    if (!safeEqual(record.otpHash, hashOtp(otp, email))) {
       sendError(res, 'Incorrect code', 400, 'INVALID_OTP');
       return;
     }
@@ -124,7 +123,11 @@ export const verifyEmailOtp = async (req: Request, res: Response): Promise<void>
       const name = email.split('@')[0];
       await AthleteProfile.create({ userId: user._id, fullName: 'Player', profileUrl: generateSlug(name) });
     } else if (!user.isVerified) {
-      user.isVerified = true; // they just proved they own this inbox
+      // They just proved they own this inbox. Anything stored by whoever pre-registered this address
+      // (a password, live sessions) must not survive that.
+      user.isVerified = true;
+      user.passwordHash = undefined;
+      user.refreshTokens = [];
     }
 
     await startSession(req, res, user, isNew, 'email_otp');

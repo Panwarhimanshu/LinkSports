@@ -5,8 +5,10 @@ import { AthleteProfile } from '../models/AthleteProfile';
 import { PhoneOtp } from '../models/PhoneOtp';
 import { generateOTP, generateSlug } from '../utils/jwt';
 import { sendSms } from '../utils/sms';
+import { isWhatsAppConfigured, sendWhatsApp } from '../utils/whatsapp';
 import { sendSuccess, sendError } from '../utils/response';
 import { signupsAllowed, SIGNUPS_CLOSED_MSG } from '../models/SiteSettings';
+import { safeEqual } from '../utils/otp';
 import { startSession } from '../utils/session';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -45,11 +47,13 @@ export const sendPhoneOtp = async (req: Request, res: Response): Promise<void> =
     );
 
     try {
-      await sendSms(`+91${phone}`, `${otp} is your LinkSports verification code. It is valid for 10 minutes.`);
+      const text = `${otp} is your LinkSports verification code. It is valid for 10 minutes. Do not share it with anyone.`;
+      if (isWhatsAppConfigured()) await sendWhatsApp(`91${phone}`, text);
+      else await sendSms(`+91${phone}`, text);
     } catch (err) {
-      console.error('sendSms failed:', (err as Error).message);
+      console.error('OTP delivery failed:', (err as Error).message);
       await PhoneOtp.deleteOne({ phone });
-      sendError(res, 'Could not send the SMS right now. Try Google sign-in or try again later.', 503, 'SMS_UNAVAILABLE');
+      sendError(res, 'Could not send the code right now. Try Google sign-in or try again later.', 503, 'SMS_UNAVAILABLE');
       return;
     }
 
@@ -70,26 +74,24 @@ export const verifyPhoneOtp = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const record = await PhoneOtp.findOne({ phone });
-    if (!record || record.expiresAt < new Date()) {
-      sendError(res, 'This code has expired. Request a new one.', 400, 'OTP_EXPIRED');
+    // Count the attempt atomically before comparing so parallel guesses cannot exceed the cap.
+    const record = await PhoneOtp.findOneAndUpdate(
+      { phone, expiresAt: { $gt: new Date() }, attempts: { $lt: MAX_ATTEMPTS } },
+      { $inc: { attempts: 1 } },
+      { new: true },
+    );
+    if (!record) {
+      sendError(res, 'This code has expired or was tried too many times. Request a new one.', 400, 'OTP_EXPIRED');
       return;
     }
-    if (record.attempts >= MAX_ATTEMPTS) {
-      await PhoneOtp.deleteOne({ phone });
-      sendError(res, 'Too many wrong attempts. Request a new code.', 429, 'OTP_LOCKED');
-      return;
-    }
-    if (record.otpHash !== hashOtp(otp, phone)) {
-      record.attempts += 1;
-      await record.save();
+    if (!safeEqual(record.otpHash, hashOtp(otp, phone))) {
       sendError(res, 'Incorrect code', 400, 'INVALID_OTP');
       return;
     }
     await PhoneOtp.deleteOne({ phone }); // single use
 
     // Match existing accounts whatever format their number was stored in (e.g. migrated "98765 43210").
-    let user = await User.findOne({ phone: new RegExp(`${phone}$`) }).select('+refreshTokens');
+    let user = await User.findOne({ phone: { $in: [`+91${phone}`, `91${phone}`, phone] } }).select('+refreshTokens');
     let isNew = false;
 
     if (user?.isSuspended) {
@@ -110,6 +112,8 @@ export const verifyPhoneOtp = async (req: Request, res: Response): Promise<void>
       await AthleteProfile.create({ userId: user._id, fullName: 'Player', phone: `+91${phone}`, profileUrl: generateSlug('player') });
     } else if (!user.isVerified) {
       user.isVerified = true; // they just proved they own this number
+      user.passwordHash = undefined; // drop anything a pre-registrant set on this account
+      user.refreshTokens = [];
     }
 
     await startSession(req, res, user, isNew, 'phone');

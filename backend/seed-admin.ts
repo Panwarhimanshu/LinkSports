@@ -5,8 +5,11 @@ import { User } from './src/models/User';
 const run = async () => {
   await mongoose.connect(process.env.MONGODB_URI as string);
 
-  const email = 'admin@linksports.in';
-  const password = 'Admin@123';
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password || password.length < 12) {
+    throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) in the environment before running this script.');
+  }
 
   const existing = await User.findOne({ email }).select('+passwordHash');
 
