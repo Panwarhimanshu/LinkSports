@@ -13,5 +13,4 @@ const run = async () => {
   await mongoose.disconnect();
 };
 
-run().
-
+run().catch((e) => { console.error(e.message); process.exit(1); });
