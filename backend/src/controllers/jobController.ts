@@ -1,3 +1,4 @@
+import { escapeRegex, pageParams, pick } from '../utils/query';
 import mongoose from 'mongoose';
 import { Response } from 'express';
 import { AuthRequest } from '../types';
@@ -8,13 +9,18 @@ import { Notification } from '../models/Notification';
 import { sendSuccess, sendError } from '../utils/response';
 import { getProfileName } from '../utils/profile';
 
+const JOB_FIELDS = [
+  'title', 'description', 'category', 'location', 'jobType', 'experienceLevel',
+  'salaryMin', 'salaryMax', 'requiredQualifications', 'skills', 'applicationDeadline',
+] as const;
+
 export const createJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const org = await Organization.findOne({ userId: req.user!._id });
     if (!org) { sendError(res, 'Organization profile required', 403); return; }
 
     const job = await Job.create({
-      ...req.body,
+      ...pick(req.body, JOB_FIELDS),
       organizationId: org._id,
       createdBy: req.user!._id,
       status: 'draft',
@@ -38,27 +44,27 @@ export const submitJobForReview = async (req: AuthRequest, res: Response): Promi
 
 export const getJobs = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { category, location, jobType, experience, q, page = 1, limit = 20 } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+    const { category, location, jobType, experience, q } = req.query;
+    const { page, limit, skip } = pageParams(req.query);
     const query: Record<string, unknown> = { status: 'published' };
 
     if (category) query.category = category;
     if (jobType) query.jobType = jobType;
     if (experience) query.experienceLevel = experience;
-    if (q) query.$text = { $search: q as string };
-    if (location) query.location = new RegExp(location as string, 'i');
+    if (q) query.$text = { $search: String(q).slice(0, 100) };
+    if (location) query.location = new RegExp(escapeRegex(location), 'i');
 
     const [jobs, total] = await Promise.all([
       Job.find(query)
         .populate('organizationId', 'name logo isVerified')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(Number(limit)),
+        .limit(limit),
       Job.countDocuments(query),
     ]);
 
     sendSuccess(res, jobs, 'Jobs fetched', 200, {
-      total, page: Number(page), pages: Math.ceil(total / Number(limit)), limit: Number(limit),
+      total, page, pages: Math.ceil(total / limit), limit,
     });
   } catch { sendError(res, 'Failed to fetch jobs', 500); }
 };
@@ -69,6 +75,9 @@ export const getJob = async (req: AuthRequest, res: Response): Promise<void> => 
     if (!mongoose.isValidObjectId(req.params.id)) { sendError(res, 'Job not found', 404); return; }
     const job = await Job.findById(req.params.id).populate('organizationId', 'name logo isVerified type contact');
     if (!job) { sendError(res, 'Job not found', 404); return; }
+    if (job.status !== 'published' && String(job.createdBy) !== String(req.user?._id) && req.user?.role !== 'admin') {
+      sendError(res, 'Job not found', 404); return;
+    }
 
     let userApplication = null;
     if (req.user) {

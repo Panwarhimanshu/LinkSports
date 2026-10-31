@@ -25,7 +25,7 @@ services:
       MYSQL_USER: linksports
       MYSQL_PASSWORD: linksports123
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       # Automatically import a SQL dump placed at ./dump/linksports_dump.sql
       - ./dump:/docker-entrypoint-initdb.d:ro
@@ -50,7 +50,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: admin123
       MONGO_INITDB_DATABASE: linksports
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo_data:/data/db
       - ./mongo-init:/docker-entrypoint-initdb.d:ro
@@ -69,7 +69,7 @@ services:
       mongo:
         condition: service_healthy
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: admin
       ME_CONFIG_MONGODB_ADMINPASSWORD: admin123

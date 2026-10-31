@@ -29,6 +29,7 @@ const UserSchema = new Schema<IUser>(
     phone: { type: String, trim: true },
     emailOtp: { type: String, select: false },
     emailOtpExpiry: { type: Date, select: false },
+    emailOtpAttempts: { type: Number, default: 0, select: false },
     phoneOtp: { type: String, select: false },
     phoneOtpExpiry: { type: Date, select: false },
     refreshTokens: [{ type: String, select: false }],

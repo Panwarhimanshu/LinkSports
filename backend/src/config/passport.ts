@@ -20,6 +20,7 @@ export const configurePassport = () => {
         try {
           const email = profile.emails?.[0]?.value;
           if (!email) return done(new Error('No email from Google'));
+          if ((profile as any)._json?.email_verified === false) return done(new Error('Google email is not verified'));
 
           let user = await User.findOne({ email });
 
@@ -46,6 +47,8 @@ export const configurePassport = () => {
             let changed = false;
             if (!user.isVerified) {
               user.isVerified = true;
+              user.passwordHash = undefined; // drop anything a pre-registrant set on this account
+              user.refreshTokens = [];
               changed = true;
             }
             if (user.needsRoleSelection) {

@@ -13,6 +13,7 @@ export interface IUser extends Document {
   phone?: string;
   emailOtp?: string;
   emailOtpExpiry?: Date;
+  emailOtpAttempts?: number;
   phoneOtp?: string;
   phoneOtpExpiry?: Date;
   refreshTokens: string[];

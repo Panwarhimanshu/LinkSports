@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../types';
 import { Payment, Coupon } from '../models/Payment';
 import { Listing } from '../models/Listing';
@@ -22,25 +23,44 @@ const getRazorpay = async () => {
   return razorpay;
 };
 
+const isProd = () => process.env.NODE_ENV === 'production';
+
+/** Takes one use of a coupon, respecting its limit atomically. Returns false when none is left. */
+const takeCouponUse = async (code: string): Promise<boolean> => {
+  const hit = await Coupon.findOneAndUpdate(
+    { code, isActive: true, $or: [{ usageLimit: { $in: [null, 0] } }, { $expr: { $lt: ['$usedCount', '$usageLimit'] } }] },
+    { $inc: { usedCount: 1 } },
+  );
+  return Boolean(hit);
+};
+
+const REFERENCE_MODELS = { Listing, Job } as const;
+
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { type, referenceId, referenceType, couponCode } = req.body;
+    const { type, referenceId, referenceType } = req.body ?? {};
+    const couponCode = typeof req.body?.couponCode === 'string' ? req.body.couponCode.trim().toUpperCase() : undefined;
+
+    // The thing being paid for must exist and belong to the payer.
+    if (referenceType !== 'Listing' && referenceType !== 'Job') { sendError(res, 'Invalid reference', 400); return; }
+    if (typeof type !== 'string' || !mongoose.isValidObjectId(referenceId)) { sendError(res, 'Invalid reference', 400); return; }
+    const owned = await (REFERENCE_MODELS[referenceType as 'Listing' | 'Job'] as any).exists({ _id: referenceId, createdBy: req.user!._id });
+    if (!owned) { sendError(res, 'Item not found', 404); return; }
 
     let amount = LISTING_FEE;
     let discountAmount = 0;
+    let appliedCoupon: string | undefined;
 
     if (couponCode) {
-      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
+      const coupon = await Coupon.findOne({ code: couponCode, isActive: true });
       if (coupon) {
         const now = new Date();
-        if ((!coupon.validUntil || coupon.validUntil > now) && coupon.validFrom <= now) {
-          if (!coupon.usageLimit || coupon.usedCount < coupon.usageLimit) {
-            if (coupon.discountType === 'percentage') {
-              discountAmount = Math.floor(amount * coupon.discountValue / 100);
-            } else {
-              discountAmount = Math.min(coupon.discountValue, amount);
-            }
-          }
+        if ((!coupon.validUntil || coupon.validUntil > now) && coupon.validFrom <= now
+          && (!coupon.usageLimit || coupon.usedCount < coupon.usageLimit)) {
+          discountAmount = coupon.discountType === 'percentage'
+            ? Math.floor(amount * coupon.discountValue / 100)
+            : Math.min(coupon.discountValue, amount);
+          appliedCoupon = couponCode;
         }
       }
     }
@@ -52,32 +72,27 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       type,
       amount,
       discountAmount,
-      couponCode,
+      couponCode: appliedCoupon,
       referenceId,
       referenceType,
       status: 'pending',
     });
 
     if (amount === 0) {
+      if (appliedCoupon && !(await takeCouponUse(appliedCoupon))) {
+        await Payment.deleteOne({ _id: payment._id });
+        sendError(res, 'Coupon usage limit reached', 400); return;
+      }
       payment.status = 'success';
       await payment.save();
-
-      if (couponCode) {
-        await Coupon.findOneAndUpdate({ code: couponCode.toUpperCase() }, { $inc: { usedCount: 1 } });
-      }
-
-      if (referenceType === 'Listing') {
-        await Listing.findByIdAndUpdate(referenceId, { paymentId: payment._id, status: 'pending' });
-      } else if (referenceType === 'Job') {
-        await Job.findByIdAndUpdate(referenceId, { paymentId: payment._id, status: 'pending' });
-      }
-
+      await (REFERENCE_MODELS[referenceType as 'Listing' | 'Job'] as any).updateOne({ _id: referenceId, createdBy: req.user!._id }, { paymentId: payment._id, status: 'pending' });
       sendSuccess(res, { payment, orderId: null, amount: 0, isFree: true });
       return;
     }
 
     const rzp = await getRazorpay();
     if (!rzp) {
+      if (isProd()) { await Payment.deleteOne({ _id: payment._id }); sendError(res, 'Payments are not available right now', 503); return; }
       sendSuccess(res, {
         payment, orderId: `mock_order_${Date.now()}`, amount: amount * 100,
         key: 'mock_key', isMock: true,
@@ -107,41 +122,47 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
 export const verifyPayment = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { paymentId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+    const { paymentId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body ?? {};
+    if (!mongoose.isValidObjectId(paymentId)) { sendError(res, 'Payment not found', 404); return; }
 
-    const payment = await Payment.findById(paymentId);
+    // Only the payer can verify their own payment.
+    const payment = await Payment.findOne({ _id: paymentId, userId: req.user!._id });
     if (!payment) { sendError(res, 'Payment not found', 404); return; }
+    if (payment.status === 'success') { sendSuccess(res, payment, 'Payment verified'); return; }
 
-    if (razorpayOrderId && razorpayPaymentId && razorpaySignature && process.env.RAZORPAY_KEY_SECRET) {
-      const body = `${razorpayOrderId}|${razorpayPaymentId}`;
-      const expectedSig = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(body)
-        .digest('hex');
-
-      if (expectedSig !== razorpaySignature) {
-        payment.status = 'failed';
-        await payment.save();
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (secret && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID !== 'your_razorpay_key_id') {
+      // A signature for the order we created is mandatory; there is no path to "success" without it.
+      if (typeof razorpayOrderId !== 'string' || typeof razorpayPaymentId !== 'string' || typeof razorpaySignature !== 'string'
+        || !payment.razorpayOrderId || razorpayOrderId !== payment.razorpayOrderId) {
         sendError(res, 'Payment verification failed', 400); return;
       }
+      const expectedSig = crypto.createHmac('sha256', secret).update(`${razorpayOrderId}|${razorpayPaymentId}`).digest('hex');
+      const a = Buffer.from(expectedSig);
+      const b = Buffer.from(razorpaySignature);
+      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+        await Payment.updateOne({ _id: payment._id, status: 'pending' }, { status: 'failed' });
+        sendError(res, 'Payment verification failed', 400); return;
+      }
+    } else if (isProd()) {
+      sendError(res, 'Payments are not available right now', 503); return;
+    } // else: local development with the mock gateway
+
+    // Flip pending -> success exactly once; replays and parallel calls find nothing to flip.
+    const done = await Payment.findOneAndUpdate(
+      { _id: payment._id, status: 'pending' },
+      { status: 'success', razorpayPaymentId, razorpaySignature },
+      { new: true },
+    );
+    if (!done) { sendSuccess(res, payment, 'Payment verified'); return; }
+
+    if (done.couponCode) await takeCouponUse(done.couponCode);
+
+    if (done.referenceId && (done.referenceType === 'Listing' || done.referenceType === 'Job')) {
+      await (REFERENCE_MODELS[done.referenceType] as any).updateOne({ _id: done.referenceId, createdBy: req.user!._id }, { paymentId: done._id, status: 'pending' });
     }
 
-    payment.razorpayPaymentId = razorpayPaymentId;
-    payment.razorpaySignature = razorpaySignature;
-    payment.status = 'success';
-    await payment.save();
-
-    if (payment.couponCode) {
-      await Coupon.findOneAndUpdate({ code: payment.couponCode }, { $inc: { usedCount: 1 } });
-    }
-
-    if (payment.referenceType === 'Listing' && payment.referenceId) {
-      await Listing.findByIdAndUpdate(payment.referenceId, { paymentId: payment._id, status: 'pending' });
-    } else if (payment.referenceType === 'Job' && payment.referenceId) {
-      await Job.findByIdAndUpdate(payment.referenceId, { paymentId: payment._id, status: 'pending' });
-    }
-
-    sendSuccess(res, payment, 'Payment verified');
+    sendSuccess(res, done, 'Payment verified');
   } catch { sendError(res, 'Payment verification failed', 500); }
 };
 

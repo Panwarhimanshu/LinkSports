@@ -25,6 +25,26 @@ const otpLimiter = rateLimit({
 // Email sign-in codes: counted per inbox (not just per IP, which a whole school or mobile network can share), and
 // sending and checking a code no longer draw from the same small budget. Wrong guesses are capped per code anyway.
 const emailKey = (req: any) => `${req.ip}|${String(req.body?.email ?? '').trim().toLowerCase()}`;
+// Phone codes go out over WhatsApp, so cap sends per number too: protects the sender number from bans and the
+// recipient from being spammed by anyone who knows their number.
+const phoneKey = (req: any) => String(req.body?.phone ?? '').replace(/\D/g, '').slice(-10) || req.ip;
+const phoneSendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 5 : 100,
+  keyGenerator: phoneKey,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many codes requested for this number. Try again in an hour.' } },
+});
+// Password guessing: per IP and per identifier, so neither one address nor one account can be hammered.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 20 : 200,
+  keyGenerator: (req: any) => `${req.ip}|${String(req.body?.email ?? '').trim().toLowerCase()}`,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many login attempts. Please wait a few minutes.' } },
+});
 const emailSendLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 8 : 100,
@@ -45,10 +65,10 @@ const emailVerifyLimiter = rateLimit({
 router.post('/register', register);
 router.post('/verify-email', otpLimiter, verifyEmail);
 router.post('/resend-otp', otpLimiter, resendOtp);
-router.post('/login', login);
+router.post('/login', loginLimiter, login);
 router.post('/email/send-otp', emailSendLimiter, sendEmailOtp);
 router.post('/email/verify-otp', emailVerifyLimiter, verifyEmailOtp);
-router.post('/phone/send-otp', otpLimiter, sendPhoneOtp);
+router.post('/phone/send-otp', otpLimiter, phoneSendLimiter, sendPhoneOtp);
 router.post('/phone/verify-otp', otpLimiter, verifyPhoneOtp);
 router.post('/role', protect, chooseRole);
 router.post('/dev-login', devLogin); // 404 unless DEV_LOGIN=true and not production
