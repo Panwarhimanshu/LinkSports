@@ -523,7 +523,10 @@ export const getOrganizationProfile = async (req: AuthRequest, res: Response): P
     const isOwnProfile = req.user ? req.user._id.toString() === orgOwnerId : false;
     const out: any = org.toObject();
     if (!isOwnProfile && req.user?.role !== 'admin') {
-      delete out.verificationDocuments; // KYC documents are for the owner and admins only
+      // KYC papers, the admin's rejection note and the private phone are for the owner and admins only
+      delete out.verificationDocuments;
+      delete out.rejectionReason;
+      delete out.alternatePhone;
       if (out.userId && typeof out.userId === 'object') delete out.userId.email;
       if (!req.user) delete out.contact; // contact details only for signed-in users
     }
@@ -1334,7 +1337,7 @@ const buildSearchOr = async (
   ];
 };
 
-const PUBLIC_ATHLETE_FIELDS = 'fullName username photo primarySport secondarySports position location tagline profileUrl gender dob height heightUnit weight availabilityStatus isParaAthlete experienceLevel yearsOfExperience connectionCount followerCount profileCompletion';
+const PUBLIC_ATHLETE_FIELDS = 'fullName username photo primarySport secondarySports position location tagline profileUrl gender height heightUnit weight availabilityStatus isParaAthlete experienceLevel yearsOfExperience connectionCount followerCount profileCompletion';
 const PUBLIC_COACH_FIELDS = 'fullName username photo sportsSpecialization ageGroupsCoached location tagline profileUrl coachingLevel yearsOfExperience availability connectionCount followerCount';
 const PUBLIC_ORG_FIELDS = 'name logo banner description sports profileUrl type isVerified verificationStatus connectionCount followerCount city state';
 

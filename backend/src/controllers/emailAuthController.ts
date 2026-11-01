@@ -95,23 +95,31 @@ export const verifyEmailOtp = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const record = await EmailOtp.findOne({ email });
-    if (!record || record.expiresAt < new Date()) {
+    // Same idea as the phone codes: bump the counter atomically before comparing, so parallel guesses can't dodge the cap.
+    const record = await EmailOtp.findOneAndUpdate(
+      { email, expiresAt: { $gt: new Date() } },
+      { $inc: { attempts: 1 } },
+      { new: true },
+    );
+    if (!record) {
       sendError(res, 'This code has expired. Request a new one.', 400, 'OTP_EXPIRED');
       return;
     }
-    if (record.attempts >= MAX_ATTEMPTS) {
+    if (record.attempts > MAX_ATTEMPTS) {
       await EmailOtp.deleteOne({ email });
       sendError(res, 'Too many wrong attempts. Request a new code.', 429, 'OTP_LOCKED');
       return;
     }
     if (!otpMatches(record.otpHash, otp, email)) {
-      record.attempts += 1;
-      await record.save();
       sendError(res, 'Incorrect code', 400, 'INVALID_OTP');
       return;
     }
-    await EmailOtp.deleteOne({ email }); // single use
+    // Single use: only one of several parallel correct submissions gets to delete the row.
+    const spent = await EmailOtp.deleteOne({ email, otpHash: record.otpHash });
+    if (spent.deletedCount !== 1) {
+      sendError(res, 'This code has expired. Request a new one.', 400, 'OTP_EXPIRED');
+      return;
+    }
 
     let user = await User.findOne({ email }).select('+refreshTokens');
     let isNew = false;

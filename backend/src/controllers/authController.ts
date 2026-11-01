@@ -15,6 +15,15 @@ import { OAuthCode } from '../models/OAuthCode';
 import crypto from 'crypto';
 
 const OTP_MAX_ATTEMPTS = 5;
+
+/** Counts one code try in a single atomic step. Read, add one, save would let parallel guesses all see the old number. */
+const bumpOtpAttempts = async (userId: unknown): Promise<number> => {
+  const u = await User.findByIdAndUpdate(userId, { $inc: { otpAttempts: 1 } }, { new: true }).select('+otpAttempts');
+  return u?.otpAttempts ?? OTP_MAX_ATTEMPTS + 1;
+};
+
+const dropOtp = (userId: unknown) =>
+  User.updateOne({ _id: userId }, { $unset: { emailOtp: '', emailOtpExpiry: '' }, $set: { otpAttempts: 0 } });
 const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,128}$/;
 
 const COOKIE_OPTIONS = {
@@ -110,14 +119,11 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
 
     if (!user || user.isVerified || !user.emailOtp || !/^\d{6}$/.test(code)) { sendError(res, 'Invalid or expired code', 400, 'INVALID_OTP'); return; }
     if (user.emailOtpExpiry && user.emailOtpExpiry < new Date()) { sendError(res, 'This code has expired. Request a new one.', 400, 'OTP_EXPIRED'); return; }
-    if ((user.otpAttempts || 0) >= OTP_MAX_ATTEMPTS) {
-      user.emailOtp = undefined; user.emailOtpExpiry = undefined; user.otpAttempts = 0;
-      await user.save();
+    if ((await bumpOtpAttempts(user._id)) > OTP_MAX_ATTEMPTS) {
+      await dropOtp(user._id);
       sendError(res, 'Too many wrong attempts. Request a new code.', 429, 'OTP_LOCKED'); return;
     }
     if (!safeEqual(user.emailOtp, hashCode(code, normalizedEmail, 'verify'))) {
-      user.otpAttempts = (user.otpAttempts || 0) + 1;
-      await user.save();
       sendError(res, 'Incorrect code', 400, 'INVALID_OTP'); return;
     }
 
@@ -125,6 +131,7 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     user.emailOtp = undefined;
     user.emailOtpExpiry = undefined;
     user.otpAttempts = 0;
+    user.markModified('otpAttempts'); // our copy was loaded before the counter moved, so force the write
     await user.save();
 
     sendSuccess(res, null, 'Email verified successfully');
@@ -358,14 +365,11 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     if (user.emailOtpExpiry && user.emailOtpExpiry < new Date()) {
       sendError(res, 'This code has expired. Please request a new one.', 400, 'OTP_EXPIRED'); return;
     }
-    if ((user.otpAttempts || 0) >= OTP_MAX_ATTEMPTS) {
-      user.emailOtp = undefined; user.emailOtpExpiry = undefined; user.otpAttempts = 0;
-      await user.save();
+    if ((await bumpOtpAttempts(user._id)) > OTP_MAX_ATTEMPTS) {
+      await dropOtp(user._id);
       sendError(res, 'Too many wrong attempts. Request a new code.', 429, 'OTP_LOCKED'); return;
     }
     if (!safeEqual(user.emailOtp, hashCode(code, normalizedEmail, 'reset'))) {
-      user.otpAttempts = (user.otpAttempts || 0) + 1;
-      await user.save();
       sendError(res, 'Incorrect code. Please check and try again.', 400, 'INVALID_OTP'); return;
     }
 
@@ -373,6 +377,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     user.emailOtp = undefined;
     user.emailOtpExpiry = undefined;
     user.otpAttempts = 0;
+    user.markModified('otpAttempts');
     user.refreshTokens = [];
     user.tokensValidAfter = new Date(); // every session signed in with the old password stops working
     await user.save();
