@@ -42,13 +42,25 @@ const emailVerifyLimiter = rateLimit({
   message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many attempts. Please wait a few minutes and try again.' } },
 });
 
+// Codes go out over WhatsApp, which costs us (and can get the number flagged) if someone floods one phone.
+// So sends are also capped per number, whatever IP they come from.
+const phoneKey = (req: any) => String(req.body?.phone ?? '').replace(/\D/g, '').slice(-10) || req.ip;
+const phoneSendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 5 : 100,
+  keyGenerator: phoneKey,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many codes sent to this number. Try again in an hour.' } },
+});
+
 router.post('/register', register);
 router.post('/verify-email', otpLimiter, verifyEmail);
 router.post('/resend-otp', otpLimiter, resendOtp);
 router.post('/login', login);
 router.post('/email/send-otp', emailSendLimiter, sendEmailOtp);
 router.post('/email/verify-otp', emailVerifyLimiter, verifyEmailOtp);
-router.post('/phone/send-otp', otpLimiter, sendPhoneOtp);
+router.post('/phone/send-otp', otpLimiter, phoneSendLimiter, sendPhoneOtp);
 router.post('/phone/verify-otp', otpLimiter, verifyPhoneOtp);
 router.post('/role', protect, chooseRole);
 router.post('/dev-login', devLogin); // 404 unless DEV_LOGIN=true and not production

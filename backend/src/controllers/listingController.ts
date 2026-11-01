@@ -5,7 +5,6 @@ import { Listing } from '../models/Listing';
 import { Application } from '../models/Application';
 import { Organization } from '../models/Organization';
 import { Notification } from '../models/Notification';
-import { User } from '../models/User';
 import { sendSuccess, sendError } from '../utils/response';
 import { getProfileName } from '../utils/profile';
 import { asString, escapeRegex } from '../utils/security';
@@ -18,27 +17,6 @@ const LISTING_FIELDS = [
 const pick = (body: Record<string, unknown>, fields: string[]) =>
   Object.fromEntries(fields.filter((f) => body[f] !== undefined).map((f) => [f, body[f]]));
 
-const notifyAllAthletes = async (listingId: unknown, orgName: string, listingTitle: string, listingType: string) => {
-  try {
-    const athletes = await User.find({ role: 'athlete' }, '_id').lean();
-    if (athletes.length === 0) return;
-    const typeLabel = listingType.replace(/_/g, ' ');
-    const notifications = athletes.map((a) => ({
-      recipientId: a._id,
-      type: 'new_event_posted',
-      title: `New ${typeLabel} posted`,
-      message: `${orgName} just posted a new ${typeLabel}: "${listingTitle}"`,
-      referenceId: listingId,
-      referenceType: 'Listing',
-      link: `/listings/${listingId}`,
-      isRead: false,
-    }));
-    await Notification.insertMany(notifications, { ordered: false });
-  } catch (err) {
-    console.error('[Notify] Failed to notify athletes of new listing:', err);
-  }
-};
-
 export const createListing = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const org = await Organization.findOne({ userId: req.user!._id });
@@ -49,13 +27,12 @@ export const createListing = async (req: AuthRequest, res: Response): Promise<vo
       ...pick(req.body, LISTING_FIELDS),
       organizationId: org._id,
       createdBy: req.user!._id,
-      status: 'published',
+      // Starts as a draft. It goes live after the fee is paid and an admin approves it (admins' approval
+      // is also what notifies the athletes), so nobody can skip both by just calling this endpoint.
+      status: 'draft',
     });
 
-    // Fire-and-forget — don't block the response
-    notifyAllAthletes(listing._id, org.name, listing.title, listing.type);
-
-    sendSuccess(res, listing, 'Listing published successfully', 201);
+    sendSuccess(res, listing, 'Listing saved as a draft', 201);
   } catch { sendError(res, 'Failed to create listing', 500); }
 };
 

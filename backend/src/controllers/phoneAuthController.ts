@@ -5,6 +5,8 @@ import { AthleteProfile } from '../models/AthleteProfile';
 import { PhoneOtp } from '../models/PhoneOtp';
 import { generateOTP, generateSlug } from '../utils/jwt';
 import { sendSms } from '../utils/sms';
+import { isWhatsAppConfigured, sendWhatsApp } from '../utils/whatsapp';
+import { safeEqual } from '../utils/security';
 import { sendSuccess, sendError } from '../utils/response';
 import { signupsAllowed, SIGNUPS_CLOSED_MSG } from '../models/SiteSettings';
 import { startSession } from '../utils/session';
@@ -44,12 +46,15 @@ export const sendPhoneOtp = async (req: Request, res: Response): Promise<void> =
       { upsert: true }
     );
 
+    const text = `${otp} is your LinkSports verification code. It is valid for 10 minutes. Don't share it with anyone.`;
     try {
-      await sendSms(`+91${phone}`, `${otp} is your LinkSports verification code. It is valid for 10 minutes.`);
+      // WhatsApp first, because that's what we actually have set up. SMS is only the fallback.
+      if (isWhatsAppConfigured()) await sendWhatsApp(`91${phone}`, text);
+      else await sendSms(`+91${phone}`, text);
     } catch (err) {
-      console.error('sendSms failed:', (err as Error).message);
+      console.error('OTP delivery failed:', (err as Error).message);
       await PhoneOtp.deleteOne({ phone });
-      sendError(res, 'Could not send the SMS right now. Try Google sign-in or try again later.', 503, 'SMS_UNAVAILABLE');
+      sendError(res, 'Could not send the code right now. Try Google sign-in or try again later.', 503, 'SMS_UNAVAILABLE');
       return;
     }
 
@@ -70,26 +75,35 @@ export const verifyPhoneOtp = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const record = await PhoneOtp.findOne({ phone });
-    if (!record || record.expiresAt < new Date()) {
+    // Count the try first, in one atomic step. If we read the counter, compared, and only then bumped it,
+    // a burst of parallel requests would all see "0 attempts" and get far more than 5 guesses.
+    const record = await PhoneOtp.findOneAndUpdate(
+      { phone, expiresAt: { $gt: new Date() } },
+      { $inc: { attempts: 1 } },
+      { new: true },
+    );
+    if (!record) {
       sendError(res, 'This code has expired. Request a new one.', 400, 'OTP_EXPIRED');
       return;
     }
-    if (record.attempts >= MAX_ATTEMPTS) {
+    if (record.attempts > MAX_ATTEMPTS) {
       await PhoneOtp.deleteOne({ phone });
       sendError(res, 'Too many wrong attempts. Request a new code.', 429, 'OTP_LOCKED');
       return;
     }
-    if (record.otpHash !== hashOtp(otp, phone)) {
-      record.attempts += 1;
-      await record.save();
+    if (!safeEqual(record.otpHash, hashOtp(otp, phone))) {
       sendError(res, 'Incorrect code', 400, 'INVALID_OTP');
       return;
     }
-    await PhoneOtp.deleteOne({ phone }); // single use
+    // Single use. Only one of several parallel correct submissions gets to delete the row.
+    const spent = await PhoneOtp.deleteOne({ phone, otpHash: record.otpHash });
+    if (spent.deletedCount !== 1) {
+      sendError(res, 'This code has expired. Request a new one.', 400, 'OTP_EXPIRED');
+      return;
+    }
 
-    // Match existing accounts whatever format their number was stored in (e.g. migrated "98765 43210").
-    let user = await User.findOne({ phone: new RegExp(`${phone}$`) }).select('+refreshTokens');
+    // Existing accounts might have the number stored as +91..., 91... or just the 10 digits.
+    let user = await User.findOne({ phone: { $in: [`+91${phone}`, `91${phone}`, phone] } }).select('+refreshTokens');
     let isNew = false;
 
     if (user?.isSuspended) {
